@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useAlive } from './useAlive';
 
@@ -106,4 +106,16 @@ export const useAsyncCallback = <TData, TError, TArgs extends unknown[]>(
   const callback = useAsync(asyncCallback, setState);
 
   return [state, callback];
+};
+
+export const useAsyncCallbackValue = <TData, TError>(
+  asyncCallback: AsyncCallback<[], TData>
+): [AsyncState<TData, TError>, AsyncCallback<[], TData>] => {
+  const [state, load] = useAsyncCallback<TData, TError, []>(asyncCallback);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  return [state, load];
 };

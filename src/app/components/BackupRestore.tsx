@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { useAtom } from 'jotai';
 import { CryptoApi } from 'matrix-js-sdk/lib/crypto-api';
-import { Badge, Box, Chip, percent, ProgressBar, Spinner, Text } from 'folds';
+import { Badge, Box, Chip, color, percent, ProgressBar, Spinner, Text } from 'folds';
 import { BackupProgressStatus, backupRestoreProgressAtom } from '../state/backupRestore';
 import { InfoCard } from './info-card';
-import { AsyncStatus, useAsyncCallback } from '../hooks/useAsyncCallback';
+import { AsyncStatus, useAsyncCallback, useAsyncCallbackValue } from '../hooks/useAsyncCallback';
 
 type BackupRestoreTileProps = {
   crypto: CryptoApi;
@@ -12,13 +12,13 @@ type BackupRestoreTileProps = {
 export function BackupRestoreTile({ crypto }: BackupRestoreTileProps) {
   const [restoreProgress, setRestoreProgress] = useAtom(backupRestoreProgressAtom);
 
-  const [backupInfo, loadBackupInfo] = useAsyncCallback(
+  const [backupInfo] = useAsyncCallbackValue(
     useCallback(() => crypto.getKeyBackupInfo(), [crypto])
   );
 
-  useEffect(() => {
-    loadBackupInfo();
-  }, [loadBackupInfo]);
+  const [activeBackup, recheckActiveBackup] = useAsyncCallbackValue(
+    useCallback(() => crypto.getActiveSessionBackupVersion(), [crypto])
+  );
 
   const [restoreState, restoreBackup] = useAsyncCallback(
     useCallback(async () => {
@@ -30,35 +30,74 @@ export function BackupRestoreTile({ crypto }: BackupRestoreTileProps) {
     }, [crypto, setRestoreProgress])
   );
 
+  const [startState, startActiveBackup] = useAsyncCallback(
+    useCallback(async () => {
+      await crypto.checkKeyBackupAndEnable();
+      await recheckActiveBackup();
+    }, [crypto, recheckActiveBackup])
+  );
+
   const running =
     restoreState.status === AsyncStatus.Loading ||
+    startState.status === AsyncStatus.Loading ||
     restoreProgress.status === BackupProgressStatus.Fetching ||
     restoreProgress.status === BackupProgressStatus.Loading;
 
   const hasInfo = backupInfo.status === AsyncStatus.Success;
+  const isBackupActive =
+    activeBackup.status === AsyncStatus.Success ? activeBackup.data !== null : false;
 
   return (
     <InfoCard
       variant="Surface"
       title="Encryption Backup"
       description={
-        <span>
-          Version: {hasInfo ? backupInfo.data?.version : 'NIL'}, Messages Keys:{' '}
-          {hasInfo ? backupInfo.data?.count : 'NIL'}
-        </span>
+        <Box as="span" gap="200" alignItems="Center" wrap="Wrap">
+          <Box as="span" gap="100" alignItems="Center">
+            <Badge
+              variant={isBackupActive ? 'Success' : 'Critical'}
+              fill="Solid"
+              size="200"
+              radii="Pill"
+            />
+            <Text
+              size="L400"
+              style={{ color: isBackupActive ? color.Success.Main : color.Critical.Main }}
+            >
+              {isBackupActive ? 'Active' : 'Stopped'}
+            </Text>
+          </Box>
+          <span>version: {hasInfo ? backupInfo.data?.version : 'NIL'},</span>
+          <span>Keys: {hasInfo ? backupInfo.data?.count : 'NIL'}</span>
+        </Box>
       }
       after={
-        <Chip
-          variant="Secondary"
-          radii="Pill"
-          onClick={restoreBackup}
-          disabled={running}
-          before={running && <Spinner size="100" variant="Secondary" fill="Soft" />}
-        >
-          <Text as="span" size="B300">
-            Restore
-          </Text>
-        </Chip>
+        <Box gap="200">
+          {!isBackupActive && (
+            <Chip
+              variant="Success"
+              radii="Pill"
+              outlined
+              disabled={running}
+              onClick={startActiveBackup}
+            >
+              <Text as="span" size="B300">
+                Start
+              </Text>
+            </Chip>
+          )}
+          <Chip
+            variant="Secondary"
+            radii="Pill"
+            onClick={restoreBackup}
+            disabled={running}
+            before={running && <Spinner size="100" variant="Secondary" fill="Soft" />}
+          >
+            <Text as="span" size="B300">
+              Restore
+            </Text>
+          </Chip>
+        </Box>
       }
     >
       {restoreProgress.status === BackupProgressStatus.Loading && (
