@@ -65,15 +65,15 @@ function UnverifiedIndicator() {
               </SidebarAvatar>
             )}
           </SidebarItemTooltip>
-          <SidebarItemBadge hasCount>
-            {unverifiedDeviceCount && unverifiedDeviceCount > 0 && (
+          {!unverified && unverifiedDeviceCount && unverifiedDeviceCount > 0 && (
+            <SidebarItemBadge hasCount>
               <Badge variant="Warning" size="400" fill="Solid" radii="Pill" outlined={false}>
                 <Text as="span" size="L400">
                   {unverifiedDeviceCount}
                 </Text>
               </Badge>
-            )}
-          </SidebarItemBadge>
+            </SidebarItemBadge>
+          )}
         </SidebarItem>
       )}
       {settings && (
