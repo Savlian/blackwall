@@ -1,6 +1,6 @@
 import React, { MouseEventHandler, useCallback, useState } from 'react';
 import { useAtom } from 'jotai';
-import { CryptoApi } from 'matrix-js-sdk/lib/crypto-api';
+import { CryptoApi, KeyBackupInfo } from 'matrix-js-sdk/lib/crypto-api';
 import {
   Badge,
   Box,
@@ -22,7 +22,12 @@ import FocusTrap from 'focus-trap-react';
 import { BackupProgressStatus, backupRestoreProgressAtom } from '../state/backupRestore';
 import { InfoCard } from './info-card';
 import { AsyncStatus, useAsyncCallback } from '../hooks/useAsyncCallback';
-import { useKeyBackupInfo, useKeyBackupStatus, useKeyBackupSync } from '../hooks/useKeyBackup';
+import {
+  useKeyBackupInfo,
+  useKeyBackupStatus,
+  useKeyBackupSync,
+  useKeyBackupTrust,
+} from '../hooks/useKeyBackup';
 import { stopPropagation } from '../utils/keyboard';
 
 type BackupStatusProps = {
@@ -92,6 +97,39 @@ function BackupProgress({ total, downloaded }: BackupProgressProps) {
   );
 }
 
+type BackupTrustInfoProps = {
+  crypto: CryptoApi;
+  backupInfo: KeyBackupInfo;
+};
+function BackupTrustInfo({ crypto, backupInfo }: BackupTrustInfoProps) {
+  const trust = useKeyBackupTrust(crypto, backupInfo);
+
+  if (!trust) return null;
+
+  return (
+    <Box direction="Column">
+      {trust.matchesDecryptionKey ? (
+        <Text size="T200" style={{ color: color.Success.Main }}>
+          <b>Backup has trusted decryption key.</b>
+        </Text>
+      ) : (
+        <Text size="T200" style={{ color: color.Critical.Main }}>
+          <b>Backup does not have trusted decryption key!</b>
+        </Text>
+      )}
+      {trust.trusted ? (
+        <Text size="T200" style={{ color: color.Success.Main }}>
+          <b>Backup has trusted by signature.</b>
+        </Text>
+      ) : (
+        <Text size="T200" style={{ color: color.Critical.Main }}>
+          <b>Backup does not have trusted signature!</b>
+        </Text>
+      )}
+    </Box>
+  );
+}
+
 type BackupRestoreTileProps = {
   crypto: CryptoApi;
 };
@@ -101,7 +139,7 @@ export function BackupRestoreTile({ crypto }: BackupRestoreTileProps) {
     restoreProgress.status === BackupProgressStatus.Fetching ||
     restoreProgress.status === BackupProgressStatus.Loading;
 
-  const status = useKeyBackupStatus(crypto);
+  const backupEnabled = useKeyBackupStatus(crypto);
   const backupInfo = useKeyBackupInfo(crypto);
   const [remainingSession, syncFailure] = useKeyBackupSync();
 
@@ -139,12 +177,18 @@ export function BackupRestoreTile({ crypto }: BackupRestoreTileProps) {
       after={
         <Box alignItems="Center" gap="200">
           {remainingSession === 0 ? (
-            <BackupStatus enabled={status} />
+            <BackupStatus enabled={backupEnabled} />
           ) : (
             <BackupSyncing count={remainingSession} />
           )}
-          <IconButton size="300" variant="SurfaceVariant" radii="300" onClick={handleMenu}>
-            <Icon size="100" src={menuCords ? Icons.ChevronTop : Icons.ChevronBottom} />
+          <IconButton
+            aria-pressed={!!menuCords}
+            size="300"
+            variant="Surface"
+            radii="300"
+            onClick={handleMenu}
+          >
+            <Icon size="100" src={Icons.VerticalDots} />
           </IconButton>
           <PopOut
             anchor={menuCords}
@@ -193,6 +237,14 @@ export function BackupRestoreTile({ crypto }: BackupRestoreTileProps) {
         <Text size="T200" style={{ color: color.Critical.Main }}>
           <b>{syncFailure}</b>
         </Text>
+      )}
+      {!backupEnabled && backupInfo === null && (
+        <Text size="T200" style={{ color: color.Critical.Main }}>
+          <b>No backup present on server!</b>
+        </Text>
+      )}
+      {!syncFailure && !backupEnabled && backupInfo && (
+        <BackupTrustInfo crypto={crypto} backupInfo={backupInfo} />
       )}
       {restoreState.status === AsyncStatus.Loading && !restoring && <BackupProgressFetching />}
       {restoreProgress.status === BackupProgressStatus.Fetching && <BackupProgressFetching />}

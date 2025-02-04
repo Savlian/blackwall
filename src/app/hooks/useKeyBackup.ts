@@ -1,4 +1,5 @@
 import {
+  BackupTrustInfo,
   CryptoApi,
   CryptoEvent,
   CryptoEventHandlerMap,
@@ -121,4 +122,32 @@ export const useKeyBackupInfo = (crypto: CryptoApi): KeyBackupInfo | undefined |
   );
 
   return info;
+};
+
+export const useKeyBackupTrust = (
+  crypto: CryptoApi,
+  backupInfo: KeyBackupInfo
+): BackupTrustInfo | undefined => {
+  const alive = useAlive();
+  const [trust, setTrust] = useState<BackupTrustInfo>();
+
+  const fetchTrust = useCallback(() => {
+    crypto.isKeyBackupTrusted(backupInfo).then((t) => {
+      if (alive()) {
+        setTrust(t);
+      }
+    });
+  }, [crypto, alive, backupInfo]);
+
+  useEffect(() => {
+    fetchTrust();
+  }, [fetchTrust]);
+
+  useKeyBackupStatusChange(
+    useCallback(() => {
+      fetchTrust();
+    }, [fetchTrust])
+  );
+
+  return trust;
 };
