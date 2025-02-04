@@ -97,6 +97,9 @@ type BackupRestoreTileProps = {
 };
 export function BackupRestoreTile({ crypto }: BackupRestoreTileProps) {
   const [restoreProgress, setRestoreProgress] = useAtom(backupRestoreProgressAtom);
+  const restoring =
+    restoreProgress.status === BackupProgressStatus.Fetching ||
+    restoreProgress.status === BackupProgressStatus.Loading;
 
   const status = useKeyBackupStatus(crypto);
   const backupInfo = useKeyBackupInfo(crypto);
@@ -167,9 +170,11 @@ export function BackupRestoreTile({ crypto }: BackupRestoreTileProps) {
                       size="300"
                       variant="Surface"
                       radii="300"
-                      aria-disabled={restoreState.status === AsyncStatus.Loading}
+                      aria-disabled={restoreState.status === AsyncStatus.Loading || restoring}
                       onClick={
-                        restoreState.status === AsyncStatus.Loading ? undefined : handleRestore
+                        restoreState.status === AsyncStatus.Loading || restoring
+                          ? undefined
+                          : handleRestore
                       }
                     >
                       <Box grow="Yes">
@@ -189,9 +194,7 @@ export function BackupRestoreTile({ crypto }: BackupRestoreTileProps) {
           <b>{syncFailure}</b>
         </Text>
       )}
-      {restoreState.status === AsyncStatus.Loading &&
-        restoreProgress.status !== BackupProgressStatus.Fetching &&
-        restoreProgress.status !== BackupProgressStatus.Loading && <BackupProgressFetching />}
+      {restoreState.status === AsyncStatus.Loading && !restoring && <BackupProgressFetching />}
       {restoreProgress.status === BackupProgressStatus.Fetching && <BackupProgressFetching />}
       {restoreProgress.status === BackupProgressStatus.Loading && (
         <BackupProgress
