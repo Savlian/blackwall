@@ -87,14 +87,14 @@ export const useKeyBackupSync = (): [number, string | undefined] => {
   return [remaining, failure];
 };
 
-export const useKeyBackupInfo = (crypto: CryptoApi): KeyBackupInfo | undefined => {
+export const useKeyBackupInfo = (crypto: CryptoApi): KeyBackupInfo | undefined | null => {
   const alive = useAlive();
-  const [info, setInfo] = useState<KeyBackupInfo>();
+  const [info, setInfo] = useState<KeyBackupInfo | null>();
 
   const fetchInfo = useCallback(() => {
     crypto.getKeyBackupInfo().then((i) => {
       if (alive()) {
-        setInfo(i ?? undefined);
+        setInfo(i);
       }
     });
   }, [crypto, alive]);
@@ -102,6 +102,12 @@ export const useKeyBackupInfo = (crypto: CryptoApi): KeyBackupInfo | undefined =
   useEffect(() => {
     fetchInfo();
   }, [fetchInfo]);
+
+  useKeyBackupStatusChange(
+    useCallback(() => {
+      fetchInfo();
+    }, [fetchInfo])
+  );
 
   useKeyBackupSessionsRemainingChange(
     useCallback(
