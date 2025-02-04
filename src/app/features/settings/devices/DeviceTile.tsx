@@ -72,10 +72,10 @@ function DeviceDetails({ device }: { device: IMyDevice }) {
   );
 }
 
-type DeviceSessionKeyDetailsProps = {
+type DeviceKeyDetailsProps = {
   crypto: CryptoApi;
 };
-export function DeviceSessionKeyDetails({ crypto }: DeviceSessionKeyDetailsProps) {
+export function DeviceKeyDetails({ crypto }: DeviceKeyDetailsProps) {
   const [keysState, loadKeys] = useAsyncCallback(
     useCallback(() => {
       const keys = crypto.getOwnDeviceKeys();
@@ -91,7 +91,7 @@ export function DeviceSessionKeyDetails({ crypto }: DeviceSessionKeyDetailsProps
 
   return (
     <Text className={BreakWord} size="T200" priority="300">
-      Session Key:{' '}
+      Device Key:{' '}
       <i>{keysState.status === AsyncStatus.Success ? keysState.data.ed25519 : 'loading...'}</i>
     </Text>
   );
