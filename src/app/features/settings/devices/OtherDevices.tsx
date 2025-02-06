@@ -97,14 +97,16 @@ export function OtherDevices({ devices, refreshDeviceList, showVerification }: O
                   />
                 }
               />
-              {showVerification && (
+              {showVerification && crypto && (
                 <DeviceVerificationStatus
                   crypto={crypto}
                   userId={mx.getSafeUserId()}
                   deviceId={device.device_id}
                 >
                   {(status) =>
-                    status === VerificationStatus.Unverified && <VerifyOtherDeviceTile />
+                    status === VerificationStatus.Unverified && (
+                      <VerifyOtherDeviceTile crypto={crypto} deviceId={device.device_id} />
+                    )
                   }
                 </DeviceVerificationStatus>
               )}

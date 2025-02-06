@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Badge, Box, Button, Chip, config, Icon, Icons, Spinner, Text } from 'folds';
+import { CryptoApi, VerificationRequest } from 'matrix-js-sdk/lib/crypto-api';
 import { VerificationStatus } from '../../../hooks/useDeviceVerificationStatus';
 import { InfoCard } from '../../../components/info-card';
 import { ManualVerificationTile } from '../../../components/ManualVerification';
 import { SecretStorageKeyContent } from '../../../../types/matrix/accountData';
+import { AsyncState, AsyncStatus, useAsync } from '../../../hooks/useAsyncCallback';
+import { useMatrixClient } from '../../../hooks/useMatrixClient';
+import { DeviceVerification } from '../../../components/DeviceVerification';
 
 type VerificationStatusBadgeProps = {
   verificationStatus: VerificationStatus;
@@ -131,17 +135,57 @@ export function VerifyCurrentDeviceTile({
   );
 }
 
-export function VerifyOtherDeviceTile() {
+type VerifyOtherDeviceTileProps = {
+  crypto: CryptoApi;
+  deviceId: string;
+};
+export function VerifyOtherDeviceTile({ crypto, deviceId }: VerifyOtherDeviceTileProps) {
+  const mx = useMatrixClient();
+  const [requestState, setRequestState] = useState<AsyncState<VerificationRequest, Error>>({
+    status: AsyncStatus.Idle,
+  });
+
+  const requestVerification = useAsync<VerificationRequest, Error, []>(
+    useCallback(() => {
+      const requestPromise = crypto.requestDeviceVerification(mx.getSafeUserId(), deviceId);
+      return requestPromise;
+    }, [mx, crypto, deviceId]),
+    setRequestState
+  );
+
+  const handleExit = useCallback(() => {
+    setRequestState({
+      status: AsyncStatus.Idle,
+    });
+  }, []);
+
+  const requesting = requestState.status === AsyncStatus.Loading;
   return (
     <InfoCard
       variant="Warning"
       title="Unverified"
       description="Verify device identity and grant access to encrypted messages."
       after={
-        <Button size="300" variant="Warning" radii="300">
-          <Text size="B300">Verify</Text>
+        <Button
+          size="300"
+          variant="Warning"
+          radii="300"
+          onClick={requestVerification}
+          before={requesting && <Spinner size="100" variant="Warning" fill="Solid" />}
+          disabled={requesting}
+        >
+          <Text as="span" size="B300">
+            Verify
+          </Text>
         </Button>
       }
-    />
+    >
+      {requestState.status === AsyncStatus.Error && (
+        <Text size="T200">{requestState.error.message}</Text>
+      )}
+      {requestState.status === AsyncStatus.Success && (
+        <DeviceVerification request={requestState.data} onExit={handleExit} />
+      )}
+    </InfoCard>
   );
 }
