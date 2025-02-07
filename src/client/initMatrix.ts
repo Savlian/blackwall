@@ -67,3 +67,17 @@ export const logoutClient = async (mx: MatrixClient) => {
   window.localStorage.clear();
   window.location.reload();
 };
+
+export const clearLoginData = async () => {
+  const dbs = await window.indexedDB.databases();
+
+  dbs.forEach((idbInfo) => {
+    const { name } = idbInfo;
+    if (name) {
+      window.indexedDB.deleteDatabase(name);
+    }
+  });
+
+  window.localStorage.clear();
+  window.location.reload();
+};
