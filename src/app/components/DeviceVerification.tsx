@@ -119,7 +119,8 @@ function AutoVerificationStart({ onStart }: VerificationStartProps) {
 function CompareEmoji({ sasData }: { sasData: ShowSasCallbacks }) {
   const [confirmState, confirm] = useAsyncCallback(useCallback(() => sasData.confirm(), [sasData]));
 
-  const confirming = confirmState.status === AsyncStatus.Loading;
+  const confirming =
+    confirmState.status === AsyncStatus.Loading || confirmState.status === AsyncStatus.Success;
 
   return (
     <Box direction="Column" gap="400">

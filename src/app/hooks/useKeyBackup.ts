@@ -65,6 +65,19 @@ export const useKeyBackupFailedChange = (
   }, [mx, onChange]);
 };
 
+export const useKeyBackupDecryptionKeyCached = (
+  onChange: CryptoEventHandlerMap[CryptoEvent.KeyBackupDecryptionKeyCached]
+) => {
+  const mx = useMatrixClient();
+
+  useEffect(() => {
+    mx.on(CryptoEvent.KeyBackupDecryptionKeyCached, onChange);
+    return () => {
+      mx.removeListener(CryptoEvent.KeyBackupDecryptionKeyCached, onChange);
+    };
+  }, [mx, onChange]);
+};
+
 export const useKeyBackupSync = (): [number, string | undefined] => {
   const [remaining, setRemaining] = useState(0);
   const [failure, setFailure] = useState<string>();

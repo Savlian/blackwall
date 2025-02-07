@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import { CryptoApi } from 'matrix-js-sdk/lib/crypto-api';
-import { AsyncStatus, useAsyncCallback } from './useAsyncCallback';
 import { verifiedDevice } from '../utils/matrix-crypto';
 import { useAlive } from './useAlive';
 import { fulfilledPromiseSettledResult } from '../utils/common';
@@ -14,17 +13,26 @@ export enum VerificationStatus {
   Unsupported,
 }
 
-export const useDeviceVerificationStatus = (
+export const useDeviceVerificationDetect = (
   crypto: CryptoApi | undefined,
   userId: string,
-  deviceId: string | undefined
-): VerificationStatus => {
+  deviceId: string | undefined,
+  callback: (status: VerificationStatus) => void
+): void => {
   const mx = useMatrixClient();
-  const [verificationState, getVerification] = useAsyncCallback(verifiedDevice);
 
-  const updateStatus = useCallback(() => {
-    if (crypto && deviceId) getVerification(crypto, userId, deviceId);
-  }, [crypto, deviceId, userId, getVerification]);
+  const updateStatus = useCallback(async () => {
+    if (crypto && deviceId) {
+      const data = await verifiedDevice(crypto, userId, deviceId);
+      if (data === null) {
+        callback(VerificationStatus.Unsupported);
+        return;
+      }
+      callback(data ? VerificationStatus.Verified : VerificationStatus.Unverified);
+      return;
+    }
+    callback(VerificationStatus.Unknown);
+  }, [crypto, deviceId, userId, callback]);
 
   useEffect(() => {
     updateStatus();
@@ -40,14 +48,18 @@ export const useDeviceVerificationStatus = (
       [userId, updateStatus]
     )
   );
+};
 
-  if (verificationState.status === AsyncStatus.Success) {
-    if (verificationState.data === null) return VerificationStatus.Unsupported;
+export const useDeviceVerificationStatus = (
+  crypto: CryptoApi | undefined,
+  userId: string,
+  deviceId: string | undefined
+): VerificationStatus => {
+  const [verificationStatus, setVerificationStatus] = useState(VerificationStatus.Unknown);
 
-    return verificationState.data ? VerificationStatus.Verified : VerificationStatus.Unverified;
-  }
+  useDeviceVerificationDetect(crypto, userId, deviceId, setVerificationStatus);
 
-  return VerificationStatus.Unknown;
+  return verificationStatus;
 };
 
 export const useUnverifiedDeviceCount = (

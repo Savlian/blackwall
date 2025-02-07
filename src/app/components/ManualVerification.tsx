@@ -13,7 +13,6 @@ import {
   color,
 } from 'folds';
 import FocusTrap from 'focus-trap-react';
-import { useSetAtom } from 'jotai';
 import { stopPropagation } from '../utils/keyboard';
 import { SettingTile } from './setting-tile';
 import { SecretStorageKeyContent } from '../../types/matrix/accountData';
@@ -21,7 +20,6 @@ import { SecretStorageRecoveryKey, SecretStorageRecoveryPassphrase } from './Sec
 import { useMatrixClient } from '../hooks/useMatrixClient';
 import { AsyncStatus, useAsyncCallback } from '../hooks/useAsyncCallback';
 import { storePrivateKey } from '../../client/state/secretStorageKeys';
-import { backupRestoreProgressAtom } from '../state/backupRestore';
 
 export enum ManualVerificationMethod {
   RecoveryPassphrase = 'passphrase',
@@ -123,7 +121,6 @@ export function ManualVerificationTile({
   options,
 }: ManualVerificationTileProps) {
   const mx = useMatrixClient();
-  const setBackupRestoreProgress = useSetAtom(backupRestoreProgressAtom);
 
   const hasPassphrase = !!secretStorageKeyContent.passphrase;
   const [method, setMethod] = useState(
@@ -145,13 +142,8 @@ export function ManualVerificationTile({
       await crypto.bootstrapSecretStorage({});
 
       await crypto.loadSessionBackupPrivateKeyFromSecretStorage();
-      await crypto.restoreKeyBackup({
-        progressCallback(progress) {
-          setBackupRestoreProgress(progress);
-        },
-      });
     },
-    [mx, secretStorageKeyId, setBackupRestoreProgress]
+    [mx, secretStorageKeyId]
   );
 
   const [verifyState, handleDecodedRecoveryKey] = useAsyncCallback<void, Error, [Uint8Array]>(
@@ -173,34 +165,35 @@ export function ManualVerificationTile({
           </Box>
         }
       />
-      <Box direction="Column" gap="100">
-        {method === ManualVerificationMethod.RecoveryKey && (
-          <SecretStorageRecoveryKey
-            processing={verifying}
-            keyContent={secretStorageKeyContent}
-            onDecodedRecoveryKey={handleDecodedRecoveryKey}
-          />
-        )}
-        {method === ManualVerificationMethod.RecoveryPassphrase &&
-          secretStorageKeyContent.passphrase && (
-            <SecretStorageRecoveryPassphrase
+      {verifyState.status === AsyncStatus.Success ? (
+        <Text size="T200" style={{ color: color.Success.Main }}>
+          <b>Device verified!</b>
+        </Text>
+      ) : (
+        <Box direction="Column" gap="100">
+          {method === ManualVerificationMethod.RecoveryKey && (
+            <SecretStorageRecoveryKey
               processing={verifying}
               keyContent={secretStorageKeyContent}
-              passphraseContent={secretStorageKeyContent.passphrase}
               onDecodedRecoveryKey={handleDecodedRecoveryKey}
             />
           )}
-        {verifyState.status === AsyncStatus.Error && (
-          <Text size="T200" style={{ color: color.Critical.Main }}>
-            <b>{verifyState.error.message}</b>
-          </Text>
-        )}
-        {verifyState.status === AsyncStatus.Success && (
-          <Text size="T200" style={{ color: color.Success.Main }}>
-            Device verified!
-          </Text>
-        )}
-      </Box>
+          {method === ManualVerificationMethod.RecoveryPassphrase &&
+            secretStorageKeyContent.passphrase && (
+              <SecretStorageRecoveryPassphrase
+                processing={verifying}
+                keyContent={secretStorageKeyContent}
+                passphraseContent={secretStorageKeyContent.passphrase}
+                onDecodedRecoveryKey={handleDecodedRecoveryKey}
+              />
+            )}
+          {verifyState.status === AsyncStatus.Error && (
+            <Text size="T200" style={{ color: color.Critical.Main }}>
+              <b>{verifyState.error.message}</b>
+            </Text>
+          )}
+        </Box>
+      )}
     </Box>
   );
 }
