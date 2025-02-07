@@ -111,7 +111,7 @@ function AutoVerificationStart({ onStart }: VerificationStartProps) {
 
   return (
     <Box direction="Column" gap="400">
-      <WaitingMessage message="Starting verification via emoji comparison..." />
+      <WaitingMessage message="Starting verification using emoji comparison..." />
     </Box>
   );
 }
@@ -192,7 +192,7 @@ function SasVerification({ verifier, onCancel }: SasVerificationProps) {
 
   return (
     <Box direction="Column" gap="400">
-      <WaitingMessage message="Starting verification via emoji comparison..." />
+      <WaitingMessage message="Starting verification using emoji comparison..." />
     </Box>
   );
 }

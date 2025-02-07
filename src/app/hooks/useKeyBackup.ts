@@ -117,11 +117,7 @@ export const useKeyBackupInfo = (crypto: CryptoApi): KeyBackupInfo | undefined |
     fetchInfo();
   }, [fetchInfo]);
 
-  useKeyBackupStatusChange(
-    useCallback(() => {
-      fetchInfo();
-    }, [fetchInfo])
-  );
+  useKeyBackupStatusChange(fetchInfo);
 
   useKeyBackupSessionsRemainingChange(
     useCallback(
@@ -156,11 +152,9 @@ export const useKeyBackupTrust = (
     fetchTrust();
   }, [fetchTrust]);
 
-  useKeyBackupStatusChange(
-    useCallback(() => {
-      fetchTrust();
-    }, [fetchTrust])
-  );
+  useKeyBackupStatusChange(fetchTrust);
+
+  useKeyBackupDecryptionKeyCached(fetchTrust);
 
   return trust;
 };
