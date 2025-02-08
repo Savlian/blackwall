@@ -1,5 +1,20 @@
 import React, { useCallback, useState } from 'react';
-import { Badge, Box, Button, Chip, config, Icon, Icons, Spinner, Text } from 'folds';
+import {
+  Badge,
+  Box,
+  Button,
+  Chip,
+  config,
+  Icon,
+  Icons,
+  Spinner,
+  Text,
+  Overlay,
+  OverlayBackdrop,
+  OverlayCenter,
+  IconButton,
+} from 'folds';
+import FocusTrap from 'focus-trap-react';
 import { CryptoApi, VerificationRequest } from 'matrix-js-sdk/lib/crypto-api';
 import { VerificationStatus } from '../../../hooks/useDeviceVerificationStatus';
 import { InfoCard } from '../../../components/info-card';
@@ -8,6 +23,7 @@ import { SecretStorageKeyContent } from '../../../../types/matrix/accountData';
 import { AsyncState, AsyncStatus, useAsync } from '../../../hooks/useAsyncCallback';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { DeviceVerification } from '../../../components/DeviceVerification';
+import { DeviceVerificationSetup } from '../../../components/DeviceVerificationSetup';
 
 type VerificationStatusBadgeProps = {
   verificationStatus: VerificationStatus;
@@ -187,5 +203,64 @@ export function VerifyOtherDeviceTile({ crypto, deviceId }: VerifyOtherDeviceTil
         <DeviceVerification request={requestState.data} onExit={handleExit} />
       )}
     </InfoCard>
+  );
+}
+
+export function EnableVerification() {
+  const [open, setOpen] = useState(false);
+
+  const handleCancel = useCallback(() => setOpen(false), []);
+
+  return (
+    <>
+      <Button size="300" radii="300" onClick={() => setOpen(true)}>
+        <Text as="span" size="B300">
+          Enable
+        </Text>
+      </Button>
+      {open && (
+        <Overlay open backdrop={<OverlayBackdrop />}>
+          <OverlayCenter>
+            <FocusTrap
+              focusTrapOptions={{
+                initialFocus: false,
+                clickOutsideDeactivates: false,
+                escapeDeactivates: false,
+              }}
+            >
+              <DeviceVerificationSetup onCancel={handleCancel} />
+            </FocusTrap>
+          </OverlayCenter>
+        </Overlay>
+      )}
+    </>
+  );
+}
+
+export function DeviceVerificationOptions() {
+  const [open, setOpen] = useState(false);
+
+  const handleCancel = useCallback(() => setOpen(false), []);
+  return (
+    <>
+      <IconButton variant="SurfaceVariant" size="300" radii="300" onClick={() => setOpen(true)}>
+        <Icon size="100" src={Icons.VerticalDots} />
+      </IconButton>
+      {open && (
+        <Overlay open backdrop={<OverlayBackdrop />}>
+          <OverlayCenter>
+            <FocusTrap
+              focusTrapOptions={{
+                initialFocus: false,
+                clickOutsideDeactivates: false,
+                escapeDeactivates: false,
+              }}
+            >
+              <DeviceVerificationSetup onCancel={handleCancel} />
+            </FocusTrap>
+          </OverlayCenter>
+        </Overlay>
+      )}
+    </>
   );
 }

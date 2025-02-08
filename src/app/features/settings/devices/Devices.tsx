@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Text, IconButton, Icon, Icons, Scroll, Button } from 'folds';
+import { Box, Text, IconButton, Icon, Icons, Scroll } from 'folds';
 import { Page, PageContent, PageHeader } from '../../../components/page';
 import { SequenceCard } from '../../../components/sequence-card';
 import { SequenceCardStyle } from '../styles.css';
@@ -9,7 +9,12 @@ import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { LocalBackup } from './LocalBackup';
 import { DeviceLogoutBtn, DeviceKeyDetails, DeviceTile, DeviceTilePlaceholder } from './DeviceTile';
 import { OtherDevices } from './OtherDevices';
-import { VerificationStatusBadge, VerifyCurrentDeviceTile } from './Verification';
+import {
+  DeviceVerificationOptions,
+  EnableVerification,
+  VerificationStatusBadge,
+  VerifyCurrentDeviceTile,
+} from './Verification';
 import {
   useDeviceVerificationStatus,
   useUnverifiedDeviceCount,
@@ -92,16 +97,15 @@ export function Devices({ requestClose }: DevicesProps) {
                     description="To verify device identity and grant access to encrypted messages."
                     after={
                       crossSigningActive ? (
-                        <VerificationStatusBadge
-                          verificationStatus={verificationStatus}
-                          otherUnverifiedCount={unverifiedDeviceCount}
-                        />
+                        <Box gap="200" alignItems="Center">
+                          <VerificationStatusBadge
+                            verificationStatus={verificationStatus}
+                            otherUnverifiedCount={unverifiedDeviceCount}
+                          />
+                          <DeviceVerificationOptions />
+                        </Box>
                       ) : (
-                        <Button size="300" radii="300">
-                          <Text as="span" size="B300">
-                            Enable
-                          </Text>
-                        </Button>
+                        <EnableVerification />
                       )
                     }
                   />
