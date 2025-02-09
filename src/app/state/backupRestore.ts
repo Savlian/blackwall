@@ -49,8 +49,9 @@ export const backupRestoreProgressAtom = atom<
     if (progress.stage === 'load_keys') {
       const { total, successes, failures } = progress;
       if (total === undefined || successes === undefined || failures === undefined) {
+        // Setting to idle as https://github.com/matrix-org/matrix-js-sdk/issues/4703
         set(baseBackupRestoreProgressAtom, {
-          status: BackupProgressStatus.Fetching,
+          status: BackupProgressStatus.Idle,
         });
         return;
       }
