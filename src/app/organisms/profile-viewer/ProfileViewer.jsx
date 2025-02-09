@@ -100,8 +100,9 @@ function SessionInfo({ userId }) {
 
     async function loadDevices() {
       try {
-        await mx.downloadKeys([userId], true);
-        const myDevices = mx.getStoredDevicesForUser(userId);
+        const crypto = mx.getCrypto();
+        const userToDevices = await crypto.getUserDeviceInfo([userId], true);
+        const myDevices = Array.from(userToDevices.get(userId).values());
 
         if (isUnmounted) return;
         setDevices(myDevices);
@@ -127,7 +128,7 @@ function SessionInfo({ userId }) {
             <Chip
               key={device.deviceId}
               iconSrc={ShieldEmptyIC}
-              text={device.getDisplayName() || device.deviceId}
+              text={device.displayName || device.deviceId}
             />
           ))}
       </div>
@@ -175,7 +176,7 @@ function ProfileFooter({ roomId, userId, onRequestClose }) {
   const roomState = room.getLiveTimeline().getState(EventTimeline.FORWARDS);
 
   const canIKick =
-  roomState?.hasSufficientPowerLevelFor('kick', myPowerlevel) && userPL < myPowerlevel;
+    roomState?.hasSufficientPowerLevelFor('kick', myPowerlevel) && userPL < myPowerlevel;
 
   const isBanned = member?.membership === 'ban';
 

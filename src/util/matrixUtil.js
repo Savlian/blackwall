@@ -135,9 +135,9 @@ export function getSSKeyInfo(mx, key) {
 
 export async function hasDevices(mx, userId) {
   try {
-    const usersDeviceMap = await mx.downloadKeys([userId, mx.getUserId()]);
+    const usersDeviceMap = await mx.getUserDeviceInfo([userId, mx.getUserId()]);
     return Object.values(usersDeviceMap)
-      .every((userDevices) => (Object.keys(userDevices).length > 0));
+      .every((deviceIdToDevices) => deviceIdToDevices.size > 0);
   } catch (e) {
     console.error("Error determining if it's possible to encrypt to all users: ", e);
     return false;
