@@ -4,13 +4,13 @@ import { CryptoApi, KeyBackupInfo } from 'matrix-js-sdk/lib/crypto-api';
 import {
   Badge,
   Box,
+  Button,
   color,
   config,
   Icon,
   IconButton,
   Icons,
   Menu,
-  MenuItem,
   percent,
   PopOut,
   ProgressBar,
@@ -169,12 +169,6 @@ export function BackupRestoreTile({ crypto }: BackupRestoreTileProps) {
     <InfoCard
       variant="Surface"
       title="Encryption Backup"
-      description={
-        <Box as="span" gap="200" alignItems="Center" wrap="Wrap">
-          <span>Version: {backupInfo?.version ?? 'NIL'},</span>
-          <span>Keys: {backupInfo?.count ?? 'NIL'}</span>
-        </Box>
-      }
       after={
         <Box alignItems="Center" gap="200">
           {remainingSession === 0 ? (
@@ -209,11 +203,28 @@ export function BackupRestoreTile({ crypto }: BackupRestoreTileProps) {
                   escapeDeactivates: stopPropagation,
                 }}
               >
-                <Menu>
-                  <Box direction="Column" gap="100" style={{ padding: config.space.S100 }}>
-                    <MenuItem
+                <Menu
+                  style={{
+                    padding: config.space.S100,
+                  }}
+                >
+                  <Box direction="Column" gap="100">
+                    <Box direction="Column" gap="200">
+                      <InfoCard
+                        variant="SurfaceVariant"
+                        title="Backup Details"
+                        description={
+                          <>
+                            <span>Version: {backupInfo?.version ?? 'NIL'}</span>
+                            <br />
+                            <span>Keys: {backupInfo?.count ?? 'NIL'}</span>
+                          </>
+                        }
+                      />
+                    </Box>
+                    <Button
                       size="300"
-                      variant="Surface"
+                      variant="Success"
                       radii="300"
                       aria-disabled={restoreState.status === AsyncStatus.Loading || restoring}
                       onClick={
@@ -221,11 +232,10 @@ export function BackupRestoreTile({ crypto }: BackupRestoreTileProps) {
                           ? undefined
                           : handleRestore
                       }
+                      before={<Icon size="100" src={Icons.Download} />}
                     >
-                      <Box grow="Yes">
-                        <Text size="T300">Restore</Text>
-                      </Box>
-                    </MenuItem>
+                      <Text size="B300">Restore Backup</Text>
+                    </Button>
                   </Box>
                 </Menu>
               </FocusTrap>
