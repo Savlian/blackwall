@@ -24,6 +24,7 @@ import { clearSecretStorageKeys } from '../../client/state/secretStorageKeys';
 import { ActionUIA, ActionUIAFlowsLoader } from './ActionUIA';
 import { useMatrixClient } from '../hooks/useMatrixClient';
 import { useAlive } from '../hooks/useAlive';
+import { UseStateProvider } from './UseStateProvider';
 
 type UIACallback<T> = (
   authDict: AuthDict | null
@@ -300,7 +301,14 @@ export const DeviceVerificationSetup = forwardRef<HTMLDivElement, DeviceVerifica
           <Box grow="Yes">
             <Text size="H4">Setup Device Verification</Text>
           </Box>
-          <IconButton size="300" radii="300" onClick={onCancel}>
+          <IconButton
+            size="300"
+            radii="300"
+            onClick={() => {
+              console.log('cancel click');
+              onCancel();
+            }}
+          >
             <Icon src={Icons.Cross} />
           </IconButton>
         </Header>
@@ -311,6 +319,63 @@ export const DeviceVerificationSetup = forwardRef<HTMLDivElement, DeviceVerifica
             <SetupVerification onComplete={setRecoveryKey} />
           )}
         </Box>
+      </Dialog>
+    );
+  }
+);
+type DeviceVerificationResetProps = {
+  onCancel: () => void;
+};
+export const DeviceVerificationReset = forwardRef<HTMLDivElement, DeviceVerificationResetProps>(
+  ({ onCancel }, ref) => {
+    const [reset, setReset] = useState(false);
+
+    return (
+      <Dialog ref={ref}>
+        <Header
+          style={{
+            padding: `0 ${config.space.S200} 0 ${config.space.S400}`,
+            borderBottomWidth: config.borderWidth.B300,
+          }}
+          variant="Surface"
+          size="500"
+        >
+          <Box grow="Yes">
+            <Text size="H4">Reset Device Verification</Text>
+          </Box>
+          <IconButton size="300" radii="300" onClick={onCancel}>
+            <Icon src={Icons.Cross} />
+          </IconButton>
+        </Header>
+        {reset ? (
+          <Box style={{ padding: config.space.S400 }} direction="Column" gap="400">
+            <UseStateProvider initial={undefined}>
+              {(recoveryKey: string | undefined, setRecoveryKey) =>
+                recoveryKey ? (
+                  <RecoveryKeyDisplay recoveryKey={recoveryKey} />
+                ) : (
+                  <SetupVerification onComplete={setRecoveryKey} />
+                )
+              }
+            </UseStateProvider>
+          </Box>
+        ) : (
+          <Box style={{ padding: config.space.S400 }} direction="Column" gap="400">
+            <Box direction="Column" gap="200">
+              <Text size="H1">✋🧑‍🚒🤚</Text>
+              <Text size="T300">Resetting device verification is permanent.</Text>
+              <Text size="T300">
+                Anyone you have verified with will see security alerts and your encryption backup
+                will be lost. You almost certainly do not want to do this, unless you have lost{' '}
+                <b>Recovery Key</b> or <b>Recovery Passphrase</b> and every device you can verify
+                from.
+              </Text>
+            </Box>
+            <Button variant="Critical" onClick={() => setReset(true)}>
+              <Text size="B400">Reset</Text>
+            </Button>
+          </Box>
+        )}
       </Dialog>
     );
   }

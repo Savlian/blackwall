@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { MouseEventHandler, useCallback, useState } from 'react';
 import {
   Badge,
   Box,
@@ -13,6 +13,10 @@ import {
   OverlayBackdrop,
   OverlayCenter,
   IconButton,
+  RectCords,
+  PopOut,
+  Menu,
+  MenuItem,
 } from 'folds';
 import FocusTrap from 'focus-trap-react';
 import { CryptoApi, VerificationRequest } from 'matrix-js-sdk/lib/crypto-api';
@@ -23,7 +27,11 @@ import { SecretStorageKeyContent } from '../../../../types/matrix/accountData';
 import { AsyncState, AsyncStatus, useAsync } from '../../../hooks/useAsyncCallback';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { DeviceVerification } from '../../../components/DeviceVerification';
-import { DeviceVerificationSetup } from '../../../components/DeviceVerificationSetup';
+import {
+  DeviceVerificationReset,
+  DeviceVerificationSetup,
+} from '../../../components/DeviceVerificationSetup';
+import { stopPropagation } from '../../../utils/keyboard';
 
 type VerificationStatusBadgeProps = {
   verificationStatus: VerificationStatus;
@@ -238,15 +246,71 @@ export function EnableVerification() {
 }
 
 export function DeviceVerificationOptions() {
-  const [open, setOpen] = useState(false);
+  const [menuCords, setMenuCords] = useState<RectCords>();
 
-  const handleCancel = useCallback(() => setOpen(false), []);
+  const [reset, setReset] = useState(false);
+
+  const handleCancelReset = useCallback(() => {
+    setReset(false);
+  }, []);
+
+  const handleMenu: MouseEventHandler<HTMLButtonElement> = (event) => {
+    setMenuCords(event.currentTarget.getBoundingClientRect());
+  };
+
+  const handleReset = () => {
+    setMenuCords(undefined);
+    setReset(true);
+  };
+
   return (
     <>
-      <IconButton variant="SurfaceVariant" size="300" radii="300" onClick={() => setOpen(true)}>
+      <IconButton
+        aria-pressed={!!menuCords}
+        variant="SurfaceVariant"
+        size="300"
+        radii="300"
+        onClick={handleMenu}
+      >
         <Icon size="100" src={Icons.VerticalDots} />
       </IconButton>
-      {open && (
+      <PopOut
+        anchor={menuCords}
+        offset={5}
+        position="Bottom"
+        align="Center"
+        content={
+          <FocusTrap
+            focusTrapOptions={{
+              initialFocus: false,
+              onDeactivate: () => setMenuCords(undefined),
+              clickOutsideDeactivates: true,
+              isKeyForward: (evt: KeyboardEvent) =>
+                evt.key === 'ArrowDown' || evt.key === 'ArrowRight',
+              isKeyBackward: (evt: KeyboardEvent) =>
+                evt.key === 'ArrowUp' || evt.key === 'ArrowLeft',
+              escapeDeactivates: stopPropagation,
+            }}
+          >
+            <Menu>
+              <Box direction="Column" gap="100" style={{ padding: config.space.S100 }}>
+                <MenuItem
+                  variant="Critical"
+                  onClick={handleReset}
+                  size="300"
+                  radii="300"
+                  fill="None"
+                >
+                  <Text as="span" size="T300" truncate>
+                    Reset
+                  </Text>
+                </MenuItem>
+              </Box>
+            </Menu>
+          </FocusTrap>
+        }
+      />
+      {reset && (
         <Overlay open backdrop={<OverlayBackdrop />}>
           <OverlayCenter>
             <FocusTrap
@@ -256,7 +320,7 @@ export function DeviceVerificationOptions() {
                 escapeDeactivates: false,
               }}
             >
-              <DeviceVerificationSetup onCancel={handleCancel} />
+              <DeviceVerificationReset onCancel={handleCancelReset} />
             </FocusTrap>
           </OverlayCenter>
         </Overlay>
