@@ -96,17 +96,18 @@ export function Devices({ requestClose }: DevicesProps) {
                     title="Device Verification"
                     description="To verify device identity and grant access to encrypted messages."
                     after={
-                      crossSigningActive ? (
-                        <Box gap="200" alignItems="Center">
-                          <VerificationStatusBadge
-                            verificationStatus={verificationStatus}
-                            otherUnverifiedCount={unverifiedDeviceCount}
-                          />
-                          <DeviceVerificationOptions />
-                        </Box>
-                      ) : (
-                        <EnableVerification />
-                      )
+                      <>
+                        <EnableVerification visible={!crossSigningActive} />
+                        {crossSigningActive && (
+                          <Box gap="200" alignItems="Center">
+                            <VerificationStatusBadge
+                              verificationStatus={verificationStatus}
+                              otherUnverifiedCount={unverifiedDeviceCount}
+                            />
+                            <DeviceVerificationOptions />
+                          </Box>
+                        )}
+                      </>
                     }
                   />
                 </SequenceCard>

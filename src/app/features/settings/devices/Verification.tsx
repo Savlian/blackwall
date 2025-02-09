@@ -214,18 +214,23 @@ export function VerifyOtherDeviceTile({ crypto, deviceId }: VerifyOtherDeviceTil
   );
 }
 
-export function EnableVerification() {
+type EnableVerificationProps = {
+  visible: boolean;
+};
+export function EnableVerification({ visible }: EnableVerificationProps) {
   const [open, setOpen] = useState(false);
 
   const handleCancel = useCallback(() => setOpen(false), []);
 
   return (
     <>
-      <Button size="300" radii="300" onClick={() => setOpen(true)}>
-        <Text as="span" size="B300">
-          Enable
-        </Text>
-      </Button>
+      {visible && (
+        <Button size="300" radii="300" onClick={() => setOpen(true)}>
+          <Text as="span" size="B300">
+            Enable
+          </Text>
+        </Button>
+      )}
       {open && (
         <Overlay open backdrop={<OverlayBackdrop />}>
           <OverlayCenter>

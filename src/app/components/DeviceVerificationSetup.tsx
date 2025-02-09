@@ -301,14 +301,7 @@ export const DeviceVerificationSetup = forwardRef<HTMLDivElement, DeviceVerifica
           <Box grow="Yes">
             <Text size="H4">Setup Device Verification</Text>
           </Box>
-          <IconButton
-            size="300"
-            radii="300"
-            onClick={() => {
-              console.log('cancel click');
-              onCancel();
-            }}
-          >
+          <IconButton size="300" radii="300" onClick={onCancel}>
             <Icon src={Icons.Cross} />
           </IconButton>
         </Header>
