@@ -182,8 +182,8 @@ function SetupVerification({ onComplete }: SetupVerificationProps) {
   return (
     <Box as="form" onSubmit={handleSubmit} direction="Column" gap="400">
       <Text size="T300">
-        We will generate a <b>Recovery Key</b> for verifying your identity if you do not have access
-        to other devices. Additionally, provide a passphrase as a memorable alternative.
+        Generate a <b>Recovery Key</b> for verifying identity if you do not have access to other
+        devices. Additionally, setup a passphrase as a memorable alternative.
       </Text>
       <Box direction="Column" gap="100">
         <Text size="L400">Passphrase (Optional)</Text>
