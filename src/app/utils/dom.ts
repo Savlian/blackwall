@@ -217,3 +217,10 @@ export const syntaxErrorPosition = (error: SyntaxError): number | undefined => {
   if (Number.isNaN(position)) return undefined;
   return position;
 };
+
+export const notificationPermission = (permission: NotificationPermission) => {
+  if (Notification) {
+    return Notification.permission === permission;
+  }
+  return false;
+};
