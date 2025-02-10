@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 
 export const getNotificationState = (): PermissionState => {
-  if ('Notification' in window) {
+  try {
     if (window.Notification.permission === 'default') {
       return 'prompt';
     }
 
     return window.Notification.permission;
+  } catch {
+    return 'denied';
   }
-
-  return 'denied';
 };
 
 export function usePermissionState(name: PermissionName, initialValue: PermissionState = 'prompt') {

@@ -219,8 +219,9 @@ export const syntaxErrorPosition = (error: SyntaxError): number | undefined => {
 };
 
 export const notificationPermission = (permission: NotificationPermission) => {
-  if ('Notification' in window) {
+  try {
     return window.Notification.permission === permission;
+  } catch {
+    return false;
   }
-  return false;
 };
