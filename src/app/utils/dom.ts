@@ -219,7 +219,7 @@ export const syntaxErrorPosition = (error: SyntaxError): number | undefined => {
 };
 
 export const notificationPermission = (permission: NotificationPermission) => {
-  if (window.Notification) {
+  if ('Notification' in window) {
     return window.Notification.permission === permission;
   }
   return false;
