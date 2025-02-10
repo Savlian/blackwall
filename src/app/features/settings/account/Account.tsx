@@ -241,12 +241,16 @@ function ProfileDisplayName({ profile, userId }: ProfileProps) {
   const disableSetDisplayname = capabilities['m.set_displayname']?.enabled === false;
 
   const defaultDisplayName = profile.displayName ?? getMxIdLocalPart(userId) ?? userId;
-  const [displayName, setDisplayName] = useState(defaultDisplayName);
+  const [displayName, setDisplayName] = useState<string>();
 
   const [changeState, changeDisplayName] = useAsyncCallback(
     useCallback((name: string) => mx.setDisplayName(name), [mx])
   );
   const changingDisplayName = changeState.status === AsyncStatus.Loading;
+
+  useEffect(() => {
+    setDisplayName(defaultDisplayName);
+  }, [defaultDisplayName]);
 
   const handleChange: ChangeEventHandler<HTMLInputElement> = (evt) => {
     const name = evt.currentTarget.value;

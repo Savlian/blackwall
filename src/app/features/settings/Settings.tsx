@@ -1,5 +1,20 @@
 import React, { useMemo, useState } from 'react';
-import { Avatar, Box, config, Icon, IconButton, Icons, IconSrc, MenuItem, Text } from 'folds';
+import {
+  Avatar,
+  Box,
+  Button,
+  config,
+  Icon,
+  IconButton,
+  Icons,
+  IconSrc,
+  MenuItem,
+  Overlay,
+  OverlayBackdrop,
+  OverlayCenter,
+  Text,
+} from 'folds';
+import FocusTrap from 'focus-trap-react';
 import { General } from './general';
 import { PageNav, PageNavContent, PageNavHeader, PageRoot } from '../../components/page';
 import { ScreenSize, useScreenSizeContext } from '../../hooks/useScreenSize';
@@ -11,16 +26,19 @@ import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
 import { UserAvatar } from '../../components/user-avatar';
 import { nameInitials } from '../../utils/common';
 import { Notifications } from './notifications';
+import { Devices } from './devices';
 import { EmojisStickers } from './emojis-stickers';
 import { DeveloperTools } from './developer-tools';
 import { About } from './about';
+import { UseStateProvider } from '../../components/UseStateProvider';
+import { stopPropagation } from '../../utils/keyboard';
+import { LogoutDialog } from '../../components/LogoutDialog';
 
-enum SettingsPages {
+export enum SettingsPages {
   GeneralPage,
   AccountPage,
   NotificationPage,
-  SessionPage,
-  EncryptionPage,
+  DevicesPage,
   EmojisStickersPage,
   DeveloperToolsPage,
   AboutPage,
@@ -51,14 +69,9 @@ const useSettingsMenuItems = (): SettingsMenuItem[] =>
         icon: Icons.Bell,
       },
       {
-        page: SettingsPages.SessionPage,
-        name: 'Sessions',
+        page: SettingsPages.DevicesPage,
+        name: 'Devices',
         icon: Icons.Category,
-      },
-      {
-        page: SettingsPages.EncryptionPage,
-        name: 'Encryption',
-        icon: Icons.ShieldLock,
       },
       {
         page: SettingsPages.EmojisStickersPage,
@@ -134,30 +147,65 @@ export function Settings({ initialPage, requestClose }: SettingsProps) {
                 )}
               </Box>
             </PageNavHeader>
-            <PageNavContent>
-              <div>
-                {menuItems.map((item) => (
-                  <MenuItem
-                    key={item.name}
-                    variant="Background"
-                    radii="400"
-                    aria-pressed={activePage === item.page}
-                    before={<Icon src={item.icon} size="100" filled={activePage === item.page} />}
-                    onClick={() => setActivePage(item.page)}
-                  >
-                    <Text
-                      style={{
-                        fontWeight: activePage === item.page ? config.fontWeight.W600 : undefined,
-                      }}
-                      size="T300"
-                      truncate
+            <Box grow="Yes" direction="Column">
+              <PageNavContent>
+                <div style={{ flexGrow: 1 }}>
+                  {menuItems.map((item) => (
+                    <MenuItem
+                      key={item.name}
+                      variant="Background"
+                      radii="400"
+                      aria-pressed={activePage === item.page}
+                      before={<Icon src={item.icon} size="100" filled={activePage === item.page} />}
+                      onClick={() => setActivePage(item.page)}
                     >
-                      {item.name}
-                    </Text>
-                  </MenuItem>
-                ))}
-              </div>
-            </PageNavContent>
+                      <Text
+                        style={{
+                          fontWeight: activePage === item.page ? config.fontWeight.W600 : undefined,
+                        }}
+                        size="T300"
+                        truncate
+                      >
+                        {item.name}
+                      </Text>
+                    </MenuItem>
+                  ))}
+                </div>
+              </PageNavContent>
+              <Box style={{ padding: config.space.S200 }} shrink="No" direction="Column">
+                <UseStateProvider initial={false}>
+                  {(logout, setLogout) => (
+                    <>
+                      <Button
+                        size="300"
+                        variant="Critical"
+                        fill="None"
+                        radii="Pill"
+                        before={<Icon src={Icons.Power} size="100" />}
+                        onClick={() => setLogout(true)}
+                      >
+                        <Text size="B400">Logout</Text>
+                      </Button>
+                      {logout && (
+                        <Overlay open backdrop={<OverlayBackdrop />}>
+                          <OverlayCenter>
+                            <FocusTrap
+                              focusTrapOptions={{
+                                onDeactivate: () => setLogout(false),
+                                clickOutsideDeactivates: true,
+                                escapeDeactivates: stopPropagation,
+                              }}
+                            >
+                              <LogoutDialog handleClose={() => setLogout(false)} />
+                            </FocusTrap>
+                          </OverlayCenter>
+                        </Overlay>
+                      )}
+                    </>
+                  )}
+                </UseStateProvider>
+              </Box>
+            </Box>
           </PageNav>
         )
       }
@@ -170,6 +218,9 @@ export function Settings({ initialPage, requestClose }: SettingsProps) {
       )}
       {activePage === SettingsPages.NotificationPage && (
         <Notifications requestClose={handlePageRequestClose} />
+      )}
+      {activePage === SettingsPages.DevicesPage && (
+        <Devices requestClose={handlePageRequestClose} />
       )}
       {activePage === SettingsPages.EmojisStickersPage && (
         <EmojisStickers requestClose={handlePageRequestClose} />

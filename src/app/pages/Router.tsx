@@ -56,6 +56,8 @@ import { MobileFriendlyPageNav, MobileFriendlyClientNav } from './MobileFriendly
 import { ClientInitStorageAtom } from './client/ClientInitStorageAtom';
 import { ClientNonUIFeatures } from './client/ClientNonUIFeatures';
 import { AuthRouteThemeManager, UnAuthRouteThemeManager } from './ThemeManager';
+import { ReceiveSelfDeviceVerification } from '../components/DeviceVerification';
+import { AutoRestoreBackupOnVerification } from '../components/BackupRestore';
 
 export const createRouter = (clientConfig: ClientConfig, screenSize: ScreenSize) => {
   const { hashRouter } = clientConfig;
@@ -119,6 +121,8 @@ export const createRouter = (clientConfig: ClientConfig, screenSize: ScreenSize)
                     >
                       <Outlet />
                     </ClientLayout>
+                    <ReceiveSelfDeviceVerification />
+                    <AutoRestoreBackupOnVerification />
                   </ClientNonUIFeatures>
                 </ClientBindAtoms>
               </ClientInitStorageAtom>
