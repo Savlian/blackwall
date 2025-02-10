@@ -38,9 +38,9 @@ function SystemNotification() {
           description={
             notifPermission === 'denied' ? (
               <Text as="span" style={{ color: color.Critical.Main }} size="T200">
-                {!Notification
-                  ? 'Notifications are not supported by the system.'
-                  : 'Notification permission is blocked. Please allow notification permission from browser address bar.'}
+                {'Notification' in window
+                  ? 'Notification permission is blocked. Please allow notification permission from browser address bar.'
+                  : 'Notifications are not supported by the system.'}
               </Text>
             ) : (
               <span>Show desktop notifications when message arrive.</span>
