@@ -12,6 +12,8 @@ const useFetchEvent = (room: Room, eventId: string) => {
     const evt = await mx.fetchRoomEvent(room.roomId, eventId);
     const mEvent = new MatrixEvent(evt);
 
+    console.log('=====> event');
+    console.log(evt.unsigned?.['m.relations'] && evt.unsigned?.['m.relations']['m.replace']);
     if (evt.unsigned?.['m.relations'] && evt.unsigned?.['m.relations']['m.replace']) {
       const replaceEvt = evt.unsigned?.['m.relations']['m.replace'] as IEvent;
       const replaceEvent = new MatrixEvent(replaceEvt);
