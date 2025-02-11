@@ -554,7 +554,7 @@ function Messages() {
       </SequenceCard>
       <SequenceCard className={SequenceCardStyle} variant="SurfaceVariant" direction="Column">
         <SettingTile
-          title="Auto Load Media"
+          title="Disable Media Auto Load"
           after={<Switch variant="Primary" value={mediaAutoLoad} onChange={setMediaAutoLoad} />}
         />
       </SequenceCard>
