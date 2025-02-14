@@ -45,9 +45,10 @@ export type InlineRulesRunner = (
 
 const MIN_ANY = '(.+?)';
 const URL_NEG_LB = '(?<!(https?|ftp|mailto|magnet):\\/\\/\\S*)';
+const ESC_NEG_LB = '(?<!\\\\)';
 
 const BOLD_MD_1 = '**';
-const BOLD_PREFIX_1 = '\\*{2}';
+const BOLD_PREFIX_1 = `${ESC_NEG_LB}\\*{2}`;
 const BOLD_NEG_LA_1 = '(?!\\*)';
 const BOLD_REG_1 = new RegExp(
   `${URL_NEG_LB}${BOLD_PREFIX_1}${MIN_ANY}${BOLD_PREFIX_1}${BOLD_NEG_LA_1}`
@@ -61,7 +62,7 @@ const BoldRule: InlineMDRule = {
 };
 
 const ITALIC_MD_1 = '*';
-const ITALIC_PREFIX_1 = '\\*';
+const ITALIC_PREFIX_1 = `${ESC_NEG_LB}\\*`;
 const ITALIC_NEG_LA_1 = '(?!\\*)';
 const ITALIC_REG_1 = new RegExp(
   `${URL_NEG_LB}${ITALIC_PREFIX_1}${MIN_ANY}${ITALIC_PREFIX_1}${ITALIC_NEG_LA_1}`
@@ -75,7 +76,7 @@ const ItalicRule1: InlineMDRule = {
 };
 
 const ITALIC_MD_2 = '_';
-const ITALIC_PREFIX_2 = '_';
+const ITALIC_PREFIX_2 = `${ESC_NEG_LB}_`;
 const ITALIC_NEG_LA_2 = '(?!_)';
 const ITALIC_REG_2 = new RegExp(
   `${URL_NEG_LB}${ITALIC_PREFIX_2}${MIN_ANY}${ITALIC_PREFIX_2}${ITALIC_NEG_LA_2}`
@@ -89,7 +90,7 @@ const ItalicRule2: InlineMDRule = {
 };
 
 const UNDERLINE_MD_1 = '__';
-const UNDERLINE_PREFIX_1 = '_{2}';
+const UNDERLINE_PREFIX_1 = `${ESC_NEG_LB}_{2}`;
 const UNDERLINE_NEG_LA_1 = '(?!_)';
 const UNDERLINE_REG_1 = new RegExp(
   `${URL_NEG_LB}${UNDERLINE_PREFIX_1}${MIN_ANY}${UNDERLINE_PREFIX_1}${UNDERLINE_NEG_LA_1}`
@@ -103,7 +104,7 @@ const UnderlineRule: InlineMDRule = {
 };
 
 const STRIKE_MD_1 = '~~';
-const STRIKE_PREFIX_1 = '~{2}';
+const STRIKE_PREFIX_1 = `${ESC_NEG_LB}~{2}`;
 const STRIKE_NEG_LA_1 = '(?!~)';
 const STRIKE_REG_1 = new RegExp(
   `${URL_NEG_LB}${STRIKE_PREFIX_1}${MIN_ANY}${STRIKE_PREFIX_1}${STRIKE_NEG_LA_1}`
@@ -117,9 +118,11 @@ const StrikeRule: InlineMDRule = {
 };
 
 const CODE_MD_1 = '`';
-const CODE_PREFIX_1 = '`';
+const CODE_PREFIX_1 = `${ESC_NEG_LB}\``;
 const CODE_NEG_LA_1 = '(?!`)';
-const CODE_REG_1 = new RegExp(`${URL_NEG_LB}${CODE_PREFIX_1}(.+?)${CODE_PREFIX_1}${CODE_NEG_LA_1}`);
+const CODE_REG_1 = new RegExp(
+  `${URL_NEG_LB}$${CODE_PREFIX_1}(.+?)$${CODE_PREFIX_1}${CODE_NEG_LA_1}`
+);
 const CodeRule: InlineMDRule = {
   match: (text) => text.match(CODE_REG_1),
   html: (parse, match) => {
@@ -129,7 +132,7 @@ const CodeRule: InlineMDRule = {
 };
 
 const SPOILER_MD_1 = '||';
-const SPOILER_PREFIX_1 = '\\|{2}';
+const SPOILER_PREFIX_1 = `${ESC_NEG_LB}\\|{2}`;
 const SPOILER_NEG_LA_1 = '(?!\\|)';
 const SPOILER_REG_1 = new RegExp(
   `${URL_NEG_LB}${SPOILER_PREFIX_1}${MIN_ANY}${SPOILER_PREFIX_1}${SPOILER_NEG_LA_1}`
@@ -150,6 +153,16 @@ const LinkRule: InlineMDRule = {
   html: (parse, match) => {
     const [, g1, g2] = match;
     return `<a data-md href="${g2}">${parse(g1)}</a>`;
+  },
+};
+
+const ESC_SEQ_1 = '\\\\([*_~`|])';
+const ESC_REG_1 = new RegExp(`${URL_NEG_LB}${ESC_SEQ_1}`);
+const EscapeRule: InlineMDRule = {
+  match: (text) => text.match(ESC_REG_1),
+  html: (parse, match) => {
+    const [, , g2] = match;
+    return g2;
   },
 };
 
@@ -200,6 +213,7 @@ const LeveledRules = [
   StrikeRule,
   SpoilerRule,
   LinkRule,
+  EscapeRule,
 ];
 
 export const parseInlineMD: InlineMDParser = (text) => {
