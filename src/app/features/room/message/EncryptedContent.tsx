@@ -1,5 +1,6 @@
 import { MatrixEvent, MatrixEventEvent, MatrixEventHandlerMap } from 'matrix-js-sdk';
 import React, { ReactNode, useEffect, useState } from 'react';
+import { MessageEvent } from '../../../../types/matrix/room';
 
 type EncryptedContentProps = {
   mEvent: MatrixEvent;
@@ -7,11 +8,11 @@ type EncryptedContentProps = {
 };
 
 export function EncryptedContent({ mEvent, children }: EncryptedContentProps) {
-  const [, toggleDecrypted] = useState(!mEvent.isBeingDecrypted());
+  const [, toggleDecrypted] = useState(mEvent.getType() !== MessageEvent.RoomMessageEncrypted);
 
   useEffect(() => {
-    const handleDecrypted: MatrixEventHandlerMap[MatrixEventEvent.Decrypted] = () => {
-      toggleDecrypted((s) => !s);
+    const handleDecrypted: MatrixEventHandlerMap[MatrixEventEvent.Decrypted] = (event) => {
+      toggleDecrypted(event.getType() !== MessageEvent.RoomMessageEncrypted);
     };
     mEvent.on(MatrixEventEvent.Decrypted, handleDecrypted);
     return () => {
