@@ -8,11 +8,12 @@ type EncryptedContentProps = {
 };
 
 export function EncryptedContent({ mEvent, children }: EncryptedContentProps) {
-  const [, toggleDecrypted] = useState(mEvent.getType() !== MessageEvent.RoomMessageEncrypted);
+  const [, toggleEncrypted] = useState(mEvent.getType() === MessageEvent.RoomMessageEncrypted);
 
   useEffect(() => {
+    toggleEncrypted(mEvent.getType() === MessageEvent.RoomMessageEncrypted);
     const handleDecrypted: MatrixEventHandlerMap[MatrixEventEvent.Decrypted] = (event) => {
-      toggleDecrypted(event.getType() !== MessageEvent.RoomMessageEncrypted);
+      toggleEncrypted(event.getType() === MessageEvent.RoomMessageEncrypted);
     };
     mEvent.on(MatrixEventEvent.Decrypted, handleDecrypted);
     return () => {
