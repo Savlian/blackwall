@@ -3,21 +3,65 @@ import { atomFamily } from 'jotai/utils';
 import { Descendant } from 'slate';
 import { EncryptedAttachmentInfo } from 'browser-encrypt-attachment';
 import { IEventRelation } from 'matrix-js-sdk';
-import { TListAtom, createListAtom } from '../list';
 import { createUploadAtomFamily } from '../upload';
 import { TUploadContent } from '../../utils/matrix';
 
-export const roomUploadAtomFamily = createUploadAtomFamily();
+export type TUploadMetadata = {
+  spoiled: boolean;
+};
 
 export type TUploadItem = {
   file: TUploadContent;
   originalFile: TUploadContent;
+  metadata: TUploadMetadata;
   encInfo: EncryptedAttachmentInfo | undefined;
 };
 
-export const roomIdToUploadItemsAtomFamily = atomFamily<string, TListAtom<TUploadItem>>(
-  createListAtom
+export type UploadListAction =
+  | {
+      type: 'PUT';
+      items: TUploadItem[];
+    }
+  | {
+      type: 'DELETE';
+      items: TUploadItem[];
+    }
+  | {
+      type: 'MODIFY';
+      item: TUploadItem;
+      metadata: TUploadMetadata;
+    };
+
+export const createUploadListAtom = () => {
+  const baseListAtom = atom<TUploadItem[]>([]);
+  return atom<TUploadItem[], [UploadListAction], undefined>(
+    (get) => get(baseListAtom),
+    (get, set, action) => {
+      const items = get(baseListAtom);
+      if (action.type === 'DELETE') {
+        set(
+          baseListAtom,
+          items.filter((item) => !action.items.includes(item))
+        );
+        return;
+      }
+      if (action.type === 'PUT') {
+        set(baseListAtom, [...items, ...action.items]);
+        return;
+      }
+      if (action.type === 'MODIFY') {
+        set(baseListAtom, items.map((item) => item === action.item ? {...item, metadata: action.metadata} : item));
+      }
+    }
+  );
+};
+export type TUploadListAtom = ReturnType<typeof createUploadListAtom>;
+
+export const roomIdToUploadItemsAtomFamily = atomFamily<string, TUploadListAtom>(
+  createUploadListAtom
 );
+
+export const roomUploadAtomFamily = createUploadAtomFamily();
 
 export type RoomIdToMsgAction =
   | {

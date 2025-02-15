@@ -51,6 +51,8 @@ export type ImageContentProps = {
   info?: IImageInfo;
   encInfo?: EncryptedAttachmentInfo;
   autoPlay?: boolean;
+  spoiler?: boolean;
+  spoilerReason?: string;
   renderViewer: (props: RenderViewerProps) => ReactNode;
   renderImage: (props: RenderImageProps) => ReactNode;
 };
@@ -64,6 +66,8 @@ export const ImageContent = as<'div', ImageContentProps>(
       info,
       encInfo,
       autoPlay,
+      spoiler,
+      spoilerReason,
       renderViewer,
       renderImage,
       ...props
@@ -77,6 +81,7 @@ export const ImageContent = as<'div', ImageContentProps>(
     const [load, setLoad] = useState(false);
     const [error, setError] = useState(false);
     const [viewer, setViewer] = useState(false);
+    const [spoiled, setSpoiled] = useState(spoiler ?? false);
 
     const [srcState, loadSrc] = useAsyncCallback(
       useCallback(async () => {
@@ -160,7 +165,7 @@ export const ImageContent = as<'div', ImageContentProps>(
           </Box>
         )}
         {srcState.status === AsyncStatus.Success && (
-          <Box className={css.AbsoluteContainer}>
+          <Box className={classNames(css.AbsoluteContainer, spoiled && css.Blur)}>
             {renderImage({
               alt: body,
               title: body,
@@ -170,6 +175,35 @@ export const ImageContent = as<'div', ImageContentProps>(
               onClick: () => setViewer(true),
               tabIndex: 0,
             })}
+          </Box>
+        )}
+        {srcState.status === AsyncStatus.Success && spoiled && (
+          <Box className={css.AbsoluteContainer} alignItems="Center" justifyContent="Center">
+            <TooltipProvider
+              tooltip={
+                typeof spoilerReason === 'string' && (
+                  <Tooltip variant="Secondary">
+                    <Text>{spoilerReason}</Text>
+                  </Tooltip>
+                )
+              }
+              position="Top"
+              align="Center"
+            >
+              {(triggerRef) => (
+                <Button
+                  ref={triggerRef}
+                  variant="Secondary"
+                  fill="Solid"
+                  radii="300"
+                  size="300"
+                  onClick={() => setSpoiled(false)}
+                  before={<Icon size="Inherit" src={Icons.Eye} filled />}
+                >
+                  <Text size="B300">Show</Text>
+                </Button>
+              )}
+            </TooltipProvider>
           </Box>
         )}
         {(srcState.status === AsyncStatus.Loading || srcState.status === AsyncStatus.Success) &&

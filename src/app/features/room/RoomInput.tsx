@@ -167,15 +167,29 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
           const encryptFiles = fulfilledPromiseSettledResult(
             await Promise.allSettled(safeFiles.map((f) => encryptFile(f)))
           );
-          encryptFiles.forEach((ef) => fileItems.push(ef));
+          encryptFiles.forEach((ef) =>
+            fileItems.push({
+              ...ef,
+              metadata: {
+                spoiled: false,
+              },
+            })
+          );
         } else {
           safeFiles.forEach((f) =>
-            fileItems.push({ file: f, originalFile: f, encInfo: undefined })
+            fileItems.push({
+              file: f,
+              originalFile: f,
+              encInfo: undefined,
+              metadata: {
+                spoiled: false,
+              },
+            })
           );
         }
         setSelectedFiles({
           type: 'PUT',
-          item: fileItems,
+          items: fileItems,
         });
       },
       [setSelectedFiles, room]
@@ -213,7 +227,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
         const uploads = Array.isArray(upload) ? upload : [upload];
         setSelectedFiles({
           type: 'DELETE',
-          item: selectedFiles.filter((f) => uploads.find((u) => u === f.file)),
+          items: selectedFiles.filter((f) => uploads.find((u) => u === f.file)),
         });
         uploads.forEach((u) => roomUploadAtomFamily.remove(u));
       },
@@ -420,7 +434,10 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
                         // eslint-disable-next-line react/no-array-index-key
                         key={index}
                         isEncrypted={!!fileItem.encInfo}
-                        uploadAtom={roomUploadAtomFamily(fileItem.file)}
+                        fileItem={fileItem}
+                        setMetadata={(metadata) =>
+                          setSelectedFiles({ type: 'MODIFY', item: fileItem, metadata })
+                        }
                         onRemove={handleRemoveUpload}
                       />
                     ))}
