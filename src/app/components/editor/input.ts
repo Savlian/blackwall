@@ -429,7 +429,7 @@ export const plainToEditorInput = (text: string, markdown?: boolean): Descendant
       type: BlockType.Paragraph,
       children: [
         {
-          text: markdown ? lineText : escapeMarkdownInlineSequences(lineText),
+          text: markdown ? escapeMarkdownInlineSequences(lineText) : lineText,
         },
       ],
     };

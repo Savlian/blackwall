@@ -3,7 +3,11 @@ import { Descendant, Text } from 'slate';
 import { sanitizeText } from '../../utils/sanitize';
 import { BlockType } from './types';
 import { CustomElement } from './slate';
-import { parseBlockMD, parseInlineMD } from '../../plugins/markdown';
+import {
+  parseBlockMD,
+  parseInlineMD,
+  unescapeMarkdownInlineSequences,
+} from '../../plugins/markdown';
 import { findAndReplace } from '../../utils/findAndReplace';
 
 export type OutputOptions = {
@@ -156,11 +160,11 @@ const elementToPlainText = (node: CustomElement, children: string): string => {
   }
 };
 
-export const toPlainText = (node: Descendant | Descendant[]): string => {
-  if (Array.isArray(node)) return node.map((n) => toPlainText(n)).join('');
-  if (Text.isText(node)) return node.text;
+export const toPlainText = (node: Descendant | Descendant[], isMarkdown: boolean): string => {
+  if (Array.isArray(node)) return node.map((n) => toPlainText(n, isMarkdown)).join('');
+  if (Text.isText(node)) return isMarkdown ? unescapeMarkdownInlineSequences(node.text) : node.text;
 
-  const children = node.children.map((n) => toPlainText(n)).join('');
+  const children = node.children.map((n) => toPlainText(n, isMarkdown)).join('');
   return elementToPlainText(node, children);
 };
 

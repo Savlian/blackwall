@@ -92,7 +92,7 @@ export const MessageEditor = as<'div', MessageEditorProps>(
 
     const [saveState, save] = useAsyncCallback(
       useCallback(async () => {
-        const plainText = toPlainText(editor.children).trim();
+        const plainText = toPlainText(editor.children, isMarkdown).trim();
         const customHtml = trimCustomHtml(
           toMatrixCustomHTML(editor.children, {
             allowTextFormatting: true,
