@@ -70,7 +70,7 @@ export const StrikeRule: InlineMDRule = {
   match: (text) => text.match(STRIKE_REG_1),
   html: (parse, match) => {
     const [, , g2] = match;
-    return `<del data-md="${STRIKE_MD_1}">${parse(g2)}</del>`;
+    return `<s data-md="${STRIKE_MD_1}">${parse(g2)}</s>`;
   },
 };
 
