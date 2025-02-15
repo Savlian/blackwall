@@ -1,6 +1,8 @@
+import { replaceMatch } from '../internal';
 import {
   BlockQuoteRule,
   CodeBlockRule,
+  ESC_BLOCK_SEQ,
   HeadingRule,
   OrderedListRule,
   UnorderedListRule,
@@ -27,14 +29,18 @@ export const parseBlockMD: BlockMDParser = (text, parseInline) => {
 
   // replace \n with <br/> because want to preserve empty lines
   if (!result) {
-    if (parseInline) {
-      result = text
-        .split('\n')
-        .map((lineText) => parseInline(lineText))
-        .join('<br/>');
-    } else {
-      result = text.replace(/\n/g, '<br/>');
-    }
+    result = text
+      .split('\n')
+      .map((lineText) => {
+        const match = lineText.match(ESC_BLOCK_SEQ);
+        if (!match) {
+          return parseInline?.(lineText) ?? lineText;
+        }
+
+        const [, g1] = match;
+        return replaceMatch(lineText, match, g1, (t) => [parseInline?.(t) ?? t]).join('');
+      })
+      .join('<br/>');
   }
 
   return result ?? text;

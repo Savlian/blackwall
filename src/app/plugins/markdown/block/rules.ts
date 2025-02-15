@@ -95,3 +95,5 @@ export const UnorderedListRule: BlockMDRule = {
     return `<ul data-md="${UNORDERED_LIST_MD_1}">${lines}</ul>`;
   },
 };
+
+export const ESC_BLOCK_SEQ = /^\\(\\*(#{1,6} +|```|>|(-|[\da-zA-Z]\.) +|\* +))/;
