@@ -5,6 +5,7 @@ import { EncryptedAttachmentInfo } from 'browser-encrypt-attachment';
 import { IEventRelation } from 'matrix-js-sdk';
 import { createUploadAtomFamily } from '../upload';
 import { TUploadContent } from '../../utils/matrix';
+import { createListAtom } from '../list';
 
 export type TUploadMetadata = {
   markedAsSpoiler: boolean;
@@ -17,48 +18,10 @@ export type TUploadItem = {
   encInfo: EncryptedAttachmentInfo | undefined;
 };
 
-export type UploadListAction =
-  | {
-      type: 'PUT';
-      items: TUploadItem[];
-    }
-  | {
-      type: 'DELETE';
-      items: TUploadItem[];
-    }
-  | {
-      type: 'MODIFY';
-      item: TUploadItem;
-      metadata: TUploadMetadata;
-    };
-
-export const createUploadListAtom = () => {
-  const baseListAtom = atom<TUploadItem[]>([]);
-  return atom<TUploadItem[], [UploadListAction], undefined>(
-    (get) => get(baseListAtom),
-    (get, set, action) => {
-      const items = get(baseListAtom);
-      if (action.type === 'DELETE') {
-        set(
-          baseListAtom,
-          items.filter((item) => !action.items.includes(item))
-        );
-        return;
-      }
-      if (action.type === 'PUT') {
-        set(baseListAtom, [...items, ...action.items]);
-        return;
-      }
-      if (action.type === 'MODIFY') {
-        set(baseListAtom, items.map((item) => item === action.item ? {...item, metadata: action.metadata} : item));
-      }
-    }
-  );
-};
-export type TUploadListAtom = ReturnType<typeof createUploadListAtom>;
+export type TUploadListAtom = ReturnType<typeof createListAtom<TUploadItem>>;
 
 export const roomIdToUploadItemsAtomFamily = atomFamily<string, TUploadListAtom>(
-  createUploadListAtom
+  createListAtom
 );
 
 export const roomUploadAtomFamily = createUploadAtomFamily();

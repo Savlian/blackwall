@@ -189,7 +189,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
         }
         setSelectedFiles({
           type: 'PUT',
-          items: fileItems,
+          item: fileItems,
         });
       },
       [setSelectedFiles, room]
@@ -227,7 +227,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
         const uploads = Array.isArray(upload) ? upload : [upload];
         setSelectedFiles({
           type: 'DELETE',
-          items: selectedFiles.filter((f) => uploads.find((u) => u === f.file)),
+          item: selectedFiles.filter((f) => uploads.find((u) => u === f.file)),
         });
         uploads.forEach((u) => roomUploadAtomFamily.remove(u));
       },
@@ -436,7 +436,11 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
                         isEncrypted={!!fileItem.encInfo}
                         fileItem={fileItem}
                         setMetadata={(metadata) =>
-                          setSelectedFiles({ type: 'MODIFY', item: fileItem, metadata })
+                          setSelectedFiles({
+                            type: 'REPLACE',
+                            item: fileItem,
+                            replacement: { ...fileItem, metadata },
+                          })
                         }
                         onRemove={handleRemoveUpload}
                       />
