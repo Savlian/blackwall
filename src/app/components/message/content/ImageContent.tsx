@@ -3,6 +3,7 @@ import {
   Badge,
   Box,
   Button,
+  Chip,
   Icon,
   Icons,
   Modal,
@@ -51,7 +52,7 @@ export type ImageContentProps = {
   info?: IImageInfo;
   encInfo?: EncryptedAttachmentInfo;
   autoPlay?: boolean;
-  spoiler?: boolean;
+  markedAsSpoiler?: boolean;
   spoilerReason?: string;
   renderViewer: (props: RenderViewerProps) => ReactNode;
   renderImage: (props: RenderImageProps) => ReactNode;
@@ -66,7 +67,7 @@ export const ImageContent = as<'div', ImageContentProps>(
       info,
       encInfo,
       autoPlay,
-      spoiler,
+      markedAsSpoiler,
       spoilerReason,
       renderViewer,
       renderImage,
@@ -81,7 +82,7 @@ export const ImageContent = as<'div', ImageContentProps>(
     const [load, setLoad] = useState(false);
     const [error, setError] = useState(false);
     const [viewer, setViewer] = useState(false);
-    const [spoiled, setSpoiled] = useState(spoiler ?? false);
+    const [blurred, setBlurred] = useState(markedAsSpoiler ?? false);
 
     const [srcState, loadSrc] = useAsyncCallback(
       useCallback(async () => {
@@ -165,7 +166,7 @@ export const ImageContent = as<'div', ImageContentProps>(
           </Box>
         )}
         {srcState.status === AsyncStatus.Success && (
-          <Box className={classNames(css.AbsoluteContainer, spoiled && css.Blur)}>
+          <Box className={classNames(css.AbsoluteContainer, blurred && css.Blur)}>
             {renderImage({
               alt: body,
               title: body,
@@ -177,7 +178,7 @@ export const ImageContent = as<'div', ImageContentProps>(
             })}
           </Box>
         )}
-        {srcState.status === AsyncStatus.Success && spoiled && (
+        {srcState.status === AsyncStatus.Success && blurred && (
           <Box className={css.AbsoluteContainer} alignItems="Center" justifyContent="Center">
             <TooltipProvider
               tooltip={
@@ -191,17 +192,16 @@ export const ImageContent = as<'div', ImageContentProps>(
               align="Center"
             >
               {(triggerRef) => (
-                <Button
+                <Chip
                   ref={triggerRef}
                   variant="Secondary"
-                  fill="Solid"
-                  radii="300"
-                  size="300"
-                  onClick={() => setSpoiled(false)}
-                  before={<Icon size="Inherit" src={Icons.Eye} filled />}
+                  radii="Pill"
+                  size="500"
+                  outlined
+                  onClick={() => setBlurred(false)}
                 >
-                  <Text size="B300">Show</Text>
-                </Button>
+                  <Text size="B300">Spoiler</Text>
+                </Chip>
               )}
             </TooltipProvider>
           </Box>

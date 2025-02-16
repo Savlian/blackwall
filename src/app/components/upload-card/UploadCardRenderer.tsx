@@ -34,7 +34,7 @@ export function UploadCardRenderer({
   if (upload.status === UploadStatus.Idle) startUpload();
 
   const toggleSpoiler = useCallback(() => {
-    setMetadata({ ...metadata, spoiled: !metadata.spoiled });
+    setMetadata({ ...metadata, markedAsSpoiler: !metadata.markedAsSpoiler });
   }, [setMetadata, metadata]);
 
   const removeUpload = () => {
@@ -70,7 +70,7 @@ export function UploadCardRenderer({
             <TooltipProvider
               tooltip={
                 <Tooltip variant="SurfaceVariant">
-                  <Text>Spoil Image</Text>
+                  <Text>Spoiler Image</Text>
                 </Tooltip>
               }
               position="Top"
@@ -85,7 +85,7 @@ export function UploadCardRenderer({
                   radii="Pill"
                   size="300"
                 >
-                  <Icon src={metadata.spoiled ? Icons.EyeBlind : Icons.Eye} size="200" />
+                  <Icon src={metadata.markedAsSpoiler ? Icons.EyeBlind : Icons.Eye} size="200" />
                 </IconButton>
               )}
             </TooltipProvider>

@@ -179,7 +179,7 @@ type RenderImageContentProps = {
   mimeType?: string;
   url: string;
   encInfo?: IEncryptedFile;
-  spoiler?: boolean;
+  markedAsSpoiler?: boolean;
   spoilerReason?: string;
 };
 type MImageProps = {
@@ -208,7 +208,7 @@ export function MImage({ content, renderImageContent, outlined }: MImageProps) {
           mimeType: imgInfo?.mimetype,
           url: mxcUrl,
           encInfo: content.file,
-          spoiler: content[MATRIX_SPOILER_PROPERTY_NAME],
+          markedAsSpoiler: content[MATRIX_SPOILER_PROPERTY_NAME],
           spoilerReason: content[MATRIX_SPOILER_REASON_PROPERTY_NAME],
         })}
       </AttachmentBox>

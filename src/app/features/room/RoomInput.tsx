@@ -171,7 +171,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
             fileItems.push({
               ...ef,
               metadata: {
-                spoiled: false,
+                markedAsSpoiler: false,
               },
             })
           );
@@ -182,7 +182,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
               originalFile: f,
               encInfo: undefined,
               metadata: {
-                spoiled: false,
+                markedAsSpoiler: false,
               },
             })
           );

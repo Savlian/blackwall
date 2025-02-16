@@ -7,7 +7,7 @@ import { createUploadAtomFamily } from '../upload';
 import { TUploadContent } from '../../utils/matrix';
 
 export type TUploadMetadata = {
-  spoiled: boolean;
+  markedAsSpoiler: boolean;
 };
 
 export type TUploadItem = {
