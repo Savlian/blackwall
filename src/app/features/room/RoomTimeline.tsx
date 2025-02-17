@@ -586,15 +586,19 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
         // so timeline can be updated with evt like: edits, reactions etc
         if (atBottomRef.current) {
           if (document.hasFocus() && (!unreadInfo || mEvt.getSender() === mx.getUserId())) {
+            // Check if the document is in focus (user is actively viewing the app),
+            // and either there are no unread messages or the latest message is from the current user.
+            // If either condition is met, trigger the markAsRead function to send a read receipt.
             requestAnimationFrame(() => markAsRead(mx, mEvt.getRoomId()!));
           }
 
-          if (document.hasFocus()) {
-            scrollToBottomRef.current.count += 1;
-            scrollToBottomRef.current.smooth = true;
-          } else if (!unreadInfo) {
+          if (!document.hasFocus() && !unreadInfo) {
             setUnreadInfo(getRoomUnreadInfo(room));
           }
+
+          scrollToBottomRef.current.count += 1;
+          scrollToBottomRef.current.smooth = true;
+
           setTimeline((ct) => ({
             ...ct,
             range: {
@@ -611,6 +615,31 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
       },
       [mx, room, unreadInfo]
     )
+  );
+
+  const handleOpenEvent = useCallback(
+    async (evtId: string, highlight = true) => {
+      const evtTimeline = getEventTimeline(room, evtId);
+      const absoluteIndex =
+        evtTimeline && getEventIdAbsoluteIndex(timeline.linkedTimelines, evtTimeline, evtId);
+
+      if (typeof absoluteIndex === 'number') {
+        scrollToItem(absoluteIndex, {
+          behavior: 'smooth',
+          align: 'center',
+          stopInView: true,
+        });
+        setFocusItem({
+          index: absoluteIndex,
+          scrollTo: false,
+          highlight,
+        });
+      } else {
+        setTimeline(getEmptyTimeline());
+        loadEventTimeline(evtId);
+      }
+    },
+    [room, timeline, scrollToItem, loadEventTimeline]
   );
 
   useLiveTimelineRefresh(
@@ -646,16 +675,17 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
   );
 
   const tryAutoMarkAsRead = useCallback(() => {
-    if (!unreadInfo) {
+    const readUptoEventId = readUptoEventIdRef.current;
+    if (!readUptoEventId) {
       requestAnimationFrame(() => markAsRead(mx, room.roomId));
       return;
     }
-    const evtTimeline = getEventTimeline(room, unreadInfo.readUptoEventId);
+    const evtTimeline = getEventTimeline(room, readUptoEventId);
     const latestTimeline = evtTimeline && getFirstLinkedTimeline(evtTimeline, Direction.Forward);
     if (latestTimeline === room.getLiveTimeline()) {
       requestAnimationFrame(() => markAsRead(mx, room.roomId));
     }
-  }, [mx, room, unreadInfo]);
+  }, [mx, room]);
 
   const debounceSetAtBottom = useDebounce(
     useCallback((entry: IntersectionObserverEntry) => {
@@ -672,7 +702,9 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
         if (targetEntry) debounceSetAtBottom(targetEntry);
         if (targetEntry?.isIntersecting && atLiveEndRef.current) {
           setAtBottom(true);
-          tryAutoMarkAsRead();
+          if (document.hasFocus()) {
+            tryAutoMarkAsRead();
+          }
         }
       },
       [debounceSetAtBottom, tryAutoMarkAsRead]
@@ -690,11 +722,15 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
   useDocumentFocusChange(
     useCallback(
       (inFocus) => {
+        if (inFocus && unreadInfo?.inLiveTimeline) {
+          handleOpenEvent(unreadInfo.readUptoEventId, false);
+          return;
+        }
         if (inFocus && atBottomRef.current) {
           tryAutoMarkAsRead();
         }
       },
-      [tryAutoMarkAsRead]
+      [tryAutoMarkAsRead, unreadInfo, handleOpenEvent]
     )
   );
 
@@ -832,27 +868,9 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
     async (evt) => {
       const targetId = evt.currentTarget.getAttribute('data-event-id');
       if (!targetId) return;
-      const replyTimeline = getEventTimeline(room, targetId);
-      const absoluteIndex =
-        replyTimeline && getEventIdAbsoluteIndex(timeline.linkedTimelines, replyTimeline, targetId);
-
-      if (typeof absoluteIndex === 'number') {
-        scrollToItem(absoluteIndex, {
-          behavior: 'smooth',
-          align: 'center',
-          stopInView: true,
-        });
-        setFocusItem({
-          index: absoluteIndex,
-          scrollTo: false,
-          highlight: true,
-        });
-      } else {
-        setTimeline(getEmptyTimeline());
-        loadEventTimeline(targetId);
-      }
+      handleOpenEvent(targetId);
     },
-    [room, timeline, scrollToItem, loadEventTimeline]
+    [handleOpenEvent]
   );
 
   const handleUserClick: MouseEventHandler<HTMLButtonElement> = useCallback(
