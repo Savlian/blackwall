@@ -430,6 +430,7 @@ a {
 
 [data-mx-spoiler][aria-pressed='true'] a {
   color: transparent;
+  pointer-events: none;
 }
 
 b {
