@@ -26,7 +26,10 @@ import {
   testMatrixTo,
 } from '../../plugins/matrix-to';
 import { tryDecodeURIComponent } from '../../utils/dom';
-import { escapeMarkdownInlineSequences } from '../../plugins/markdown';
+import {
+  escapeMarkdownInlineSequences,
+  escapeMarkdownBlockSequences,
+} from '../../plugins/markdown';
 
 type ProcessTextCallback = (text: string) => string;
 
@@ -345,7 +348,8 @@ const parseHeadingNode = (
 
 export const domToEditorInput = (
   domNodes: ChildNode[],
-  processText: ProcessTextCallback
+  processText: ProcessTextCallback,
+  processLineStartText: ProcessTextCallback
 ): Descendant[] => {
   const children: Descendant[] = [];
 
@@ -363,6 +367,13 @@ export const domToEditorInput = (
 
   domNodes.forEach((node) => {
     if (isText(node)) {
+      if (lineHolder.length === 0) {
+        // we are inserting first part of line
+        // it may contain block markdown starting data
+        // that we may need to escape.
+        lineHolder.push({ text: processLineStartText(node.data) });
+        return;
+      }
       lineHolder.push({ text: processText(node.data) });
       return;
     }
@@ -415,11 +426,16 @@ export const domToEditorInput = (
 export const htmlToEditorInput = (unsafeHtml: string, markdown?: boolean): Descendant[] => {
   const sanitizedHtml = sanitizeCustomHtml(unsafeHtml);
 
+  const processText = (partText: string) => {
+    if (!markdown) return partText;
+    return escapeMarkdownInlineSequences(partText);
+  };
+
   const domNodes = parse(sanitizedHtml);
-  const editorNodes = domToEditorInput(
-    domNodes,
-    markdown ? escapeMarkdownInlineSequences : (t) => t
-  );
+  const editorNodes = domToEditorInput(domNodes, processText, (lineStartText: string) => {
+    if (!markdown) return lineStartText;
+    return escapeMarkdownBlockSequences(lineStartText, processText);
+  });
   return editorNodes;
 };
 
@@ -429,7 +445,9 @@ export const plainToEditorInput = (text: string, markdown?: boolean): Descendant
       type: BlockType.Paragraph,
       children: [
         {
-          text: markdown ? escapeMarkdownInlineSequences(lineText) : lineText,
+          text: markdown
+            ? escapeMarkdownBlockSequences(lineText, escapeMarkdownInlineSequences)
+            : lineText,
         },
       ],
     };

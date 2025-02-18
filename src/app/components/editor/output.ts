@@ -6,6 +6,7 @@ import { CustomElement } from './slate';
 import {
   parseBlockMD,
   parseInlineMD,
+  unescapeMarkdownBlockSequences,
   unescapeMarkdownInlineSequences,
 } from '../../plugins/markdown';
 import { findAndReplace } from '../../utils/findAndReplace';
@@ -163,7 +164,10 @@ const elementToPlainText = (node: CustomElement, children: string): string => {
 
 export const toPlainText = (node: Descendant | Descendant[], isMarkdown: boolean): string => {
   if (Array.isArray(node)) return node.map((n) => toPlainText(n, isMarkdown)).join('');
-  if (Text.isText(node)) return isMarkdown ? unescapeMarkdownInlineSequences(node.text) : node.text;
+  if (Text.isText(node))
+    return isMarkdown
+      ? unescapeMarkdownBlockSequences(node.text, unescapeMarkdownInlineSequences)
+      : node.text;
 
   const children = node.children.map((n) => toPlainText(n, isMarkdown)).join('');
   return elementToPlainText(node, children);
