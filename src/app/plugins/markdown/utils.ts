@@ -11,7 +11,10 @@ import { runInlineRule } from './inline/runner';
  * @returns The plain-text with markdown escape sequences removed (e.g., `"some *italic*"`)
  */
 export const unescapeMarkdownInlineSequences = (text: string): string =>
-  runInlineRule(text, EscapeRule, (t) => t) ?? text;
+  runInlineRule(text, EscapeRule, (t) => {
+    if (t === '') return t;
+    return unescapeMarkdownInlineSequences(t);
+  }) ?? text;
 
 /**
  * Recovers the markdown escape sequences in the given plain-text.
