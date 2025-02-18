@@ -427,6 +427,11 @@ a {
     text-decoration: underline;
   }
 }
+
+[data-mx-spoiler][aria-pressed='true'] a {
+  color: transparent;
+}
+
 b {
   font-weight: var(--fw-medium);
 }
