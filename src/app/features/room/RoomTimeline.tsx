@@ -618,17 +618,22 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
   );
 
   const handleOpenEvent = useCallback(
-    async (evtId: string, highlight = true) => {
+    async (
+      evtId: string,
+      highlight = true,
+      onScroll: ((scrolled: boolean) => void) | undefined = undefined
+    ) => {
       const evtTimeline = getEventTimeline(room, evtId);
       const absoluteIndex =
         evtTimeline && getEventIdAbsoluteIndex(timeline.linkedTimelines, evtTimeline, evtId);
 
       if (typeof absoluteIndex === 'number') {
-        scrollToItem(absoluteIndex, {
+        const scrolled = scrollToItem(absoluteIndex, {
           behavior: 'smooth',
           align: 'center',
           stopInView: true,
         });
+        if (onScroll) onScroll(scrolled);
         setFocusItem({
           index: absoluteIndex,
           scrollTo: false,
@@ -722,11 +727,17 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
   useDocumentFocusChange(
     useCallback(
       (inFocus) => {
-        if (inFocus && unreadInfo?.inLiveTimeline) {
-          handleOpenEvent(unreadInfo.readUptoEventId, false);
-          return;
-        }
         if (inFocus && atBottomRef.current) {
+          if (unreadInfo?.inLiveTimeline) {
+            handleOpenEvent(unreadInfo.readUptoEventId, false, (scrolled) => {
+              // the unread event is already in view
+              // so, try mark as read;
+              if (!scrolled) {
+                tryAutoMarkAsRead();
+              }
+            });
+            return;
+          }
           tryAutoMarkAsRead();
         }
       },
