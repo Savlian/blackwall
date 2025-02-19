@@ -151,7 +151,7 @@ export const ImageContent = as<'div', ImageContentProps>(
             punch={1}
           />
         )}
-        {!autoPlay && srcState.status === AsyncStatus.Idle && (
+        {!autoPlay && !markedAsSpoiler && srcState.status === AsyncStatus.Idle && (
           <Box className={css.AbsoluteContainer} alignItems="Center" justifyContent="Center">
             <Button
               variant="Secondary"
@@ -178,7 +178,7 @@ export const ImageContent = as<'div', ImageContentProps>(
             })}
           </Box>
         )}
-        {srcState.status === AsyncStatus.Success && blurred && (
+        {blurred && (
           <Box className={css.AbsoluteContainer} alignItems="Center" justifyContent="Center">
             <TooltipProvider
               tooltip={
@@ -198,7 +198,12 @@ export const ImageContent = as<'div', ImageContentProps>(
                   radii="Pill"
                   size="500"
                   outlined
-                  onClick={() => setBlurred(false)}
+                  onClick={() => {
+                    setBlurred(false);
+                    if (srcState.status === AsyncStatus.Idle) {
+                      loadSrc();
+                    }
+                  }}
                 >
                   <Text size="B300">Spoiler</Text>
                 </Chip>
@@ -207,7 +212,8 @@ export const ImageContent = as<'div', ImageContentProps>(
           </Box>
         )}
         {(srcState.status === AsyncStatus.Loading || srcState.status === AsyncStatus.Success) &&
-          !load && (
+          !load &&
+          !markedAsSpoiler && (
             <Box className={css.AbsoluteContainer} alignItems="Center" justifyContent="Center">
               <Spinner variant="Secondary" />
             </Box>
