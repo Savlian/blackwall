@@ -84,8 +84,9 @@ export function UploadCardRenderer({
                   variant="SurfaceVariant"
                   radii="Pill"
                   size="300"
+                  aria-pressed={metadata.markedAsSpoiler}
                 >
-                  <Icon src={metadata.markedAsSpoiler ? Icons.EyeBlind : Icons.Eye} size="200" />
+                  <Icon src={Icons.EyeBlind} size="200" />
                 </IconButton>
               )}
             </TooltipProvider>
