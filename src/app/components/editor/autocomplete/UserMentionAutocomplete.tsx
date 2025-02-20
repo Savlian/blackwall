@@ -74,6 +74,7 @@ const withAllowedMembership = (member: RoomMember): boolean =>
   member.membership === Membership.Knock;
 
 const SEARCH_OPTIONS: UseAsyncSearchOptions = {
+  limit: 1000,
   matchOptions: {
     contain: true,
   },
