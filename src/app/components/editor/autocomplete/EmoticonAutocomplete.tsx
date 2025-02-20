@@ -6,11 +6,7 @@ import { Room } from 'matrix-js-sdk';
 import { AutocompleteQuery } from './autocompleteQuery';
 import { AutocompleteMenu } from './AutocompleteMenu';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
-import {
-  SearchItemStrGetter,
-  UseAsyncSearchOptions,
-  useAsyncSearch,
-} from '../../../hooks/useAsyncSearch';
+import { UseAsyncSearchOptions, useAsyncSearch } from '../../../hooks/useAsyncSearch';
 import { onTabPress } from '../../../utils/keyboard';
 import { createEmoticonElement, moveCursor, replaceWithElement } from '../utils';
 import { useRecentEmoji } from '../../../hooks/useRecentEmoji';
@@ -20,6 +16,7 @@ import { useKeyDown } from '../../../hooks/useKeyDown';
 import { mxcUrlToHttp } from '../../../utils/matrix';
 import { useMediaAuthentication } from '../../../hooks/useMediaAuthentication';
 import { ImageUsage, PackImageReader } from '../../../plugins/custom-emoji';
+import { getEmoticonSearchStr } from '../../../plugins/utils';
 
 type EmoticonCompleteHandler = (key: string, shortcode: string) => void;
 
@@ -37,10 +34,6 @@ const SEARCH_OPTIONS: UseAsyncSearchOptions = {
     contain: true,
   },
 };
-
-const getEmoticonStr: SearchItemStrGetter<EmoticonSearchItem> = (emoticon) => [
-  `:${emoticon.shortcode}:`,
-];
 
 export function EmoticonAutocomplete({
   imagePackRooms,
@@ -62,7 +55,11 @@ export function EmoticonAutocomplete({
     );
   }, [imagePacks]);
 
-  const [result, search, resetSearch] = useAsyncSearch(searchList, getEmoticonStr, SEARCH_OPTIONS);
+  const [result, search, resetSearch] = useAsyncSearch(
+    searchList,
+    getEmoticonSearchStr,
+    SEARCH_OPTIONS
+  );
   const autoCompleteEmoticon = result ? result.items.slice(0, 20) : recentEmoji;
 
   useEffect(() => {
