@@ -33,7 +33,6 @@ type EmoticonAutocompleteProps = {
 };
 
 const SEARCH_OPTIONS: UseAsyncSearchOptions = {
-  limit: 20,
   matchOptions: {
     contain: true,
   },
@@ -64,7 +63,7 @@ export function EmoticonAutocomplete({
   }, [imagePacks]);
 
   const [result, search, resetSearch] = useAsyncSearch(searchList, getEmoticonStr, SEARCH_OPTIONS);
-  const autoCompleteEmoticon = result ? result.items : recentEmoji;
+  const autoCompleteEmoticon = result ? result.items.slice(0, 20) : recentEmoji;
 
   useEffect(() => {
     if (query.text) search(query.text);
