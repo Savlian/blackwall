@@ -1,0 +1,176 @@
+import React, { useMemo, useState } from 'react';
+import { Room } from 'matrix-js-sdk';
+import { useAtomValue } from 'jotai';
+import { Avatar, Box, config, Icon, IconButton, Icons, IconSrc, MenuItem, Text } from 'folds';
+import { PageNav, PageNavContent, PageNavHeader, PageRoot } from '../../components/page';
+import { ScreenSize, useScreenSizeContext } from '../../hooks/useScreenSize';
+import { useMatrixClient } from '../../hooks/useMatrixClient';
+import { mxcUrlToHttp } from '../../utils/matrix';
+import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
+import { useRoomAvatar, useRoomName } from '../../hooks/useRoomMeta';
+import { mDirectAtom } from '../../state/mDirectList';
+import { RoomAvatar } from '../../components/room-avatar';
+import { General } from './general';
+import { nameInitials } from '../../utils/common';
+import { Members } from './members';
+import { EmojisStickers } from './emojis-stickers';
+import { Permissions } from './permissions';
+import { Security } from './security';
+
+export enum RoomSettingsPages {
+  GeneralPage,
+  MembersPage,
+  EmojisStickersPage,
+  PermissionsPage,
+  SecurityPage,
+}
+
+type RoomSettingsMenuItem = {
+  page: RoomSettingsPages;
+  name: string;
+  icon: IconSrc;
+};
+
+const useRoomSettingsMenuItems = (): RoomSettingsMenuItem[] =>
+  useMemo(
+    () => [
+      {
+        page: RoomSettingsPages.GeneralPage,
+        name: 'General',
+        icon: Icons.Setting,
+      },
+      {
+        page: RoomSettingsPages.MembersPage,
+        name: 'Members',
+        icon: Icons.User,
+      },
+      {
+        page: RoomSettingsPages.EmojisStickersPage,
+        name: 'Emojis & Stickers',
+        icon: Icons.Smile,
+      },
+      {
+        page: RoomSettingsPages.PermissionsPage,
+        name: 'Permissions',
+        icon: Icons.ShieldUser,
+      },
+      {
+        page: RoomSettingsPages.SecurityPage,
+        name: 'Security',
+        icon: Icons.Lock,
+      },
+    ],
+    []
+  );
+
+type RoomSettingsProps = {
+  room: Room;
+  initialPage?: RoomSettingsPages;
+  requestClose: () => void;
+};
+export function RoomSettings({ room, initialPage, requestClose }: RoomSettingsProps) {
+  const mx = useMatrixClient();
+  const useAuthentication = useMediaAuthentication();
+  const mDirects = useAtomValue(mDirectAtom);
+
+  const roomAvatar = useRoomAvatar(room, mDirects.has(room.roomId));
+  const roomName = useRoomName(room);
+
+  const avatarUrl = roomAvatar
+    ? mxcUrlToHttp(mx, roomAvatar, useAuthentication, 96, 96, 'crop') ?? undefined
+    : undefined;
+
+  const screenSize = useScreenSizeContext();
+  const [activePage, setActivePage] = useState<RoomSettingsPages | undefined>(() => {
+    if (initialPage) return initialPage;
+    return screenSize === ScreenSize.Mobile ? undefined : RoomSettingsPages.GeneralPage;
+  });
+  const menuItems = useRoomSettingsMenuItems();
+
+  const handlePageRequestClose = () => {
+    if (screenSize === ScreenSize.Mobile) {
+      setActivePage(undefined);
+      return;
+    }
+    requestClose();
+  };
+
+  return (
+    <PageRoot
+      nav={
+        screenSize === ScreenSize.Mobile && activePage !== undefined ? undefined : (
+          <PageNav size="300">
+            <PageNavHeader outlined={false}>
+              <Box grow="Yes" gap="200">
+                <Avatar size="200" radii="300">
+                  <RoomAvatar
+                    roomId={room.roomId}
+                    src={avatarUrl}
+                    alt={roomName}
+                    renderFallback={() => (
+                      <Text as="span" size="H6">
+                        {nameInitials(roomName)}
+                      </Text>
+                    )}
+                  />
+                </Avatar>
+                <Text size="H4" truncate>
+                  Settings
+                </Text>
+              </Box>
+              <Box shrink="No">
+                {screenSize === ScreenSize.Mobile && (
+                  <IconButton onClick={requestClose} variant="Background">
+                    <Icon src={Icons.Cross} />
+                  </IconButton>
+                )}
+              </Box>
+            </PageNavHeader>
+            <Box grow="Yes" direction="Column">
+              <PageNavContent>
+                <div style={{ flexGrow: 1 }}>
+                  {menuItems.map((item) => (
+                    <MenuItem
+                      key={item.name}
+                      variant="Background"
+                      radii="400"
+                      aria-pressed={activePage === item.page}
+                      before={<Icon src={item.icon} size="100" filled={activePage === item.page} />}
+                      onClick={() => setActivePage(item.page)}
+                    >
+                      <Text
+                        style={{
+                          fontWeight: activePage === item.page ? config.fontWeight.W600 : undefined,
+                        }}
+                        size="T300"
+                        truncate
+                      >
+                        {item.name}
+                      </Text>
+                    </MenuItem>
+                  ))}
+                </div>
+              </PageNavContent>
+            </Box>
+          </PageNav>
+        )
+      }
+    >
+      {activePage === RoomSettingsPages.GeneralPage && (
+        <General requestClose={handlePageRequestClose} />
+      )}
+      {activePage === RoomSettingsPages.MembersPage && (
+        <Members requestClose={handlePageRequestClose} />
+      )}
+      {activePage === RoomSettingsPages.EmojisStickersPage && (
+        <EmojisStickers requestClose={handlePageRequestClose} />
+      )}
+      {activePage === RoomSettingsPages.PermissionsPage && (
+        <Permissions requestClose={handlePageRequestClose} />
+      )}
+      {activePage === RoomSettingsPages.SecurityPage && (
+        <Security requestClose={handlePageRequestClose} />
+      )}
+    </PageRoot>
+  );
+}
