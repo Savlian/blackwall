@@ -113,7 +113,8 @@ export function Lobby() {
     getRoom,
     useCallback(
       (childId) =>
-        closedCategories.has(makeLobbyCategoryId(space.roomId, childId)) || !!draggingItem?.space,
+        closedCategories.has(makeLobbyCategoryId(space.roomId, childId)) ||
+        (draggingItem ? 'space' in draggingItem : false),
       [closedCategories, space.roomId, draggingItem]
     )
   );
@@ -142,8 +143,8 @@ export function Lobby() {
         return false;
       }
 
-      if (item.space) {
-        if (!container.item.space) return false;
+      if ('space' in item) {
+        if (!('space' in container.item)) return false;
         const containerSpaceId = space.roomId;
 
         if (
@@ -156,9 +157,8 @@ export function Lobby() {
         return true;
       }
 
-      const containerSpaceId = container.item.space
-        ? container.item.roomId
-        : container.item.parentId;
+      const containerSpaceId =
+        'space' in container.item ? container.item.roomId : container.item.parentId;
 
       const dropOutsideSpace = item.parentId !== containerSpaceId;
 
@@ -196,7 +196,7 @@ export function Lobby() {
       if (!item.parentId) return;
 
       const childItems = flattenHierarchy
-        .filter((i) => i.parentId && i.space)
+        .filter((i) => i.parentId && 'space' in i)
         .filter((i) => i.roomId !== item.roomId);
 
       const beforeIndex = childItems.findIndex((i) => i.roomId === containerItem.roomId);
@@ -224,7 +224,7 @@ export function Lobby() {
         if (canEdit && orderKey !== currentOrders[index]) {
           mx.sendStateEvent(
             itm.parentId,
-            StateEvent.SpaceChild,
+            StateEvent.SpaceChild as any,
             { ...itm.content, order: orderKey },
             itm.roomId
           );
@@ -240,13 +240,12 @@ export function Lobby() {
       if (!item.parentId) {
         return;
       }
-      const containerParentId: string = containerItem.space
-        ? containerItem.roomId
-        : containerItem.parentId;
+      const containerParentId: string =
+        'space' in containerItem ? containerItem.roomId : containerItem.parentId;
       const itemContent = item.content;
 
       if (item.parentId !== containerParentId) {
-        mx.sendStateEvent(item.parentId, StateEvent.SpaceChild, {}, item.roomId);
+        mx.sendStateEvent(item.parentId, StateEvent.SpaceChild as any, {}, item.roomId);
       }
 
       if (
@@ -265,7 +264,7 @@ export function Lobby() {
           const allow =
             joinRuleContent.allow?.filter((allowRule) => allowRule.room_id !== item.parentId) ?? [];
           allow.push({ type: RestrictedAllowType.RoomMembership, room_id: containerParentId });
-          mx.sendStateEvent(itemRoom.roomId, StateEvent.RoomJoinRules, {
+          mx.sendStateEvent(itemRoom.roomId, StateEvent.RoomJoinRules as any, {
             ...joinRuleContent,
             allow,
           });
@@ -273,10 +272,11 @@ export function Lobby() {
       }
 
       const childItems = flattenHierarchy
-        .filter((i) => i.parentId === containerParentId && !i.space)
+        .filter((i) => i.parentId === containerParentId && !('space' in i))
         .filter((i) => i.roomId !== item.roomId);
 
-      const beforeItem: HierarchyItem | undefined = containerItem.space ? undefined : containerItem;
+      const beforeItem: HierarchyItem | undefined =
+        'space' in containerItem ? undefined : containerItem;
       const beforeIndex = childItems.findIndex((i) => i.roomId === beforeItem?.roomId);
       const insertIndex = beforeIndex + 1;
 
@@ -300,7 +300,7 @@ export function Lobby() {
         if (itm && orderKey !== currentOrders[index]) {
           mx.sendStateEvent(
             containerParentId,
-            StateEvent.SpaceChild,
+            StateEvent.SpaceChild as any,
             { ...itm.content, order: orderKey },
             itm.roomId
           );
@@ -318,7 +318,7 @@ export function Lobby() {
         if (!canDrop(item, container)) {
           return;
         }
-        if (item.space) {
+        if ('space' in item) {
           reorderSpace(item, container.item);
         } else {
           reorderRoom(item, container.item);
@@ -415,7 +415,7 @@ export function Lobby() {
                         draggingItem?.roomId === item.roomId &&
                         draggingItem.parentId === item.parentId;
 
-                      if (item.space) {
+                      if ('space' in item) {
                         const categoryId = makeLobbyCategoryId(space.roomId, item.roomId);
                         const { parentId } = item;
                         const parentPowerLevels = parentId
@@ -435,7 +435,10 @@ export function Lobby() {
                               item={item}
                               joined={allJoinedRooms.has(item.roomId)}
                               categoryId={categoryId}
-                              closed={closedCategories.has(categoryId) || !!draggingItem?.space}
+                              closed={
+                                closedCategories.has(categoryId) ||
+                                (draggingItem ? 'space' in draggingItem : false)
+                              }
                               handleClose={handleCategoryClick}
                               getRoom={getRoom}
                               canEditChild={canEditSpaceChild(
@@ -487,8 +490,8 @@ export function Lobby() {
                             item={item}
                             onSpaceFound={addSpaceRoom}
                             dm={mDirects.has(item.roomId)}
-                            firstChild={!prevItem || prevItem.space === true}
-                            lastChild={!nextItem || nextItem.space === true}
+                            firstChild={!prevItem || 'space' in prevItem}
+                            lastChild={!nextItem || 'space' in nextItem}
                             onOpen={handleOpenRoom}
                             getRoom={getRoom}
                             canReorder={canEditSpaceChild(parentPowerLevels)}
