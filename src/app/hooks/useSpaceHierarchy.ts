@@ -262,7 +262,10 @@ export type FetchSpaceHierarchyLevelData = {
   error: Error | null;
   rooms: Map<string, IHierarchyRoom>;
 };
-export const useFetchSpaceHierarchyLevel = (roomId: string): FetchSpaceHierarchyLevelData => {
+export const useFetchSpaceHierarchyLevel = (
+  roomId: string,
+  enable: boolean
+): FetchSpaceHierarchyLevelData => {
   const mx = useMatrixClient();
   const pageNoRef = useRef(0);
 
@@ -276,6 +279,7 @@ export const useFetchSpaceHierarchyLevel = (roomId: string): FetchSpaceHierarchy
   );
 
   const queryResponse = useInfiniteQuery({
+    refetchOnMount: enable,
     queryKey: [roomId, 'hierarchy', 'level'],
     initialPageParam: undefined,
     queryFn: fetchLevel,
