@@ -72,7 +72,6 @@ export const SpaceHierarchy = forwardRef<HTMLDivElement, SpaceHierarchyProps>(
       mx.getUserId() ?? undefined
     );
     const canInviteInSpace = powerLevelAPI.canDoAction(spacePowerLevels, 'invite', userPLInSpace);
-    const isJoined = allJoinedRooms.has(spaceItem.roomId);
 
     const draggingSpace =
       draggingItem?.roomId === spaceItem.roomId && draggingItem.parentId === spaceItem.parentId;
@@ -97,7 +96,7 @@ export const SpaceHierarchy = forwardRef<HTMLDivElement, SpaceHierarchyProps>(
               <HierarchyItemMenu
                 item={{ ...spaceItem, parentId }}
                 canInvite={canInviteInSpace}
-                joined={isJoined}
+                joined={allJoinedRooms.has(spaceItem.roomId)}
                 canEditChild={canEditSpaceChild(parentPowerLevels)}
                 pinned={pinned}
                 onTogglePin={togglePinToSidebar}
@@ -151,7 +150,7 @@ export const SpaceHierarchy = forwardRef<HTMLDivElement, SpaceHierarchyProps>(
                   <HierarchyItemMenu
                     item={roomItem}
                     canInvite={canInviteInRoom}
-                    joined={isJoined}
+                    joined={allJoinedRooms.has(roomItem.roomId)}
                     canEditChild={canEditSpaceChild(spacePowerLevels)}
                   />
                 }
