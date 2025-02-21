@@ -12,21 +12,22 @@ import { SortFunc, byOrderKey, byTsOldToNew, factoryRoomIdByActivity } from '../
 import { useStateEventCallback } from './useStateEventCallback';
 import { ErrorCode } from '../cs-errorcode';
 
-export type HierarchyItem =
-  | {
-      roomId: string;
-      content: MSpaceChildContent;
-      ts: number;
-      space: true;
-      parentId?: string;
-    }
-  | {
-      roomId: string;
-      content: MSpaceChildContent;
-      ts: number;
-      space?: false;
-      parentId: string;
-    };
+export type HierarchyItemSpace = {
+  roomId: string;
+  content: MSpaceChildContent;
+  ts: number;
+  space: true;
+  parentId?: string;
+};
+
+export type HierarchyItemRoom = {
+  roomId: string;
+  content: MSpaceChildContent;
+  ts: number;
+  parentId: string;
+};
+
+export type HierarchyItem = HierarchyItemSpace | HierarchyItemRoom;
 
 type GetRoomCallback = (roomId: string) => Room | undefined;
 
@@ -38,16 +39,16 @@ const getHierarchySpaces = (
   rootSpaceId: string,
   getRoom: GetRoomCallback,
   spaceRooms: Set<string>
-): HierarchyItem[] => {
-  const rootSpaceItem: HierarchyItem = {
+): HierarchyItemSpace[] => {
+  const rootSpaceItem: HierarchyItemSpace = {
     roomId: rootSpaceId,
     content: { via: [] },
     ts: 0,
     space: true,
   };
-  let spaceItems: HierarchyItem[] = [];
+  let spaceItems: HierarchyItemSpace[] = [];
 
-  const findAndCollectHierarchySpaces = (spaceItem: HierarchyItem) => {
+  const findAndCollectHierarchySpaces = (spaceItem: HierarchyItemSpace) => {
     if (spaceItems.find((item) => item.roomId === spaceItem.roomId)) return;
     const space = getRoom(spaceItem.roomId);
     spaceItems.push(spaceItem);
@@ -64,7 +65,7 @@ const getHierarchySpaces = (
       // or requesting room summary, we will look it into spaceRooms local
       // cache which we maintain as we load summary in UI.
       if (getRoom(childId)?.isSpaceRoom() || spaceRooms.has(childId)) {
-        const childItem: HierarchyItem = {
+        const childItem: HierarchyItemSpace = {
           roomId: childId,
           content: childEvent.getContent<MSpaceChildContent>(),
           ts: childEvent.getTs(),
@@ -102,14 +103,14 @@ const getSpaceHierarchy = (
       return [spaceItem];
     }
     const childEvents = getStateEvents(space, StateEvent.SpaceChild);
-    const childItems: HierarchyItem[] = [];
+    const childItems: HierarchyItemRoom[] = [];
     childEvents.forEach((childEvent) => {
       if (!isValidChild(childEvent)) return;
       const childId = childEvent.getStateKey();
       if (!childId || !isRoomId(childId)) return;
       if (getRoom(childId)?.isSpaceRoom() || spaceRooms.has(childId)) return;
 
-      const childItem: HierarchyItem = {
+      const childItem: HierarchyItemRoom = {
         roomId: childId,
         content: childEvent.getContent<MSpaceChildContent>(),
         ts: childEvent.getTs(),
@@ -166,7 +167,7 @@ const getSpaceJoinedHierarchy = (
   excludeRoom: (parentId: string, roomId: string) => boolean,
   sortRoomItems: (parentId: string, items: HierarchyItem[]) => HierarchyItem[]
 ): HierarchyItem[] => {
-  const spaceItems: HierarchyItem[] = getHierarchySpaces(rootSpaceId, getRoom, new Set());
+  const spaceItems: HierarchyItemSpace[] = getHierarchySpaces(rootSpaceId, getRoom, new Set());
 
   const hierarchy: HierarchyItem[] = spaceItems.flatMap((spaceItem) => {
     const space = getRoom(spaceItem.roomId);
@@ -185,14 +186,14 @@ const getSpaceJoinedHierarchy = (
 
     if (joinedRoomEvents.length === 0) return [];
 
-    const childItems: HierarchyItem[] = [];
+    const childItems: HierarchyItemRoom[] = [];
     joinedRoomEvents.forEach((childEvent) => {
       const childId = childEvent.getStateKey();
       if (!childId) return;
 
       if (excludeRoom(space.roomId, childId)) return;
 
-      const childItem: HierarchyItem = {
+      const childItem: HierarchyItemRoom = {
         roomId: childId,
         content: childEvent.getContent<MSpaceChildContent>(),
         ts: childEvent.getTs(),
