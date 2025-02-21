@@ -70,7 +70,7 @@ export function UploadCardRenderer({
             <TooltipProvider
               tooltip={
                 <Tooltip variant="SurfaceVariant">
-                  <Text>Spoiler Image</Text>
+                  <Text>Mark as Spoiler</Text>
                 </Tooltip>
               }
               position="Top"
@@ -80,7 +80,7 @@ export function UploadCardRenderer({
                 <IconButton
                   ref={triggerRef}
                   onClick={toggleSpoiler}
-                  aria-label="Spoil Image"
+                  aria-label="Mark as Spoiler"
                   variant="SurfaceVariant"
                   radii="Pill"
                   size="300"

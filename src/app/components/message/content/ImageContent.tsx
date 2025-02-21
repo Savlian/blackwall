@@ -178,7 +178,7 @@ export const ImageContent = as<'div', ImageContentProps>(
             })}
           </Box>
         )}
-        {blurred && (
+        {blurred && !error && srcState.status !== AsyncStatus.Error && (
           <Box className={css.AbsoluteContainer} alignItems="Center" justifyContent="Center">
             <TooltipProvider
               tooltip={
