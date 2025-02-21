@@ -89,18 +89,24 @@ const getHierarchySpaces = (
   return spaceItems;
 };
 
+export type SpaceHierarchy = {
+  space: HierarchyItemSpace;
+  rooms?: HierarchyItemRoom[];
+};
 const getSpaceHierarchy = (
   rootSpaceId: string,
   spaceRooms: Set<string>,
   getRoom: (roomId: string) => Room | undefined,
   closedCategory: (spaceId: string) => boolean
-): HierarchyItem[] => {
-  const spaceItems: HierarchyItem[] = getHierarchySpaces(rootSpaceId, getRoom, spaceRooms);
+): SpaceHierarchy[] => {
+  const spaceItems: HierarchyItemSpace[] = getHierarchySpaces(rootSpaceId, getRoom, spaceRooms);
 
-  const hierarchy: HierarchyItem[] = spaceItems.flatMap((spaceItem) => {
+  const hierarchy: SpaceHierarchy[] = spaceItems.map((spaceItem) => {
     const space = getRoom(spaceItem.roomId);
     if (!space || closedCategory(spaceItem.roomId)) {
-      return [spaceItem];
+      return {
+        space: spaceItem,
+      };
     }
     const childEvents = getStateEvents(space, StateEvent.SpaceChild);
     const childItems: HierarchyItemRoom[] = [];
@@ -118,7 +124,11 @@ const getSpaceHierarchy = (
       };
       childItems.push(childItem);
     });
-    return [spaceItem, ...childItems.sort(hierarchyItemTs).sort(hierarchyItemByOrder)];
+
+    return {
+      space: spaceItem,
+      rooms: childItems.sort(hierarchyItemTs).sort(hierarchyItemByOrder),
+    };
   });
 
   return hierarchy;
@@ -129,7 +139,7 @@ export const useSpaceHierarchy = (
   spaceRooms: Set<string>,
   getRoom: (roomId: string) => Room | undefined,
   closedCategory: (spaceId: string) => boolean
-): HierarchyItem[] => {
+): SpaceHierarchy[] => {
   const mx = useMatrixClient();
   const roomToParents = useAtomValue(roomToParentsAtom);
 
@@ -281,7 +291,7 @@ export const useFetchSpaceHierarchyLevel = (
 
   const queryResponse = useInfiniteQuery({
     refetchOnMount: enable,
-    queryKey: [roomId, 'hierarchy', 'level'],
+    queryKey: [roomId, 'hierarchy_level'],
     initialPageParam: undefined,
     queryFn: fetchLevel,
     getNextPageParam: (result) => {
