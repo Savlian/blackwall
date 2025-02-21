@@ -1,4 +1,4 @@
-import React, { MouseEventHandler, ReactNode, useCallback, useEffect, useRef } from 'react';
+import React, { MouseEventHandler, ReactNode, useCallback, useRef } from 'react';
 import {
   Avatar,
   Badge,
@@ -30,7 +30,7 @@ import { LocalRoomSummaryLoader } from '../../components/RoomSummaryLoader';
 import { UseStateProvider } from '../../components/UseStateProvider';
 import { RoomTopicViewer } from '../../components/room-topic-viewer';
 import { onEnterOrSpace, stopPropagation } from '../../utils/keyboard';
-import { Membership, RoomType } from '../../../types/matrix/room';
+import { Membership } from '../../../types/matrix/room';
 import * as css from './RoomItem.css';
 import * as styleCss from './style.css';
 import { AsyncStatus, useAsyncCallback } from '../../hooks/useAsyncCallback';
@@ -276,26 +276,11 @@ function RoomProfile({
   );
 }
 
-function CallbackOnFoundSpace({
-  roomId,
-  onSpaceFound,
-}: {
-  roomId: string;
-  onSpaceFound: (roomId: string) => void;
-}) {
-  useEffect(() => {
-    onSpaceFound(roomId);
-  }, [roomId, onSpaceFound]);
-
-  return null;
-}
-
 type RoomItemCardProps = {
   item: HierarchyItem;
   loading: boolean;
   error: Error | null;
   summary: IHierarchyRoom | undefined;
-  onSpaceFound: (roomId: string) => void;
   dm?: boolean;
   firstChild?: boolean;
   lastChild?: boolean;
@@ -314,7 +299,6 @@ export const RoomItemCard = as<'div', RoomItemCardProps>(
       loading,
       error,
       summary,
-      onSpaceFound,
       dm,
       onOpen,
       options,
@@ -406,26 +390,21 @@ export const RoomItemCard = as<'div', RoomItemCardProps>(
                 />
               )}
               {summary && (
-                <>
-                  {summary.room_type === RoomType.Space && (
-                    <CallbackOnFoundSpace roomId={summary.room_id} onSpaceFound={onSpaceFound} />
-                  )}
-                  <RoomProfile
-                    roomId={roomId}
-                    name={summary.name || summary.canonical_alias || roomId}
-                    topic={summary.topic}
-                    avatarUrl={
-                      summary?.avatar_url
-                        ? mxcUrlToHttp(mx, summary.avatar_url, useAuthentication, 96, 96, 'crop') ??
-                          undefined
-                        : undefined
-                    }
-                    memberCount={summary.num_joined_members}
-                    suggested={content.suggested}
-                    joinRule={summary.join_rule}
-                    options={<RoomJoinButton roomId={roomId} via={content.via} />}
-                  />
-                </>
+                <RoomProfile
+                  roomId={roomId}
+                  name={summary.name || summary.canonical_alias || roomId}
+                  topic={summary.topic}
+                  avatarUrl={
+                    summary?.avatar_url
+                      ? mxcUrlToHttp(mx, summary.avatar_url, useAuthentication, 96, 96, 'crop') ??
+                        undefined
+                      : undefined
+                  }
+                  memberCount={summary.num_joined_members}
+                  suggested={content.suggested}
+                  joinRule={summary.join_rule}
+                  options={<RoomJoinButton roomId={roomId} via={content.via} />}
+                />
               )}
             </>
           )}

@@ -1,5 +1,6 @@
-import React, { forwardRef, MouseEventHandler } from 'react';
+import React, { forwardRef, MouseEventHandler, useEffect, useMemo } from 'react';
 import { Room } from 'matrix-js-sdk';
+import { IHierarchyRoom } from 'matrix-js-sdk/lib/@types/spaces';
 import { Box } from 'folds';
 import {
   HierarchyItem,
@@ -13,8 +14,10 @@ import { SpaceItemCard } from './SpaceItem';
 import { AfterItemDropTarget, CanDropCallback } from './DnD';
 import { HierarchyItemMenu } from './HierarchyItemMenu';
 import { RoomItemCard } from './RoomItem';
+import { RoomType } from '../../../types/matrix/room';
 
 type SpaceHierarchyProps = {
+  summary: IHierarchyRoom | undefined;
   spaceItem: HierarchyItemSpace;
   roomItems?: HierarchyItemRoom[];
   allJoinedRooms: Set<string>;
@@ -31,12 +34,13 @@ type SpaceHierarchyProps = {
   getRoom: (roomId: string) => Room | undefined;
   pinned: boolean;
   togglePinToSidebar: (roomId: string) => void;
-  onSpaceFound: (roomId: string) => void;
+  onSpacesFound: (spaceItems: IHierarchyRoom[]) => void;
   onOpenRoom: MouseEventHandler<HTMLButtonElement>;
 };
 export const SpaceHierarchy = forwardRef<HTMLDivElement, SpaceHierarchyProps>(
   (
     {
+      summary,
       spaceItem,
       roomItems,
       allJoinedRooms,
@@ -53,18 +57,24 @@ export const SpaceHierarchy = forwardRef<HTMLDivElement, SpaceHierarchyProps>(
       getRoom,
       pinned,
       togglePinToSidebar,
-      onSpaceFound,
       onOpenRoom,
+      onSpacesFound,
     },
     ref
   ) => {
     const mx = useMatrixClient();
 
-    const enableHierarchy = !closed && allJoinedRooms.has(spaceItem.roomId);
-    const { fetching, error, rooms } = useFetchSpaceHierarchyLevel(
-      spaceItem.roomId,
-      enableHierarchy
-    );
+    const { fetching, error, rooms } = useFetchSpaceHierarchyLevel(spaceItem.roomId, true);
+
+    const subspaces = useMemo(() => {
+      const s: Map<string, IHierarchyRoom> = new Map();
+      rooms.forEach((r) => {
+        if (r.room_type === RoomType.Space) {
+          s.set(r.room_id, r);
+        }
+      });
+      return s;
+    }, [rooms]);
 
     const spacePowerLevels = roomsPowerLevels.get(spaceItem.roomId) ?? {};
     const userPLInSpace = powerLevelAPI.getPowerLevel(
@@ -79,9 +89,16 @@ export const SpaceHierarchy = forwardRef<HTMLDivElement, SpaceHierarchyProps>(
     const { parentId } = spaceItem;
     const parentPowerLevels = parentId ? roomsPowerLevels.get(parentId) ?? {} : undefined;
 
+    useEffect(() => {
+      onSpacesFound(Array.from(subspaces.values()));
+    }, [subspaces, onSpacesFound]);
+
+    const childItems = roomItems?.filter((i) => !subspaces.has(i.roomId));
     return (
       <Box direction="Column" gap="100" ref={ref}>
         <SpaceItemCard
+          summary={rooms.get(spaceItem.roomId) ?? summary}
+          loading={fetching}
           item={spaceItem}
           joined={allJoinedRooms.has(spaceItem.roomId)}
           categoryId={categoryId}
@@ -106,7 +123,7 @@ export const SpaceHierarchy = forwardRef<HTMLDivElement, SpaceHierarchyProps>(
           after={
             <AfterItemDropTarget
               item={spaceItem}
-              nextRoomId={closed ? nextSpaceId : roomItems?.[0]?.roomId}
+              nextRoomId={closed ? nextSpaceId : childItems?.[0]?.roomId}
               afterSpace
               canDrop={canDrop}
             />
@@ -114,55 +131,60 @@ export const SpaceHierarchy = forwardRef<HTMLDivElement, SpaceHierarchyProps>(
           onDragging={onDragging}
           data-dragging={draggingSpace}
         />
-        <Box direction="Column" gap="100">
-          {roomItems?.map((roomItem, index) => {
-            const roomPowerLevels = roomsPowerLevels.get(roomItem.roomId) ?? {};
-            const userPLInRoom = powerLevelAPI.getPowerLevel(
-              roomPowerLevels,
-              mx.getUserId() ?? undefined
-            );
-            const canInviteInRoom = powerLevelAPI.canDoAction(
-              roomPowerLevels,
-              'invite',
-              userPLInRoom
-            );
+        {childItems && childItems.length > 0 && (
+          <Box direction="Column" gap="100">
+            {childItems.map((roomItem, index) => {
+              const roomPowerLevels = roomsPowerLevels.get(roomItem.roomId) ?? {};
+              const userPLInRoom = powerLevelAPI.getPowerLevel(
+                roomPowerLevels,
+                mx.getUserId() ?? undefined
+              );
+              const canInviteInRoom = powerLevelAPI.canDoAction(
+                roomPowerLevels,
+                'invite',
+                userPLInRoom
+              );
 
-            const lastItem = index === roomItems.length;
-            const nextRoomId = lastItem ? nextSpaceId : roomItems[index + 1]?.roomId;
+              const lastItem = index === childItems.length;
+              const nextRoomId = lastItem ? nextSpaceId : childItems[index + 1]?.roomId;
 
-            const roomDragging =
-              draggingItem?.roomId === roomItem.roomId &&
-              draggingItem.parentId === roomItem.parentId;
+              const roomDragging =
+                draggingItem?.roomId === roomItem.roomId &&
+                draggingItem.parentId === roomItem.parentId;
 
-            return (
-              <RoomItemCard
-                key={roomItem.roomId}
-                item={roomItem}
-                loading={fetching}
-                error={error}
-                summary={rooms.get(roomItem.roomId)}
-                onSpaceFound={onSpaceFound}
-                dm={mDirects.has(roomItem.roomId)}
-                onOpen={onOpenRoom}
-                getRoom={getRoom}
-                canReorder={canEditSpaceChild(spacePowerLevels)}
-                options={
-                  <HierarchyItemMenu
-                    item={roomItem}
-                    canInvite={canInviteInRoom}
-                    joined={allJoinedRooms.has(roomItem.roomId)}
-                    canEditChild={canEditSpaceChild(spacePowerLevels)}
-                  />
-                }
-                after={
-                  <AfterItemDropTarget item={roomItem} nextRoomId={nextRoomId} canDrop={canDrop} />
-                }
-                data-dragging={roomDragging}
-                onDragging={onDragging}
-              />
-            );
-          })}
-        </Box>
+              return (
+                <RoomItemCard
+                  key={roomItem.roomId}
+                  item={roomItem}
+                  loading={fetching}
+                  error={error}
+                  summary={rooms.get(roomItem.roomId)}
+                  dm={mDirects.has(roomItem.roomId)}
+                  onOpen={onOpenRoom}
+                  getRoom={getRoom}
+                  canReorder={canEditSpaceChild(spacePowerLevels)}
+                  options={
+                    <HierarchyItemMenu
+                      item={roomItem}
+                      canInvite={canInviteInRoom}
+                      joined={allJoinedRooms.has(roomItem.roomId)}
+                      canEditChild={canEditSpaceChild(spacePowerLevels)}
+                    />
+                  }
+                  after={
+                    <AfterItemDropTarget
+                      item={roomItem}
+                      nextRoomId={nextRoomId}
+                      canDrop={canDrop}
+                    />
+                  }
+                  data-dragging={roomDragging}
+                  onDragging={onDragging}
+                />
+              );
+            })}
+          </Box>
+        )}
       </Box>
     );
   }

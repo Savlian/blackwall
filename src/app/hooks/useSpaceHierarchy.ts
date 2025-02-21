@@ -266,8 +266,9 @@ export const useSpaceJoinedHierarchy = (
   return hierarchy;
 };
 
-const PER_PAGE_COUNT = 1000;
-const MAX_AUTO_PAGE_COUNT = 5;
+// we will paginate until 5000 items
+const PER_PAGE_COUNT = 100;
+const MAX_AUTO_PAGE_COUNT = 50;
 export type FetchSpaceHierarchyLevelData = {
   fetching: boolean;
   error: Error | null;
