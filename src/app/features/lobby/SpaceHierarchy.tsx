@@ -134,6 +134,10 @@ export const SpaceHierarchy = forwardRef<HTMLDivElement, SpaceHierarchyProps>(
         {childItems && childItems.length > 0 && (
           <Box direction="Column" gap="100">
             {childItems.map((roomItem, index) => {
+              const roomSummary = rooms.get(roomItem.roomId);
+              const inaccessibleRoom = !roomSummary && !fetching && !error;
+              if (inaccessibleRoom && !canEditSpaceChild(spacePowerLevels)) return null;
+
               const roomPowerLevels = roomsPowerLevels.get(roomItem.roomId) ?? {};
               const userPLInRoom = powerLevelAPI.getPowerLevel(
                 roomPowerLevels,
@@ -158,7 +162,7 @@ export const SpaceHierarchy = forwardRef<HTMLDivElement, SpaceHierarchyProps>(
                   item={roomItem}
                   loading={fetching}
                   error={error}
-                  summary={rooms.get(roomItem.roomId)}
+                  summary={roomSummary}
                   dm={mDirects.has(roomItem.roomId)}
                   onOpen={onOpenRoom}
                   getRoom={getRoom}
