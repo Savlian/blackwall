@@ -1,6 +1,8 @@
 import { atom, useAtom, useAtomValue } from 'jotai';
-import { useCallback, useEffect, useState } from 'react';
-import { Room } from 'matrix-js-sdk';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { MatrixError, Room } from 'matrix-js-sdk';
+import { IHierarchyRoom } from 'matrix-js-sdk/lib/@types/spaces';
+import { QueryFunction, useInfiniteQuery } from '@tanstack/react-query';
 import { useMatrixClient } from './useMatrixClient';
 import { roomToParentsAtom } from '../state/room/roomToParents';
 import { MSpaceChildContent, StateEvent } from '../../types/matrix/room';
@@ -8,6 +10,7 @@ import { getAllParents, getStateEvents, isValidChild } from '../utils/room';
 import { isRoomId } from '../utils/matrix';
 import { SortFunc, byOrderKey, byTsOldToNew, factoryRoomIdByActivity } from '../utils/sort';
 import { useStateEventCallback } from './useStateEventCallback';
+import { ErrorCode } from '../cs-errorcode';
 
 export type HierarchyItem =
   | {
@@ -250,4 +253,81 @@ export const useSpaceJoinedHierarchy = (
   );
 
   return hierarchy;
+};
+
+const PER_PAGE_COUNT = 1000;
+const MAX_AUTO_PAGE_COUNT = 5;
+export type FetchSpaceHierarchyLevelData = {
+  fetching: boolean;
+  error: Error | null;
+  rooms: Map<string, IHierarchyRoom>;
+};
+export const useFetchSpaceHierarchyLevel = (roomId: string): FetchSpaceHierarchyLevelData => {
+  const mx = useMatrixClient();
+  const pageNoRef = useRef(0);
+
+  const fetchLevel: QueryFunction<
+    Awaited<ReturnType<typeof mx.getRoomHierarchy>>,
+    string[],
+    string | undefined
+  > = useCallback(
+    ({ pageParam }) => mx.getRoomHierarchy(roomId, PER_PAGE_COUNT, 1, false, pageParam),
+    [roomId, mx]
+  );
+
+  const queryResponse = useInfiniteQuery({
+    queryKey: [roomId, 'hierarchy', 'level'],
+    initialPageParam: undefined,
+    queryFn: fetchLevel,
+    getNextPageParam: (result) => {
+      if (result.next_batch) return result.next_batch;
+      return undefined;
+    },
+    retry: 5,
+    retryDelay: (failureCount, error) => {
+      if (error instanceof MatrixError && error.errcode === ErrorCode.M_LIMIT_EXCEEDED) {
+        const { retry_after_ms: delay } = error.data;
+        if (typeof delay === 'number') {
+          return delay;
+        }
+      }
+
+      return 500 * failureCount;
+    },
+  });
+
+  const { data, isLoading, isFetchingNextPage, error, fetchNextPage, hasNextPage } = queryResponse;
+
+  useEffect(() => {
+    if (
+      hasNextPage &&
+      pageNoRef.current <= MAX_AUTO_PAGE_COUNT &&
+      !error &&
+      data &&
+      data.pages.length > 0
+    ) {
+      pageNoRef.current += 1;
+      fetchNextPage();
+    }
+  }, [fetchNextPage, hasNextPage, data, error]);
+
+  const rooms: Map<string, IHierarchyRoom> = useMemo(() => {
+    const roomsMap: Map<string, IHierarchyRoom> = new Map();
+    if (!data) return roomsMap;
+
+    const rms = data.pages.flatMap((result) => result.rooms);
+    rms.forEach((r) => {
+      roomsMap.set(r.room_id, r);
+    });
+
+    return roomsMap;
+  }, [data]);
+
+  const fetching = isLoading || isFetchingNextPage;
+
+  return {
+    fetching,
+    error,
+    rooms,
+  };
 };
