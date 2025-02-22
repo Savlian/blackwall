@@ -1,7 +1,7 @@
 import React, { forwardRef, MouseEventHandler, useEffect, useMemo } from 'react';
 import { MatrixError, Room } from 'matrix-js-sdk';
 import { IHierarchyRoom } from 'matrix-js-sdk/lib/@types/spaces';
-import { Box } from 'folds';
+import { Box, config, Text } from 'folds';
 import {
   HierarchyItem,
   HierarchyItemRoom,
@@ -15,6 +15,7 @@ import { AfterItemDropTarget, CanDropCallback } from './DnD';
 import { HierarchyItemMenu } from './HierarchyItemMenu';
 import { RoomItemCard } from './RoomItem';
 import { RoomType } from '../../../types/matrix/room';
+import { SequenceCard } from '../../components/sequence-card';
 
 type SpaceHierarchyProps = {
   summary: IHierarchyRoom | undefined;
@@ -93,7 +94,16 @@ export const SpaceHierarchy = forwardRef<HTMLDivElement, SpaceHierarchyProps>(
       onSpacesFound(Array.from(subspaces.values()));
     }, [subspaces, onSpacesFound]);
 
-    const childItems = roomItems?.filter((i) => !subspaces.has(i.roomId));
+    let childItems = roomItems?.filter((i) => !subspaces.has(i.roomId));
+    if (!canEditSpaceChild(spacePowerLevels)) {
+      // hide unknown rooms for normal user
+      childItems = childItems?.filter((i) => {
+        const forbidden = error instanceof MatrixError ? error.errcode === 'M_FORBIDDEN' : false;
+        const inaccessibleRoom = !rooms.get(i.roomId) && !fetching && (error ? forbidden : true);
+        return !inaccessibleRoom;
+      });
+    }
+
     return (
       <Box direction="Column" gap="100" ref={ref}>
         <SpaceItemCard
@@ -131,14 +141,10 @@ export const SpaceHierarchy = forwardRef<HTMLDivElement, SpaceHierarchyProps>(
           onDragging={onDragging}
           data-dragging={draggingSpace}
         />
-        {childItems && childItems.length > 0 && (
+        {childItems && childItems.length > 0 ? (
           <Box direction="Column" gap="100">
             {childItems.map((roomItem, index) => {
               const roomSummary = rooms.get(roomItem.roomId);
-              const forbidden =
-                error instanceof MatrixError ? error.errcode === 'M_FORBIDDEN' : false;
-              const inaccessibleRoom = !roomSummary && !fetching && (error ? forbidden : true);
-              if (inaccessibleRoom && !canEditSpaceChild(spacePowerLevels)) return null;
 
               const roomPowerLevels = roomsPowerLevels.get(roomItem.roomId) ?? {};
               const userPLInRoom = powerLevelAPI.getPowerLevel(
@@ -190,6 +196,28 @@ export const SpaceHierarchy = forwardRef<HTMLDivElement, SpaceHierarchyProps>(
               );
             })}
           </Box>
+        ) : (
+          childItems && (
+            <SequenceCard variant="SurfaceVariant" gap="300" alignItems="Center">
+              <Box
+                grow="Yes"
+                style={{
+                  padding: config.space.S700,
+                }}
+                direction="Column"
+                alignItems="Center"
+                justifyContent="Center"
+                gap="100"
+              >
+                <Text size="H5" align="Center">
+                  No Rooms
+                </Text>
+                <Text align="Center" size="T300" priority="300">
+                  This space does not contains rooms yet.
+                </Text>
+              </Box>
+            </SequenceCard>
+          )
         )}
       </Box>
     );
