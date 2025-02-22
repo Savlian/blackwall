@@ -372,23 +372,27 @@ export const RoomItemCard = as<'div', RoomItemCardProps>(
             </LocalRoomSummaryLoader>
           ) : (
             <>
-              {!summary && !loading && (
-                <RoomProfileError
-                  roomId={roomId}
-                  inaccessibleRoom
-                  suggested={content.suggested}
-                  via={content.via}
-                />
-              )}
-              {!summary && loading && <RoomProfileLoading />}
-              {!summary && error && (
-                <RoomProfileError
-                  roomId={roomId}
-                  inaccessibleRoom={false}
-                  suggested={content.suggested}
-                  via={content.via}
-                />
-              )}
+              {!summary &&
+                (error ? (
+                  <RoomProfileError
+                    roomId={roomId}
+                    inaccessibleRoom={false}
+                    suggested={content.suggested}
+                    via={content.via}
+                  />
+                ) : (
+                  <>
+                    {loading && <RoomProfileLoading />}
+                    {!loading && (
+                      <RoomProfileError
+                        roomId={roomId}
+                        inaccessibleRoom
+                        suggested={content.suggested}
+                        via={content.via}
+                      />
+                    )}
+                  </>
+                ))}
               {summary && (
                 <RoomProfile
                   roomId={roomId}
