@@ -1,6 +1,24 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Box, Icon, IconButton, Icons, Scroll, Text } from 'folds';
+import { JoinRule } from 'matrix-js-sdk';
 import { Page, PageContent, PageHeader } from '../../../components/page';
+import { JoinRulesSelector } from '../../../components/JoinRulesSelector';
+
+function RoomJoinRules() {
+  const joinRules: Array<JoinRule> = useMemo(
+    () => [JoinRule.Invite, JoinRule.Knock, JoinRule.Restricted, JoinRule.Public],
+    []
+  );
+
+  const [rule, setRule] = useState(JoinRule.Invite);
+
+  return (
+    <Box direction="Column" gap="100">
+      <Text size="L400">Join Access</Text>
+      <JoinRulesSelector rules={joinRules} value={rule} onChange={setRule} />
+    </Box>
+  );
+}
 
 type GeneralProps = {
   requestClose: () => void;
@@ -26,7 +44,7 @@ export function General({ requestClose }: GeneralProps) {
         <Scroll hideTrack visibility="Hover">
           <PageContent>
             <Box direction="Column" gap="700">
-              <span>some</span>
+              <RoomJoinRules />
             </Box>
           </PageContent>
         </Scroll>
