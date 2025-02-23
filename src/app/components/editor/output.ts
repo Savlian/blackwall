@@ -2,7 +2,7 @@ import { Descendant, Editor, Text } from 'slate';
 import { MatrixClient } from 'matrix-js-sdk';
 import { sanitizeText } from '../../utils/sanitize';
 import { BlockType } from './types';
-import { CustomElement, InlineElement } from './slate';
+import { CustomElement } from './slate';
 import {
   parseBlockMD,
   parseInlineMD,
@@ -207,20 +207,25 @@ export const getMentions = (mx: MatrixClient, roomId: string, editor: Editor): M
     users: new Set(),
   };
 
-  editor.children.forEach((node: Descendant): void => {
-    if ('type' in node && node.type === BlockType.Paragraph) {
-      node.children?.forEach((child: InlineElement): void => {
-        if ('type' in child && child.type === BlockType.Mention) {
-          const mention = child;
-          if (mention.id === getCanonicalAliasOrRoomId(mx, roomId)) {
-            mentionData.room = true;
-          } else if (isUserId(mention.id) && mention.id !== mx.getUserId()) {
-            mentionData.users.add(mention.id);
-          }
-        }
-      });
+  const parseMentions = (node: Descendant): void => {
+    if (Text.isText(node)) return;
+    if (node.type === BlockType.CodeBlock) return;
+
+    if (node.type === BlockType.Mention) {
+      if (node.id === getCanonicalAliasOrRoomId(mx, roomId)) {
+        mentionData.room = true;
+      }
+      if (isUserId(node.id) && node.id !== mx.getUserId()) {
+        mentionData.users.add(node.id);
+      }
+
+      return;
     }
-  });
+
+    node.children.forEach(parseMentions);
+  };
+
+  editor.children.forEach(parseMentions);
 
   return mentionData;
 };
