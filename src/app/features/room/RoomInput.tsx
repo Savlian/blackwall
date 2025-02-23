@@ -10,9 +10,9 @@ import React, {
 } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
 import { isKeyHotkey } from 'is-hotkey';
-import { EventType, IContent, MsgType, RelationType, Room, IMentions } from 'matrix-js-sdk';
+import { EventType, IContent, MsgType, RelationType, Room } from 'matrix-js-sdk';
 import { ReactEditor } from 'slate-react';
-import {Transforms, Editor, Descendant} from 'slate';
+import { Transforms, Editor } from 'slate';
 import {
   Box,
   Dialog,
@@ -53,7 +53,7 @@ import {
   isEmptyEditor,
   getBeginCommand,
   trimCommand,
-  BlockType,
+  getMentions,
 } from '../../components/editor';
 import { EmojiBoard, EmojiBoardTab } from '../../components/emoji-board';
 import { UseStateProvider } from '../../components/UseStateProvider';
@@ -63,8 +63,6 @@ import {
   getImageInfo,
   getMxIdLocalPart,
   mxcUrlToHttp,
-  isUserId,
-  getCanonicalAliasOrRoomId,
 } from '../../utils/matrix';
 import { useTypingStatusUpdater } from '../../hooks/useTypingStatusUpdater';
 import { useFilePicker } from '../../hooks/useFilePicker';
@@ -105,6 +103,7 @@ import colorMXID from '../../../util/colorMXID';
 import {
   getAllParents,
   getMemberDisplayName,
+  getMentionContent,
   trimReplyFromBody,
 } from '../../utils/room';
 import { CommandAutocomplete } from './CommandAutocomplete';
@@ -114,7 +113,6 @@ import { useElementSizeObserver } from '../../hooks/useElementSizeObserver';
 import { ReplyLayout, ThreadIndicator } from '../../components/message';
 import { roomToParentsAtom } from '../../state/room/roomToParents';
 import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
-import { InlineElement } from '../../components/editor/slate';
 
 interface RoomInputProps {
   editor: Editor;
@@ -310,39 +308,20 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
 
       const body = plainText;
       const formattedBody = customHtml;
+      const mentionData = getMentions(mx, roomId, editor);
 
       const content: IContent = {
         msgtype: msgType,
         body,
       };
-      const userIdMentions = new Set<string>();
+
       if (replyDraft && replyDraft.userId !== mx.getUserId()) {
-        userIdMentions.add(replyDraft.userId);
-      }
-      let mentionsRoom = false;
-      editor.children.forEach((node: Descendant): void => {
-        if ("type" in node && node.type === BlockType.Paragraph) {
-          node.children?.forEach((child: InlineElement): void => {
-            if ("type" in child && child.type === BlockType.Mention) {
-              const mention = child;
-              if (mention.id === getCanonicalAliasOrRoomId(mx, roomId)) {
-                mentionsRoom = true
-              } else if (isUserId(mention.id) && mention.id !== mx.getUserId()) {
-                userIdMentions.add(mention.id)
-              }
-            }
-          })
-        }
-      })
-      const mMentions: IMentions = {}
-      if (userIdMentions.size > 0) {
-        mMentions.user_ids = Array.from(userIdMentions)
-      }
-      if(mentionsRoom) {
-        mMentions.room = true
+        mentionData.users.add(replyDraft.userId);
       }
 
-      content["m.mentions"] = mMentions
+      const mMentions = getMentionContent(Array.from(mentionData.users), mentionData.room);
+      content['m.mentions'] = mMentions;
+
       if (replyDraft || !customHtmlEqualsPlainText(formattedBody, body)) {
         content.format = 'org.matrix.custom.html';
         content.formatted_body = formattedBody;

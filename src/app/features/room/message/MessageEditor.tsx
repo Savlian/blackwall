@@ -19,9 +19,9 @@ import {
   as,
   config,
 } from 'folds';
-import {Descendant, Editor, Transforms} from 'slate';
+import { Editor, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
-import {IContent, IMentions, MatrixEvent, RelationType, Room} from 'matrix-js-sdk';
+import { IContent, IMentions, MatrixEvent, RelationType, Room } from 'matrix-js-sdk';
 import { isKeyHotkey } from 'is-hotkey';
 import {
   AUTOCOMPLETE_PREFIXES,
@@ -42,7 +42,8 @@ import {
   toMatrixCustomHTML,
   toPlainText,
   trimCustomHtml,
-  useEditor, BlockType,
+  useEditor,
+  getMentions,
 } from '../../../components/editor';
 import { useSetting } from '../../../state/hooks/settings';
 import { settingsAtom } from '../../../state/settings';
@@ -50,12 +51,8 @@ import { UseStateProvider } from '../../../components/UseStateProvider';
 import { EmojiBoard } from '../../../components/emoji-board';
 import { AsyncStatus, useAsyncCallback } from '../../../hooks/useAsyncCallback';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
-import { getEditedEvent, trimReplyFromFormattedBody } from '../../../utils/room';
+import { getEditedEvent, getMentionContent, trimReplyFromFormattedBody } from '../../../utils/room';
 import { mobileOrTablet } from '../../../utils/user-agent';
-import {InlineElement} from "../../../components/editor/slate";
-import {getCanonicalAliasOrRoomId, isUserId} from "../../../utils/matrix";
-import {useAtom} from "jotai/index";
-import {roomIdToReplyDraftAtomFamily} from "../../../state/room/roomInputDrafts";
 
 type MessageEditorProps = {
   roomId: string;
@@ -78,19 +75,23 @@ export const MessageEditor = as<'div', MessageEditorProps>(
 
     const getPrevBodyAndFormattedBody = useCallback((): [
       string | undefined,
-      string | undefined
+      string | undefined,
+      IMentions | undefined
     ] => {
       const evtId = mEvent.getId()!;
       const evtTimeline = room.getTimelineForEvent(evtId);
       const editedEvent =
         evtTimeline && getEditedEvent(evtId, mEvent, evtTimeline.getTimelineSet());
 
-      const { body, formatted_body: customHtml }: Record<string, unknown> =
-        editedEvent?.getContent()['m.new_content'] ?? mEvent.getContent();
+      const content: IContent = editedEvent?.getContent()['m.new_content'] ?? mEvent.getContent();
+      const { body, formatted_body: customHtml }: Record<string, unknown> = content;
+
+      const mMentions: IMentions | undefined = content['m.mentions'];
 
       return [
         typeof body === 'string' ? body : undefined,
         typeof customHtml === 'string' ? customHtml : undefined,
+        mMentions,
       ];
     }, [room, mEvent]);
 
@@ -105,7 +106,7 @@ export const MessageEditor = as<'div', MessageEditorProps>(
           })
         );
 
-        const [prevBody, prevCustomHtml] = getPrevBodyAndFormattedBody();
+        const [prevBody, prevCustomHtml, prevMentions] = getPrevBodyAndFormattedBody();
 
         if (plainText === '') return undefined;
         if (prevBody) {
@@ -126,35 +127,14 @@ export const MessageEditor = as<'div', MessageEditorProps>(
           body: plainText,
         };
 
-        const userIdMentions = new Set<string>();
-        // if (replyDraft && replyDraft.userId !== mx.getUserId()) {
-        //   userIdMentions.add(replyDraft.userId);
-        // }
-        // TODO: Get the original message's reply to pick up the mention
-        let mentionsRoom = false;
-        editor.children.forEach((node: Descendant): void => {
-          if ("type" in node && node.type === BlockType.Paragraph) {
-            node.children?.forEach((child: InlineElement): void => {
-              if ("type" in child && child.type === BlockType.Mention) {
-                const mention = child;
-                if (mention.id === getCanonicalAliasOrRoomId(mx, roomId)) {
-                  mentionsRoom = true
-                } else if (isUserId(mention.id) && mention.id !== mx.getUserId()) {
-                  userIdMentions.add(mention.id)
-                }
-              }
-            })
-          }
-        })
-        const mMentions: IMentions = {}
-        if (userIdMentions.size > 0) {
-          mMentions.user_ids = Array.from(userIdMentions)
-        }
-        if(mentionsRoom) {
-          mMentions.room = true
-        }
+        const mentionData = getMentions(mx, roomId, editor);
 
-        newContent["m.mentions"] = mMentions
+        prevMentions?.user_ids?.forEach((prevMentionId) => {
+          mentionData.users.add(prevMentionId);
+        });
+
+        const mMentions = getMentionContent(Array.from(mentionData.users), mentionData.room);
+        newContent['m.mentions'] = mMentions;
 
         if (!customHtmlEqualsPlainText(customHtml, plainText)) {
           newContent.format = 'org.matrix.custom.html';

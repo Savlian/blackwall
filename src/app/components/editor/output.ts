@@ -1,8 +1,8 @@
-import { Descendant, Text } from 'slate';
-
+import { Descendant, Editor, Text } from 'slate';
+import { MatrixClient } from 'matrix-js-sdk';
 import { sanitizeText } from '../../utils/sanitize';
 import { BlockType } from './types';
-import { CustomElement } from './slate';
+import { CustomElement, InlineElement } from './slate';
 import {
   parseBlockMD,
   parseInlineMD,
@@ -11,6 +11,7 @@ import {
 } from '../../plugins/markdown';
 import { findAndReplace } from '../../utils/findAndReplace';
 import { sanitizeForRegex } from '../../utils/regex';
+import { getCanonicalAliasOrRoomId, isUserId } from '../../utils/matrix';
 
 export type OutputOptions = {
   allowTextFormatting?: boolean;
@@ -194,4 +195,32 @@ export const trimCommand = (cmdName: string, str: string) => {
   const match = str.match(cmdRegX);
   if (!match) return str;
   return str.slice(match[0].length);
+};
+
+export type MentionsData = {
+  room: boolean;
+  users: Set<string>;
+};
+export const getMentions = (mx: MatrixClient, roomId: string, editor: Editor): MentionsData => {
+  const mentionData: MentionsData = {
+    room: false,
+    users: new Set(),
+  };
+
+  editor.children.forEach((node: Descendant): void => {
+    if ('type' in node && node.type === BlockType.Paragraph) {
+      node.children?.forEach((child: InlineElement): void => {
+        if ('type' in child && child.type === BlockType.Mention) {
+          const mention = child;
+          if (mention.id === getCanonicalAliasOrRoomId(mx, roomId)) {
+            mentionData.room = true;
+          } else if (isUserId(mention.id) && mention.id !== mx.getUserId()) {
+            mentionData.users.add(mention.id);
+          }
+        }
+      });
+    }
+  });
+
+  return mentionData;
 };
