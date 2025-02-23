@@ -64,7 +64,7 @@ import {
   getMxIdLocalPart,
   mxcUrlToHttp,
   isUserId,
-  getCanonicalAliasOrRoomId
+  getCanonicalAliasOrRoomId,
 } from '../../utils/matrix';
 import { useTypingStatusUpdater } from '../../hooks/useTypingStatusUpdater';
 import { useFilePicker } from '../../hooks/useFilePicker';
@@ -163,14 +163,28 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
         const safeFiles = files.map(safeFile);
         const fileItems: TUploadItem[] = [];
 
-        if (mx.isRoomEncrypted(roomId)) {
+        if (room.hasEncryptionStateEvent()) {
           const encryptFiles = fulfilledPromiseSettledResult(
             await Promise.allSettled(safeFiles.map((f) => encryptFile(f)))
           );
-          encryptFiles.forEach((ef) => fileItems.push(ef));
+          encryptFiles.forEach((ef) =>
+            fileItems.push({
+              ...ef,
+              metadata: {
+                markedAsSpoiler: false,
+              },
+            })
+          );
         } else {
           safeFiles.forEach((f) =>
-            fileItems.push({ file: f, originalFile: f, encInfo: undefined })
+            fileItems.push({
+              file: f,
+              originalFile: f,
+              encInfo: undefined,
+              metadata: {
+                markedAsSpoiler: false,
+              },
+            })
           );
         }
         setSelectedFiles({
@@ -178,7 +192,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
           item: fileItems,
         });
       },
-      [setSelectedFiles, roomId, mx]
+      [setSelectedFiles, room]
     );
     const pickFile = useFilePicker(handleFiles, true);
     const handlePaste = useFilePasteHandler(handleFiles);
@@ -254,7 +268,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
       uploadBoardHandlers.current?.handleSend();
 
       const commandName = getBeginCommand(editor);
-      let plainText = toPlainText(editor.children).trim();
+      let plainText = toPlainText(editor.children, isMarkdown).trim();
       let customHtml = trimCustomHtml(
         toMatrixCustomHTML(editor.children, {
           allowTextFormatting: true,
@@ -434,9 +448,15 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
                       <UploadCardRenderer
                         // eslint-disable-next-line react/no-array-index-key
                         key={index}
-                        file={fileItem.file}
                         isEncrypted={!!fileItem.encInfo}
-                        uploadAtom={roomUploadAtomFamily(fileItem.file)}
+                        fileItem={fileItem}
+                        setMetadata={(metadata) =>
+                          setSelectedFiles({
+                            type: 'REPLACE',
+                            item: fileItem,
+                            replacement: { ...fileItem, metadata },
+                          })
+                        }
                         onRemove={handleRemoveUpload}
                       />
                     ))}

@@ -31,7 +31,9 @@ export const AbsoluteFooter = style([
   },
 ]);
 
-export const ModalWide = style({
-  minWidth: '85vw',
-  minHeight: '90vh',
-});
+export const Blur = style([
+  DefaultReset,
+  {
+    filter: 'blur(44px)',
+  },
+]);

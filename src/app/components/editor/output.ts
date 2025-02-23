@@ -3,8 +3,14 @@ import { Descendant, Text } from 'slate';
 import { sanitizeText } from '../../utils/sanitize';
 import { BlockType } from './types';
 import { CustomElement } from './slate';
-import { parseBlockMD, parseInlineMD } from '../../plugins/markdown';
+import {
+  parseBlockMD,
+  parseInlineMD,
+  unescapeMarkdownBlockSequences,
+  unescapeMarkdownInlineSequences,
+} from '../../plugins/markdown';
 import { findAndReplace } from '../../utils/findAndReplace';
+import { sanitizeForRegex } from '../../utils/regex';
 
 export type OutputOptions = {
   allowTextFormatting?: boolean;
@@ -18,7 +24,7 @@ const textToCustomHtml = (node: Text, opts: OutputOptions): string => {
     if (node.bold) string = `<strong>${string}</strong>`;
     if (node.italic) string = `<i>${string}</i>`;
     if (node.underline) string = `<u>${string}</u>`;
-    if (node.strikeThrough) string = `<del>${string}</del>`;
+    if (node.strikeThrough) string = `<s>${string}</s>`;
     if (node.code) string = `<code>${string}</code>`;
     if (node.spoiler) string = `<span data-mx-spoiler>${string}</span>`;
   }
@@ -101,7 +107,8 @@ export const toMatrixCustomHTML = (
         allowBlockMarkdown: false,
       })
         .replace(/<br\/>$/, '\n')
-        .replace(/^&gt;/, '>');
+        .replace(/^(\\*)&gt;/, '$1>');
+
       markdownLines += line;
       if (index === targetNodes.length - 1) {
         return parseBlockMD(markdownLines, ignoreHTMLParseInlineMD);
@@ -156,11 +163,14 @@ const elementToPlainText = (node: CustomElement, children: string): string => {
   }
 };
 
-export const toPlainText = (node: Descendant | Descendant[]): string => {
-  if (Array.isArray(node)) return node.map((n) => toPlainText(n)).join('');
-  if (Text.isText(node)) return node.text;
+export const toPlainText = (node: Descendant | Descendant[], isMarkdown: boolean): string => {
+  if (Array.isArray(node)) return node.map((n) => toPlainText(n, isMarkdown)).join('');
+  if (Text.isText(node))
+    return isMarkdown
+      ? unescapeMarkdownBlockSequences(node.text, unescapeMarkdownInlineSequences)
+      : node.text;
 
-  const children = node.children.map((n) => toPlainText(n)).join('');
+  const children = node.children.map((n) => toPlainText(n, isMarkdown)).join('');
   return elementToPlainText(node, children);
 };
 
@@ -179,7 +189,7 @@ export const customHtmlEqualsPlainText = (customHtml: string, plain: string): bo
 export const trimCustomHtml = (customHtml: string) => customHtml.replace(/<br\/>$/g, '').trim();
 
 export const trimCommand = (cmdName: string, str: string) => {
-  const cmdRegX = new RegExp(`^(\\s+)?(\\/${cmdName})([^\\S\n]+)?`);
+  const cmdRegX = new RegExp(`^(\\s+)?(\\/${sanitizeForRegex(cmdName)})([^\\S\n]+)?`);
 
   const match = str.match(cmdRegX);
   if (!match) return str;

@@ -96,7 +96,7 @@ export const MessageEditor = as<'div', MessageEditorProps>(
 
     const [saveState, save] = useAsyncCallback(
       useCallback(async () => {
-        const plainText = toPlainText(editor.children).trim();
+        const plainText = toPlainText(editor.children, isMarkdown).trim();
         const customHtml = trimCustomHtml(
           toMatrixCustomHTML(editor.children, {
             allowTextFormatting: true,
@@ -226,8 +226,8 @@ export const MessageEditor = as<'div', MessageEditorProps>(
 
       const initialValue =
         typeof customHtml === 'string'
-          ? htmlToEditorInput(customHtml)
-          : plainToEditorInput(typeof body === 'string' ? body : '');
+          ? htmlToEditorInput(customHtml, isMarkdown)
+          : plainToEditorInput(typeof body === 'string' ? body : '', isMarkdown);
 
       Transforms.select(editor, {
         anchor: Editor.start(editor, []),
@@ -236,7 +236,7 @@ export const MessageEditor = as<'div', MessageEditorProps>(
 
       editor.insertFragment(initialValue);
       if (!mobileOrTablet()) ReactEditor.focus(editor);
-    }, [editor, getPrevBodyAndFormattedBody]);
+    }, [editor, getPrevBodyAndFormattedBody, isMarkdown]);
 
     useEffect(() => {
       if (saveState.status === AsyncStatus.Success) {
