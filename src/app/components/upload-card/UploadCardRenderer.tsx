@@ -1,5 +1,17 @@
 import React, { useEffect } from 'react';
-import { Chip, Icon, IconButton, Icons, Text, Tooltip, TooltipProvider, color } from 'folds';
+import {
+  Box,
+  Chip,
+  Icon,
+  IconButton,
+  Icons,
+  Text,
+  Tooltip,
+  TooltipProvider,
+  color,
+  config,
+  toRem,
+} from 'folds';
 import { UploadCard, UploadCardError, UploadCardProgress } from './UploadCard';
 import { UploadStatus, UploadSuccess, useBindUploadAtom } from '../../state/upload';
 import { useMatrixClient } from '../../hooks/useMatrixClient';
@@ -10,6 +22,33 @@ import {
   TUploadItem,
   TUploadMetadata,
 } from '../../state/room/roomInputDrafts';
+import { useObjectURL } from '../../hooks/useObjectURL';
+
+function IMagePreview({ fileItem }: { fileItem: TUploadItem }) {
+  const { originalFile } = fileItem;
+  const fileUrl = useObjectURL(originalFile);
+
+  return fileUrl ? (
+    <Box
+      style={{
+        borderRadius: config.radii.R300,
+        overflow: 'hidden',
+        backgroundColor: 'black',
+      }}
+    >
+      <img
+        style={{
+          objectFit: 'contain',
+          width: '100%',
+          height: toRem(152),
+          filter: fileItem.metadata.markedAsSpoiler ? 'blur(44px)' : undefined,
+        }}
+        src={fileUrl}
+        alt={originalFile.name}
+      />
+    </Box>
+  ) : null;
+}
 
 type UploadCardRendererProps = {
   isEncrypted?: boolean;
@@ -104,6 +143,7 @@ export function UploadCardRenderer({
       }
       bottom={
         <>
+          {fileItem.originalFile.type.startsWith('image') && <IMagePreview fileItem={fileItem} />}
           {upload.status === UploadStatus.Idle && (
             <UploadCardProgress sentBytes={0} totalBytes={file.size} />
           )}
