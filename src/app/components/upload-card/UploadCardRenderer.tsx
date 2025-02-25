@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Chip, Icon, IconButton, Icons, Text, Tooltip, TooltipProvider, color } from 'folds';
 import { UploadCard, UploadCardError, UploadCardProgress } from './UploadCard';
 import { UploadStatus, UploadSuccess, useBindUploadAtom } from '../../state/upload';
@@ -14,7 +14,7 @@ import {
 type UploadCardRendererProps = {
   isEncrypted?: boolean;
   fileItem: TUploadItem;
-  setMetadata: (metadata: TUploadMetadata) => void;
+  setMetadata: (fileItem: TUploadItem, metadata: TUploadMetadata) => void;
   onRemove: (file: TUploadContent) => void;
   onComplete?: (upload: UploadSuccess) => void;
 };
@@ -33,9 +33,9 @@ export function UploadCardRenderer({
 
   if (upload.status === UploadStatus.Idle) startUpload();
 
-  const toggleSpoiler = useCallback(() => {
-    setMetadata({ ...metadata, markedAsSpoiler: !metadata.markedAsSpoiler });
-  }, [setMetadata, metadata]);
+  const toggleSpoiler = () => {
+    setMetadata(fileItem, { ...metadata, markedAsSpoiler: !metadata.markedAsSpoiler });
+  };
 
   const removeUpload = () => {
     cancelUpload();
