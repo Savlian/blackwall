@@ -273,8 +273,12 @@ export function AccountDataEditor({ type, requestClose }: AccountDataEditorProps
   const [edit, setEdit] = useState(!type);
 
   const closeEdit = useCallback(() => {
+    if (!type) {
+      requestClose();
+      return;
+    }
     setEdit(false);
-  }, []);
+  }, [type, requestClose]);
 
   const handleSave = useCallback((info: AccountDataInfo) => {
     setData(info);
