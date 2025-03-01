@@ -53,6 +53,7 @@ import {
   isEmptyEditor,
   getBeginCommand,
   trimCommand,
+  getMentions,
 } from '../../components/editor';
 import { EmojiBoard, EmojiBoardTab } from '../../components/emoji-board';
 import { UseStateProvider } from '../../components/UseStateProvider';
@@ -69,6 +70,7 @@ import { useFilePasteHandler } from '../../hooks/useFilePasteHandler';
 import { useFileDropZone } from '../../hooks/useFileDrop';
 import {
   TUploadItem,
+  TUploadMetadata,
   roomIdToMsgDraftAtomFamily,
   roomIdToReplyDraftAtomFamily,
   roomIdToUploadItemsAtomFamily,
@@ -102,12 +104,9 @@ import colorMXID from '../../../util/colorMXID';
 import {
   getAllParents,
   getMemberDisplayName,
-  parseReplyBody,
-  parseReplyFormattedBody,
+  getMentionContent,
   trimReplyFromBody,
-  trimReplyFromFormattedBody,
 } from '../../utils/room';
-import { sanitizeText } from '../../utils/sanitize';
 import { CommandAutocomplete } from './CommandAutocomplete';
 import { Command, SHRUG, TABLEFLIP, UNFLIP, useCommands } from '../../hooks/useCommands';
 import { mobileOrTablet } from '../../utils/user-agent';
@@ -128,6 +127,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
     const useAuthentication = useMediaAuthentication();
     const [enterForNewline] = useSetting(settingsAtom, 'enterForNewline');
     const [isMarkdown] = useSetting(settingsAtom, 'isMarkdown');
+    const [hideActivity] = useSetting(settingsAtom, 'hideActivity');
     const commands = useCommands(mx, room);
     const emojiBtnRef = useRef<HTMLButtonElement>(null);
     const roomToParents = useAtomValue(roomToParentsAtom);
@@ -167,10 +167,24 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
           const encryptFiles = fulfilledPromiseSettledResult(
             await Promise.allSettled(safeFiles.map((f) => encryptFile(f)))
           );
-          encryptFiles.forEach((ef) => fileItems.push(ef));
+          encryptFiles.forEach((ef) =>
+            fileItems.push({
+              ...ef,
+              metadata: {
+                markedAsSpoiler: false,
+              },
+            })
+          );
         } else {
           safeFiles.forEach((f) =>
-            fileItems.push({ file: f, originalFile: f, encInfo: undefined })
+            fileItems.push({
+              file: f,
+              originalFile: f,
+              encInfo: undefined,
+              metadata: {
+                markedAsSpoiler: false,
+              },
+            })
           );
         }
         setSelectedFiles({
@@ -206,6 +220,17 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
         resetEditorHistory(editor);
       },
       [roomId, editor, setMsgDraft]
+    );
+
+    const handleFileMetadata = useCallback(
+      (fileItem: TUploadItem, metadata: TUploadMetadata) => {
+        setSelectedFiles({
+          type: 'REPLACE',
+          item: fileItem,
+          replacement: { ...fileItem, metadata },
+        });
+      },
+      [setSelectedFiles]
     );
 
     const handleRemoveUpload = useCallback(
@@ -254,8 +279,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
       uploadBoardHandlers.current?.handleSend();
 
       const commandName = getBeginCommand(editor);
-
-      let plainText = toPlainText(editor.children).trim();
+      let plainText = toPlainText(editor.children, isMarkdown).trim();
       let customHtml = trimCustomHtml(
         toMatrixCustomHTML(editor.children, {
           allowTextFormatting: true,
@@ -295,25 +319,22 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
 
       if (plainText === '') return;
 
-      let body = plainText;
-      let formattedBody = customHtml;
-      if (replyDraft) {
-        body = parseReplyBody(replyDraft.userId, trimReplyFromBody(replyDraft.body)) + body;
-        formattedBody =
-          parseReplyFormattedBody(
-            roomId,
-            replyDraft.userId,
-            replyDraft.eventId,
-            replyDraft.formattedBody
-              ? trimReplyFromFormattedBody(replyDraft.formattedBody)
-              : sanitizeText(replyDraft.body)
-          ) + formattedBody;
-      }
+      const body = plainText;
+      const formattedBody = customHtml;
+      const mentionData = getMentions(mx, roomId, editor);
 
       const content: IContent = {
         msgtype: msgType,
         body,
       };
+
+      if (replyDraft && replyDraft.userId !== mx.getUserId()) {
+        mentionData.users.add(replyDraft.userId);
+      }
+
+      const mMentions = getMentionContent(Array.from(mentionData.users), mentionData.room);
+      content['m.mentions'] = mMentions;
+
       if (replyDraft || !customHtmlEqualsPlainText(formattedBody, body)) {
         content.format = 'org.matrix.custom.html';
         content.formatted_body = formattedBody;
@@ -345,10 +366,14 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
         }
         if (isKeyHotkey('escape', evt)) {
           evt.preventDefault();
+          if (autocompleteQuery) {
+            setAutocompleteQuery(undefined);
+            return;
+          }
           setReplyDraft(undefined);
         }
       },
-      [submit, setReplyDraft, enterForNewline]
+      [submit, setReplyDraft, enterForNewline, autocompleteQuery]
     );
 
     const handleKeyUp: KeyboardEventHandler = useCallback(
@@ -358,7 +383,9 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
           return;
         }
 
-        sendTypingStatus(!isEmptyEditor(editor));
+        if (!hideActivity) {
+          sendTypingStatus(!isEmptyEditor(editor));
+        }
 
         const prevWordRange = getPrevWorldRange(editor);
         const query = prevWordRange
@@ -366,7 +393,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
           : undefined;
         setAutocompleteQuery(query);
       },
-      [editor, sendTypingStatus]
+      [editor, sendTypingStatus, hideActivity]
     );
 
     const handleCloseAutocomplete = useCallback(() => {
@@ -420,7 +447,8 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
                         // eslint-disable-next-line react/no-array-index-key
                         key={index}
                         isEncrypted={!!fileItem.encInfo}
-                        uploadAtom={roomUploadAtomFamily(fileItem.file)}
+                        fileItem={fileItem}
+                        setMetadata={handleFileMetadata}
                         onRemove={handleRemoveUpload}
                       />
                     ))}
