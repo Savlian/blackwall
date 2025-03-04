@@ -111,9 +111,10 @@ export const LinkRule: InlineMDRule = {
   },
 };
 
-const INLINE_SEQUENCE_SET = '[*_~`|]';
+export const INLINE_SEQUENCE_SET = '[*_~`|]';
+export const CAP_INLINE_SEQ = `${URL_NEG_LB}${INLINE_SEQUENCE_SET}`;
 const ESC_SEQ_1 = `\\\\(${INLINE_SEQUENCE_SET})`;
-export const ESC_REG_1 = new RegExp(`${URL_NEG_LB}${ESC_SEQ_1}`);
+const ESC_REG_1 = new RegExp(`${URL_NEG_LB}${ESC_SEQ_1}`);
 export const EscapeRule: InlineMDRule = {
   match: (text) => text.match(ESC_REG_1),
   html: (parse, match) => {
