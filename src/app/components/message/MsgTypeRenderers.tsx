@@ -243,8 +243,24 @@ export function MVideo({ content, renderAsFile, renderVideoContent, outlined }: 
 
   const height = scaleYDimension(videoInfo.w || 400, 400, videoInfo.h || 400);
 
+  const filename = content.filename ?? content.body ?? 'Video';
+
   return (
     <Attachment outlined={outlined}>
+      <AttachmentHeader>
+        <FileHeader
+          body={filename}
+          mimeType={safeMimeType}
+          after={
+            <FileDownloadButton
+              filename={filename}
+              url={mxcUrl}
+              mimeType={safeMimeType}
+              encInfo={content.file}
+            />
+          }
+        />
+      </AttachmentHeader>
       <AttachmentBox
         style={{
           height: toRem(height < 48 ? 48 : height),
