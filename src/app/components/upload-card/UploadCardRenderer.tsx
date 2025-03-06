@@ -66,7 +66,7 @@ export function UploadCardRenderer({
               <Text size="B300">Retry</Text>
             </Chip>
           )}
-          {file.type.startsWith('image') && (
+          {(file.type.startsWith('image') || file.type.startsWith('video')) && (
             <TooltipProvider
               tooltip={
                 <Tooltip variant="SurfaceVariant">
