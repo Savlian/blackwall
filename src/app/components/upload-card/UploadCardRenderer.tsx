@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import { Box, Chip, Icon, IconButton, Icons, Text, color, config, toRem } from 'folds';
 import { UploadCard, UploadCardError, UploadCardProgress } from './UploadCard';
 import { UploadStatus, UploadSuccess, useBindUploadAtom } from '../../state/upload';
@@ -12,8 +12,17 @@ import {
 } from '../../state/room/roomInputDrafts';
 import { useObjectURL } from '../../hooks/useObjectURL';
 
-type ImagePreviewProps = { fileItem: TUploadItem; onSpoiler: (marked: boolean) => void };
-function ImagePreview({ fileItem, onSpoiler }: ImagePreviewProps) {
+type RenderPreviewProps = {
+  style: React.CSSProperties;
+  src: string;
+  alt: string;
+};
+type MediaPreviewProps = {
+  fileItem: TUploadItem;
+  onSpoiler: (marked: boolean) => void;
+  renderPreviewElement: (props: RenderPreviewProps) => ReactNode;
+};
+function MediaPreview({ fileItem, onSpoiler, renderPreviewElement }: MediaPreviewProps) {
   const { originalFile, metadata } = fileItem;
   const fileUrl = useObjectURL(originalFile);
 
@@ -26,16 +35,16 @@ function ImagePreview({ fileItem, onSpoiler }: ImagePreviewProps) {
         position: 'relative',
       }}
     >
-      <img
-        style={{
+      {renderPreviewElement({
+        style: {
           objectFit: 'contain',
           width: '100%',
           height: toRem(152),
           filter: fileItem.metadata.markedAsSpoiler ? 'blur(44px)' : undefined,
-        }}
-        src={fileUrl}
-        alt={originalFile.name}
-      />
+        },
+        src: fileUrl,
+        alt: originalFile.name,
+      })}
       <Box
         justifyContent="End"
         style={{
@@ -129,7 +138,19 @@ export function UploadCardRenderer({
       bottom={
         <>
           {fileItem.originalFile.type.startsWith('image') && (
-            <ImagePreview fileItem={fileItem} onSpoiler={handleSpoiler} />
+            <MediaPreview
+              fileItem={fileItem}
+              onSpoiler={handleSpoiler}
+              renderPreviewElement={(p) => <img {...p} alt={p.alt} />}
+            />
+          )}
+          {fileItem.originalFile.type.startsWith('video') && (
+            <MediaPreview
+              fileItem={fileItem}
+              onSpoiler={handleSpoiler}
+              // eslint-disable-next-line jsx-a11y/media-has-caption
+              renderPreviewElement={(p) => <video {...p} />}
+            />
           )}
           {upload.status === UploadStatus.Idle && (
             <UploadCardProgress sentBytes={0} totalBytes={file.size} />
