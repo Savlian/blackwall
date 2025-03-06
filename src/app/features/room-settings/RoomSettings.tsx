@@ -1,32 +1,25 @@
 import React, { useMemo, useState } from 'react';
-import { Room } from 'matrix-js-sdk';
 import { useAtomValue } from 'jotai';
 import { Avatar, Box, config, Icon, IconButton, Icons, IconSrc, MenuItem, Text } from 'folds';
+import { JoinRule } from 'matrix-js-sdk';
 import { PageNav, PageNavContent, PageNavHeader, PageRoot } from '../../components/page';
 import { ScreenSize, useScreenSizeContext } from '../../hooks/useScreenSize';
 import { useMatrixClient } from '../../hooks/useMatrixClient';
 import { mxcUrlToHttp } from '../../utils/matrix';
 import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
-import { useRoomAvatar, useRoomName } from '../../hooks/useRoomMeta';
+import { useRoomAvatar, useRoomJoinRule, useRoomName } from '../../hooks/useRoomMeta';
 import { mDirectAtom } from '../../state/mDirectList';
-import { RoomAvatar } from '../../components/room-avatar';
+import { RoomAvatar, RoomIcon } from '../../components/room-avatar';
 import { General } from './general';
-import { nameInitials } from '../../utils/common';
 import { Members } from './members';
 import { EmojisStickers } from './emojis-stickers';
 import { Permissions } from './permissions';
 import { Security } from './security';
-
-export enum RoomSettingsPages {
-  GeneralPage,
-  MembersPage,
-  EmojisStickersPage,
-  PermissionsPage,
-  SecurityPage,
-}
+import { RoomSettingsPage } from '../../state/roomSettings';
+import { useRoom } from '../../hooks/useRoom';
 
 type RoomSettingsMenuItem = {
-  page: RoomSettingsPages;
+  page: RoomSettingsPage;
   name: string;
   icon: IconSrc;
 };
@@ -35,27 +28,27 @@ const useRoomSettingsMenuItems = (): RoomSettingsMenuItem[] =>
   useMemo(
     () => [
       {
-        page: RoomSettingsPages.GeneralPage,
+        page: RoomSettingsPage.GeneralPage,
         name: 'General',
         icon: Icons.Setting,
       },
       {
-        page: RoomSettingsPages.MembersPage,
+        page: RoomSettingsPage.MembersPage,
         name: 'Members',
         icon: Icons.User,
       },
       {
-        page: RoomSettingsPages.EmojisStickersPage,
+        page: RoomSettingsPage.EmojisStickersPage,
         name: 'Emojis & Stickers',
         icon: Icons.Smile,
       },
       {
-        page: RoomSettingsPages.PermissionsPage,
+        page: RoomSettingsPage.PermissionsPage,
         name: 'Permissions',
         icon: Icons.ShieldUser,
       },
       {
-        page: RoomSettingsPages.SecurityPage,
+        page: RoomSettingsPage.SecurityPage,
         name: 'Security',
         icon: Icons.Lock,
       },
@@ -64,26 +57,27 @@ const useRoomSettingsMenuItems = (): RoomSettingsMenuItem[] =>
   );
 
 type RoomSettingsProps = {
-  room: Room;
-  initialPage?: RoomSettingsPages;
+  initialPage?: RoomSettingsPage;
   requestClose: () => void;
 };
-export function RoomSettings({ room, initialPage, requestClose }: RoomSettingsProps) {
+export function RoomSettings({ initialPage, requestClose }: RoomSettingsProps) {
+  const room = useRoom();
   const mx = useMatrixClient();
   const useAuthentication = useMediaAuthentication();
   const mDirects = useAtomValue(mDirectAtom);
 
   const roomAvatar = useRoomAvatar(room, mDirects.has(room.roomId));
   const roomName = useRoomName(room);
+  const joinRuleContent = useRoomJoinRule(room);
 
   const avatarUrl = roomAvatar
     ? mxcUrlToHttp(mx, roomAvatar, useAuthentication, 96, 96, 'crop') ?? undefined
     : undefined;
 
   const screenSize = useScreenSizeContext();
-  const [activePage, setActivePage] = useState<RoomSettingsPages | undefined>(() => {
+  const [activePage, setActivePage] = useState<RoomSettingsPage | undefined>(() => {
     if (initialPage) return initialPage;
-    return screenSize === ScreenSize.Mobile ? undefined : RoomSettingsPages.GeneralPage;
+    return screenSize === ScreenSize.Mobile ? undefined : RoomSettingsPage.GeneralPage;
   });
   const menuItems = useRoomSettingsMenuItems();
 
@@ -108,9 +102,11 @@ export function RoomSettings({ room, initialPage, requestClose }: RoomSettingsPr
                     src={avatarUrl}
                     alt={roomName}
                     renderFallback={() => (
-                      <Text as="span" size="H6">
-                        {nameInitials(roomName)}
-                      </Text>
+                      <RoomIcon
+                        size="50"
+                        joinRule={joinRuleContent?.join_rule ?? JoinRule.Invite}
+                        filled
+                      />
                     )}
                   />
                 </Avatar>
@@ -156,19 +152,19 @@ export function RoomSettings({ room, initialPage, requestClose }: RoomSettingsPr
         )
       }
     >
-      {activePage === RoomSettingsPages.GeneralPage && (
+      {activePage === RoomSettingsPage.GeneralPage && (
         <General requestClose={handlePageRequestClose} />
       )}
-      {activePage === RoomSettingsPages.MembersPage && (
+      {activePage === RoomSettingsPage.MembersPage && (
         <Members requestClose={handlePageRequestClose} />
       )}
-      {activePage === RoomSettingsPages.EmojisStickersPage && (
+      {activePage === RoomSettingsPage.EmojisStickersPage && (
         <EmojisStickers requestClose={handlePageRequestClose} />
       )}
-      {activePage === RoomSettingsPages.PermissionsPage && (
+      {activePage === RoomSettingsPage.PermissionsPage && (
         <Permissions requestClose={handlePageRequestClose} />
       )}
-      {activePage === RoomSettingsPages.SecurityPage && (
+      {activePage === RoomSettingsPage.SecurityPage && (
         <Security requestClose={handlePageRequestClose} />
       )}
     </PageRoot>

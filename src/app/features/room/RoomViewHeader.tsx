@@ -57,8 +57,7 @@ import { BackRouteHandler } from '../../components/BackRouteHandler';
 import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
 import { useRoomPinnedEvents } from '../../hooks/useRoomPinnedEvents';
 import { RoomPinMenu } from './room-pin-menu';
-import { Modal500 } from '../../components/Modal500';
-import { RoomSettings } from '../room-settings';
+import { useOpenRoomSettings } from '../../state/hooks/roomSettings';
 
 type RoomMenuProps = {
   room: Room;
@@ -71,8 +70,6 @@ const RoomMenu = forwardRef<HTMLDivElement, RoomMenuProps>(({ room, requestClose
   const powerLevels = usePowerLevelsContext();
   const { getPowerLevel, canDoAction } = usePowerLevelsAPI(powerLevels);
   const canInvite = canDoAction('invite', getPowerLevel(mx.getUserId() ?? ''));
-
-  const [settings, setSettings] = useState(false);
 
   const handleMarkAsRead = () => {
     markAsRead(mx, room.roomId, hideActivity);
@@ -91,8 +88,10 @@ const RoomMenu = forwardRef<HTMLDivElement, RoomMenuProps>(({ room, requestClose
     requestClose();
   };
 
-  const handleSettingsClose = () => {
-    setSettings(false);
+  const openSettings = useOpenRoomSettings();
+  const parentSpace = useSpaceOptionally();
+  const handleOpenSettings = () => {
+    openSettings(room.roomId, parentSpace?.roomId);
     requestClose();
   };
 
@@ -137,7 +136,7 @@ const RoomMenu = forwardRef<HTMLDivElement, RoomMenuProps>(({ room, requestClose
           </Text>
         </MenuItem>
         <MenuItem
-          onClick={() => setSettings(true)}
+          onClick={handleOpenSettings}
           size="300"
           after={<Icon size="100" src={Icons.Setting} />}
           radii="300"
@@ -146,11 +145,6 @@ const RoomMenu = forwardRef<HTMLDivElement, RoomMenuProps>(({ room, requestClose
             Room Settings
           </Text>
         </MenuItem>
-        {settings && (
-          <Modal500 requestClose={handleSettingsClose}>
-            <RoomSettings room={room} requestClose={handleSettingsClose} />
-          </Modal500>
-        )}
       </Box>
       <Line variant="Surface" size="300" />
       <Box direction="Column" gap="100" style={{ padding: config.space.S100 }}>
