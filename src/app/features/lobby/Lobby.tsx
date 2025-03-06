@@ -54,6 +54,93 @@ import { AccountDataEvent } from '../../../types/matrix/accountData';
 import { useRoomMembers } from '../../hooks/useRoomMembers';
 import { SpaceHierarchy } from './SpaceHierarchy';
 
+const useCanDropLobbyItem = (
+  space: Room,
+  roomsPowerLevels: Map<string, IPowerLevels>,
+  getRoom: (roomId: string) => Room | undefined,
+  canEditSpaceChild: (powerLevels: IPowerLevels) => boolean
+): CanDropCallback => {
+  const mx = useMatrixClient();
+
+  const canDropSpace: CanDropCallback = useCallback(
+    (item, container) => {
+      if (!('space' in container.item)) {
+        // can not drop around rooms.
+        // space can only be drop around other spaces
+        return false;
+      }
+
+      const containerSpaceId = space.roomId;
+
+      if (
+        getRoom(containerSpaceId) === undefined ||
+        !canEditSpaceChild(roomsPowerLevels.get(containerSpaceId) ?? {})
+      ) {
+        return false;
+      }
+
+      return true;
+    },
+    [space, roomsPowerLevels, getRoom, canEditSpaceChild]
+  );
+
+  const canDropRoom: CanDropCallback = useCallback(
+    (item, container) => {
+      const containerSpaceId =
+        'space' in container.item ? container.item.roomId : container.item.parentId;
+
+      const draggingOutsideSpace = item.parentId !== containerSpaceId;
+      const restrictedItem = mx.getRoom(item.roomId)?.getJoinRule() === JoinRule.Restricted;
+
+      // check and do not allow restricted room to be dragged outside
+      // current space if can't change `m.room.join_rules` `content.allow`
+      if (draggingOutsideSpace && restrictedItem) {
+        const itemPowerLevel = roomsPowerLevels.get(item.roomId) ?? {};
+        const userPLInItem = powerLevelAPI.getPowerLevel(
+          itemPowerLevel,
+          mx.getUserId() ?? undefined
+        );
+        const canChangeJoinRuleAllow = powerLevelAPI.canSendStateEvent(
+          itemPowerLevel,
+          StateEvent.RoomJoinRules,
+          userPLInItem
+        );
+        if (!canChangeJoinRuleAllow) {
+          return false;
+        }
+      }
+
+      if (
+        getRoom(containerSpaceId) === undefined ||
+        !canEditSpaceChild(roomsPowerLevels.get(containerSpaceId) ?? {})
+      ) {
+        return false;
+      }
+      return true;
+    },
+    [mx, getRoom, canEditSpaceChild, roomsPowerLevels]
+  );
+
+  const canDrop: CanDropCallback = useCallback(
+    (item, container): boolean => {
+      if (item.roomId === container.item.roomId || item.roomId === container.nextRoomId) {
+        // can not drop before or after itself
+        return false;
+      }
+
+      // if we are dragging a space
+      if ('space' in item) {
+        return canDropSpace(item, container);
+      }
+
+      return canDropRoom(item, container);
+    },
+    [canDropSpace, canDropRoom]
+  );
+
+  return canDrop;
+};
+
 export function Lobby() {
   const navigate = useNavigate();
   const mx = useMatrixClient();
@@ -150,60 +237,11 @@ export function Lobby() {
     )
   );
 
-  const canDrop: CanDropCallback = useCallback(
-    (item, container): boolean => {
-      const restrictedItem = mx.getRoom(item.roomId)?.getJoinRule() === JoinRule.Restricted;
-      if (item.roomId === container.item.roomId || item.roomId === container.nextRoomId) {
-        // can not drop before or after itself
-        return false;
-      }
-
-      if ('space' in item) {
-        if (!('space' in container.item)) return false;
-        const containerSpaceId = space.roomId;
-
-        if (
-          getRoom(containerSpaceId) === undefined ||
-          !canEditSpaceChild(roomsPowerLevels.get(containerSpaceId) ?? {})
-        ) {
-          return false;
-        }
-
-        return true;
-      }
-
-      const containerSpaceId =
-        'space' in container.item ? container.item.roomId : container.item.parentId;
-
-      const dropOutsideSpace = item.parentId !== containerSpaceId;
-
-      if (dropOutsideSpace && restrictedItem) {
-        // do not allow restricted room to drop outside
-        // current space if can't change join rule allow
-        const itemPowerLevel = roomsPowerLevels.get(item.roomId) ?? {};
-        const userPLInItem = powerLevelAPI.getPowerLevel(
-          itemPowerLevel,
-          mx.getUserId() ?? undefined
-        );
-        const canChangeJoinRuleAllow = powerLevelAPI.canSendStateEvent(
-          itemPowerLevel,
-          StateEvent.RoomJoinRules,
-          userPLInItem
-        );
-        if (!canChangeJoinRuleAllow) {
-          return false;
-        }
-      }
-
-      if (
-        getRoom(containerSpaceId) === undefined ||
-        !canEditSpaceChild(roomsPowerLevels.get(containerSpaceId) ?? {})
-      ) {
-        return false;
-      }
-      return true;
-    },
-    [getRoom, space.roomId, roomsPowerLevels, canEditSpaceChild, mx]
+  const canDrop: CanDropCallback = useCanDropLobbyItem(
+    space,
+    roomsPowerLevels,
+    getRoom,
+    canEditSpaceChild
   );
 
   const reorderSpace = useCallback(
