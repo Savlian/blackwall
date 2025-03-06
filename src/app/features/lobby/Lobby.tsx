@@ -297,6 +297,7 @@ export function Lobby() {
         'space' in containerItem ? containerItem.roomId : containerItem.parentId;
       const itemContent = item.content;
 
+      // remove from current space
       if (item.parentId !== containerParentId) {
         mx.sendStateEvent(item.parentId, StateEvent.SpaceChild as any, {}, item.roomId);
       }
