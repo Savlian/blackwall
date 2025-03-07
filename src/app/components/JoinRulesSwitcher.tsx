@@ -36,7 +36,7 @@ export const useRoomJoinRuleLabel = (): JoinRuleLabels =>
       [JoinRule.Invite]: 'Invite Only',
       [JoinRule.Knock]: 'Knock & Invite',
       [JoinRule.Restricted]: 'Via Space',
-      [JoinRule.Public]: 'Public Address',
+      [JoinRule.Public]: 'Via Address',
       [JoinRule.Private]: 'Invite Only',
     }),
     []

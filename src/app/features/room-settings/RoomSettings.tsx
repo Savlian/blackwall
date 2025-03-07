@@ -33,14 +33,14 @@ const useRoomSettingsMenuItems = (): RoomSettingsMenuItem[] =>
         icon: Icons.Setting,
       },
       {
+        page: RoomSettingsPage.SecurityPage,
+        name: 'Security',
+        icon: Icons.Lock,
+      },
+      {
         page: RoomSettingsPage.MembersPage,
         name: 'Members',
         icon: Icons.User,
-      },
-      {
-        page: RoomSettingsPage.EmojisStickersPage,
-        name: 'Emojis & Stickers',
-        icon: Icons.Smile,
       },
       {
         page: RoomSettingsPage.PermissionsPage,
@@ -48,9 +48,9 @@ const useRoomSettingsMenuItems = (): RoomSettingsMenuItem[] =>
         icon: Icons.ShieldUser,
       },
       {
-        page: RoomSettingsPage.SecurityPage,
-        name: 'Security',
-        icon: Icons.Lock,
+        page: RoomSettingsPage.EmojisStickersPage,
+        name: 'Emojis & Stickers',
+        icon: Icons.Smile,
       },
     ],
     []
