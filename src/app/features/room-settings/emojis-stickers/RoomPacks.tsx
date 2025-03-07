@@ -1,7 +1,22 @@
-import React, { useMemo } from 'react';
-import { Box, Text, Button, Icon, Icons, Avatar, AvatarImage, AvatarFallback } from 'folds';
+import React, { FormEventHandler, useCallback, useMemo } from 'react';
+import {
+  Box,
+  Text,
+  Button,
+  Icon,
+  Icons,
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+  toRem,
+  config,
+  Input,
+  Spinner,
+  color,
+} from 'folds';
+import { MatrixError } from 'matrix-js-sdk';
 import { SequenceCard } from '../../../components/sequence-card';
-import { ImagePack, ImageUsage } from '../../../plugins/custom-emoji';
+import { ImagePack, ImageUsage, PackContent } from '../../../plugins/custom-emoji';
 import { useRoom } from '../../../hooks/useRoom';
 import { useRoomImagePacks } from '../../../hooks/useImagePacks';
 import { LineClamp2 } from '../../../styles/Text.css';
@@ -12,6 +27,106 @@ import { mxcUrlToHttp } from '../../../utils/matrix';
 import { useMediaAuthentication } from '../../../hooks/useMediaAuthentication';
 import { usePowerLevels, usePowerLevelsAPI } from '../../../hooks/usePowerLevels';
 import { StateEvent } from '../../../../types/matrix/room';
+import { suffixRename } from '../../../utils/common';
+import { AsyncStatus, useAsyncCallback } from '../../../hooks/useAsyncCallback';
+import { useAlive } from '../../../hooks/useAlive';
+
+type CreatePackTileProps = {
+  packs: ImagePack[];
+  roomId: string;
+};
+function CreatePackTile({ packs, roomId }: CreatePackTileProps) {
+  const mx = useMatrixClient();
+  const alive = useAlive();
+
+  const [addState, addPack] = useAsyncCallback<void, MatrixError, [string, string]>(
+    useCallback(
+      async (stateKey, name) => {
+        const content: PackContent = {
+          pack: {
+            display_name: name,
+          },
+        };
+        await mx.sendStateEvent(roomId, StateEvent.PoniesRoomEmotes as any, content, stateKey);
+      },
+      [mx, roomId]
+    )
+  );
+
+  const creating = addState.status === AsyncStatus.Loading;
+
+  const handleSubmit: FormEventHandler<HTMLFormElement> = (evt) => {
+    evt.preventDefault();
+    if (creating) return;
+
+    const target = evt.target as HTMLFormElement | undefined;
+    const nameInput = target?.nameInput as HTMLInputElement | undefined;
+    if (!nameInput) return;
+    const name = nameInput?.value.trim();
+    if (!name) return;
+
+    let packKey = name.replace(/\s/g, '-');
+
+    const hasPack = (k: string): boolean => !!packs.find((pack) => pack.address?.stateKey === k);
+    if (hasPack(packKey)) {
+      packKey = suffixRename(packKey, hasPack);
+    }
+
+    addPack(packKey, name).then(() => {
+      if (alive()) {
+        nameInput.value = '';
+      }
+    });
+  };
+
+  return (
+    <SequenceCard
+      className={SequenceCardStyle}
+      variant="SurfaceVariant"
+      direction="Column"
+      gap="400"
+    >
+      <SettingTile
+        title="New Pack"
+        description="Add your own emoji and sticker pack to use in room."
+      >
+        <Box
+          style={{ marginTop: config.space.S200 }}
+          as="form"
+          onSubmit={handleSubmit}
+          gap="200"
+          alignItems="End"
+        >
+          <Box direction="Column" gap="100" grow="Yes">
+            <Text size="L400">Name</Text>
+            <Input
+              name="nameInput"
+              required
+              size="400"
+              variant="Secondary"
+              radii="300"
+              readOnly={creating}
+            />
+            {addState.status === AsyncStatus.Error && (
+              <Text style={{ color: color.Critical.Main }} size="T300">
+                {addState.error.message}
+              </Text>
+            )}
+          </Box>
+          <Button
+            variant="Success"
+            radii="300"
+            type="submit"
+            disabled={creating}
+            before={creating && <Spinner size="200" variant="Success" fill="Solid" />}
+          >
+            <Text size="B400">Create</Text>
+          </Button>
+        </Box>
+      </SettingTile>
+    </SequenceCard>
+  );
+}
 
 type RoomPacksProps = {
   onViewPack: (imagePack: ImagePack) => void;
@@ -51,27 +166,31 @@ export function RoomPacks({ onViewPack }: RoomPacksProps) {
           description={<span className={LineClamp2}>{pack.meta.attribution}</span>}
           before={
             <Box alignItems="Center" gap="300">
-              {/* {removed ? (
-                  <IconButton
-                    size="300"
-                    radii="Pill"
-                    variant="Critical"
-                    onClick={() => handleUndoRemove(address)}
-                    disabled={applyingChanges}
-                  >
-                    <Icon src={Icons.Plus} size="100" />
-                  </IconButton>
-                ) : (
-                  <IconButton
-                    size="300"
-                    radii="Pill"
-                    variant="Secondary"
-                    onClick={() => handleRemove(address)}
-                    disabled={applyingChanges}
-                  >
-                    <Icon src={Icons.Cross} size="100" />
-                  </IconButton>
-                )} */}
+              {/* {canEdit && (
+                <>
+                  {removed ? (
+                    <IconButton
+                      size="300"
+                      radii="Pill"
+                      variant="Critical"
+                      onClick={() => handleUndoRemove(address)}
+                      disabled={applyingChanges}
+                    >
+                      <Icon src={Icons.Plus} size="100" />
+                    </IconButton>
+                  ) : (
+                    <IconButton
+                      size="300"
+                      radii="Pill"
+                      variant="Secondary"
+                      onClick={() => handleRemove(address)}
+                      disabled={applyingChanges}
+                    >
+                      <Icon src={Icons.Cross} size="100" />
+                    </IconButton>
+                  )}
+                </>
+              )} */}
               <Avatar size="300" radii="300">
                 {avatarUrl ? (
                   <AvatarImage style={{ objectFit: 'contain' }} src={avatarUrl} />
@@ -105,14 +224,34 @@ export function RoomPacks({ onViewPack }: RoomPacksProps) {
   return (
     <Box direction="Column" gap="100">
       <Text size="L400">Packs</Text>
-      {/* <SequenceCard
-        className={SequenceCardStyle}
-        variant="SurfaceVariant"
-        direction="Column"
-        gap="400"
-      >
-      </SequenceCard> */}
+      {canEdit && <CreatePackTile roomId={room.roomId} packs={packs} />}
       {packs.map(renderPack)}
+      {packs.length === 0 && (
+        <SequenceCard
+          className={SequenceCardStyle}
+          variant="SurfaceVariant"
+          direction="Column"
+          gap="400"
+        >
+          <Box
+            justifyContent="Center"
+            direction="Column"
+            gap="200"
+            style={{
+              padding: `${config.space.S700} ${config.space.S400}`,
+              maxWidth: toRem(300),
+              margin: 'auto',
+            }}
+          >
+            <Text size="H5" align="Center">
+              No Packs
+            </Text>
+            <Text size="T200" align="Center">
+              There are no emoji or sticker packs to display at the moment.
+            </Text>
+          </Box>
+        </SequenceCard>
+      )}
     </Box>
   );
 }
