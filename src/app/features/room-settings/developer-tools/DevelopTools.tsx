@@ -1,5 +1,16 @@
-import React from 'react';
-import { Box, Text, IconButton, Icon, Icons, Scroll, Switch, Button, Chip } from 'folds';
+import React, { useState } from 'react';
+import {
+  Box,
+  Text,
+  IconButton,
+  Icon,
+  Icons,
+  Scroll,
+  Switch,
+  Button,
+  MenuItem,
+  config,
+} from 'folds';
 import { Page, PageContent, PageHeader } from '../../../components/page';
 import { SequenceCard } from '../../../components/sequence-card';
 import { SequenceCardStyle } from '../styles.css';
@@ -9,6 +20,7 @@ import { settingsAtom } from '../../../state/settings';
 import { copyToClipboard } from '../../../utils/dom';
 import { useRoom } from '../../../hooks/useRoom';
 import { useRoomState } from '../../../hooks/useRoomState';
+import { ContainerColor } from '../../../styles/ContainerColor.css';
 
 type DeveloperToolsProps = {
   requestClose: () => void;
@@ -18,6 +30,8 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
   const room = useRoom();
 
   const roomState = useRoomState(room);
+
+  const [expandState, setExpandState] = useState<string>();
 
   return (
     <Page>
@@ -86,33 +100,80 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
               </Box>
               <Box direction="Column" gap="100">
                 <Text size="L400">Room State</Text>
-                {Array.from(roomState.entries()).map(([eventType, stateKeyToEvents]) => (
-                  <SequenceCard
-                    key={eventType}
-                    className={SequenceCardStyle}
-                    variant="SurfaceVariant"
-                    direction="Column"
-                    gap="400"
-                  >
-                    <SettingTile title={eventType}>
-                      <Box gap="200" wrap="Wrap">
-                        {Array.from(stateKeyToEvents.keys()).map((stateKey) => (
-                          <Chip
-                            onClick={() => console.log(stateKeyToEvents.get(stateKey)?.event)}
-                            key={stateKey}
+                {Array.from(roomState.entries()).map(([eventType, stateKeyToEvents]) => {
+                  const expanded = eventType === expandState;
+
+                  return (
+                    <SequenceCard
+                      key={eventType}
+                      className={SequenceCardStyle}
+                      variant="SurfaceVariant"
+                      direction="Column"
+                      gap="400"
+                    >
+                      <SettingTile
+                        title={eventType}
+                        after={
+                          <Button
+                            size="300"
                             variant="Secondary"
                             fill="Soft"
-                            radii="Pill"
+                            radii="300"
+                            outlined
+                            before={
+                              <Icon
+                                size="100"
+                                src={expanded ? Icons.ChevronTop : Icons.ChevronBottom}
+                              />
+                            }
+                            onClick={() => setExpandState(expanded ? undefined : eventType)}
                           >
-                            <Text size="T200" truncate>
-                              {stateKey ? `"${stateKey}"` : 'Default'}
-                            </Text>
-                          </Chip>
-                        ))}
-                      </Box>
-                    </SettingTile>
-                  </SequenceCard>
-                ))}
+                            {expanded ? (
+                              <Text size="B300">Collapse</Text>
+                            ) : (
+                              <Text size="B300">Expand</Text>
+                            )}
+                          </Button>
+                        }
+                      />
+                      {expanded && (
+                        <Box direction="Column" gap="100">
+                          <Box justifyContent="SpaceBetween">
+                            <Text size="L400">Events</Text>
+                            <Text size="L400">Total: {stateKeyToEvents.size}</Text>
+                          </Box>
+                          <Box
+                            className={ContainerColor({ variant: 'Surface' })}
+                            style={{
+                              borderRadius: config.radii.R300,
+                              borderWidth: config.borderWidth.B300,
+                              overflow: 'hidden',
+                            }}
+                            direction="Column"
+                          >
+                            {Array.from(stateKeyToEvents.keys()).map((stateKey) => (
+                              <MenuItem
+                                onClick={() => console.log(stateKeyToEvents.get(stateKey)?.event)}
+                                key={stateKey}
+                                variant="Surface"
+                                fill="None"
+                                size="300"
+                                radii="0"
+                                after={<Icon size="50" src={Icons.ChevronRight} />}
+                              >
+                                <Box grow="Yes">
+                                  <Text size="B300" truncate>
+                                    {stateKey ? `"${stateKey}"` : 'Default'}
+                                  </Text>
+                                </Box>
+                              </MenuItem>
+                            ))}
+                          </Box>
+                        </Box>
+                      )}
+                    </SequenceCard>
+                  );
+                })}
               </Box>
             </Box>
           </PageContent>
