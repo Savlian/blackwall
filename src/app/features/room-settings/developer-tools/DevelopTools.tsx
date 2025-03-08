@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Box,
   Text,
@@ -10,7 +10,9 @@ import {
   Button,
   MenuItem,
   config,
+  Chip,
 } from 'folds';
+import { MatrixEvent } from 'matrix-js-sdk';
 import { Page, PageContent, PageHeader } from '../../../components/page';
 import { SequenceCard } from '../../../components/sequence-card';
 import { SequenceCardStyle } from '../styles.css';
@@ -21,6 +23,7 @@ import { copyToClipboard } from '../../../utils/dom';
 import { useRoom } from '../../../hooks/useRoom';
 import { useRoomState } from '../../../hooks/useRoomState';
 import { ContainerColor } from '../../../styles/ContainerColor.css';
+import { StateEventEditor } from './StateEventEditor';
 
 type DeveloperToolsProps = {
   requestClose: () => void;
@@ -32,6 +35,13 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
   const roomState = useRoomState(room);
 
   const [expandState, setExpandState] = useState<string>();
+  const [openStateEvent, setOpenStateEvent] = useState<MatrixEvent>();
+
+  const handleClose = useCallback(() => setOpenStateEvent(undefined), []);
+
+  if (openStateEvent) {
+    return <StateEventEditor stateEvent={openStateEvent} requestClose={handleClose} />;
+  }
 
   return (
     <Page>
@@ -98,83 +108,86 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
                   </SequenceCard>
                 )}
               </Box>
-              <Box direction="Column" gap="100">
-                <Text size="L400">Room State</Text>
-                {Array.from(roomState.entries()).map(([eventType, stateKeyToEvents]) => {
-                  const expanded = eventType === expandState;
+              {developerTools && (
+                <Box direction="Column" gap="100">
+                  <Text size="L400">Room State</Text>
+                  {Array.from(roomState.entries()).map(([eventType, stateKeyToEvents]) => {
+                    const expanded = eventType === expandState;
 
-                  return (
-                    <SequenceCard
-                      key={eventType}
-                      className={SequenceCardStyle}
-                      variant="SurfaceVariant"
-                      direction="Column"
-                      gap="400"
-                    >
-                      <SettingTile
-                        title={eventType}
-                        after={
-                          <Button
-                            size="300"
-                            variant="Secondary"
-                            fill="Soft"
-                            radii="300"
-                            outlined
-                            before={
-                              <Icon
-                                size="100"
-                                src={expanded ? Icons.ChevronTop : Icons.ChevronBottom}
-                              />
-                            }
-                            onClick={() => setExpandState(expanded ? undefined : eventType)}
-                          >
-                            {expanded ? (
-                              <Text size="B300">Collapse</Text>
-                            ) : (
-                              <Text size="B300">Expand</Text>
-                            )}
-                          </Button>
-                        }
-                      />
-                      {expanded && (
-                        <Box direction="Column" gap="100">
-                          <Box justifyContent="SpaceBetween">
-                            <Text size="L400">Events</Text>
-                            <Text size="L400">Total: {stateKeyToEvents.size}</Text>
+                    return (
+                      <SequenceCard
+                        id={eventType}
+                        key={eventType}
+                        className={SequenceCardStyle}
+                        variant="SurfaceVariant"
+                        direction="Column"
+                        gap="400"
+                      >
+                        <SettingTile
+                          title={eventType}
+                          after={
+                            <Chip
+                              variant="Secondary"
+                              fill="Soft"
+                              radii="Pill"
+                              before={
+                                <Icon
+                                  size="100"
+                                  src={expanded ? Icons.ChevronTop : Icons.ChevronBottom}
+                                />
+                              }
+                              onClick={() => setExpandState(expanded ? undefined : eventType)}
+                            >
+                              {expanded ? (
+                                <Text size="B300">Collapse</Text>
+                              ) : (
+                                <Text size="B300">Expand</Text>
+                              )}
+                            </Chip>
+                          }
+                        />
+                        {expanded && (
+                          <Box direction="Column" gap="100">
+                            <Box justifyContent="SpaceBetween">
+                              <Text size="L400">Events</Text>
+                              <Text size="L400">Total: {stateKeyToEvents.size}</Text>
+                            </Box>
+                            <Box
+                              className={ContainerColor({ variant: 'Surface' })}
+                              style={{
+                                borderRadius: config.radii.R300,
+                                borderWidth: config.borderWidth.B300,
+                                overflow: 'hidden',
+                              }}
+                              direction="Column"
+                            >
+                              {Array.from(stateKeyToEvents.keys()).map((stateKey) => (
+                                <MenuItem
+                                  onClick={() => {
+                                    setOpenStateEvent(stateKeyToEvents.get(stateKey));
+                                  }}
+                                  key={stateKey}
+                                  variant="Surface"
+                                  fill="None"
+                                  size="300"
+                                  radii="0"
+                                  after={<Icon size="50" src={Icons.ChevronRight} />}
+                                >
+                                  <Box grow="Yes">
+                                    <Text size="B300" truncate>
+                                      {stateKey ? `"${stateKey}"` : 'Default'}
+                                    </Text>
+                                  </Box>
+                                </MenuItem>
+                              ))}
+                            </Box>
                           </Box>
-                          <Box
-                            className={ContainerColor({ variant: 'Surface' })}
-                            style={{
-                              borderRadius: config.radii.R300,
-                              borderWidth: config.borderWidth.B300,
-                              overflow: 'hidden',
-                            }}
-                            direction="Column"
-                          >
-                            {Array.from(stateKeyToEvents.keys()).map((stateKey) => (
-                              <MenuItem
-                                onClick={() => console.log(stateKeyToEvents.get(stateKey)?.event)}
-                                key={stateKey}
-                                variant="Surface"
-                                fill="None"
-                                size="300"
-                                radii="0"
-                                after={<Icon size="50" src={Icons.ChevronRight} />}
-                              >
-                                <Box grow="Yes">
-                                  <Text size="B300" truncate>
-                                    {stateKey ? `"${stateKey}"` : 'Default'}
-                                  </Text>
-                                </Box>
-                              </MenuItem>
-                            ))}
-                          </Box>
-                        </Box>
-                      )}
-                    </SequenceCard>
-                  );
-                })}
-              </Box>
+                        )}
+                      </SequenceCard>
+                    );
+                  })}
+                </Box>
+              )}
             </Box>
           </PageContent>
         </Scroll>
