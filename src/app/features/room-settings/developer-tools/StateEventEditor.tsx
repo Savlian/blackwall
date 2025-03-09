@@ -1,12 +1,4 @@
-import React, {
-  FormEventHandler,
-  KeyboardEventHandler,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Text,
@@ -22,7 +14,6 @@ import {
   Button,
 } from 'folds';
 import { MatrixError } from 'matrix-js-sdk';
-import { isKeyHotkey } from 'is-hotkey';
 import { Page, PageHeader } from '../../../components/page';
 import { SequenceCard } from '../../../components/sequence-card';
 import { TextViewerContent } from '../../../components/text-viewer';
@@ -31,13 +22,13 @@ import { useRoom } from '../../../hooks/useRoom';
 import { StateEvent } from '../../../../types/matrix/room';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { useAlive } from '../../../hooks/useAlive';
-import { GetTarget } from '../../../plugins/text-area/type';
-import { TextAreaOperations, TextArea, Intent, Cursor } from '../../../plugins/text-area';
-import { useTextAreaIntentHandler } from '../../../hooks/useTextAreaIntent';
+import { Cursor } from '../../../plugins/text-area';
 import { AsyncStatus, useAsyncCallback } from '../../../hooks/useAsyncCallback';
 import { syntaxErrorPosition } from '../../../utils/dom';
 import { SettingTile } from '../../../components/setting-tile';
 import { SequenceCardStyle } from '../styles.css';
+import { usePowerLevels, usePowerLevelsAPI } from '../../../hooks/usePowerLevels';
+import { useTextAreaCodeEditor } from '../../../hooks/useTextAreaCodeEditor';
 
 const EDITOR_INTENT_SPACE_COUNT = 2;
 
@@ -59,32 +50,10 @@ function StateEventEdit({ type, stateKey, content, requestClose }: StateEventEdi
 
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const [jsonError, setJSONError] = useState<SyntaxError>();
-
-  const getTarget: GetTarget = useCallback(() => {
-    const target = textAreaRef.current;
-    if (!target) throw new Error('TextArea element not found!');
-    return target;
-  }, []);
-
-  const { textArea, operations, intent } = useMemo(() => {
-    const ta = new TextArea(getTarget);
-    const op = new TextAreaOperations(getTarget);
-    return {
-      textArea: ta,
-      operations: op,
-      intent: new Intent(EDITOR_INTENT_SPACE_COUNT, ta, op),
-    };
-  }, [getTarget]);
-
-  const intentHandler = useTextAreaIntentHandler(textArea, operations, intent);
-
-  const handleKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = (evt) => {
-    intentHandler(evt);
-    if (isKeyHotkey('escape', evt)) {
-      const cursor = Cursor.fromTextAreaElement(getTarget());
-      operations.deselect(cursor);
-    }
-  };
+  const { handleKeyDown, operations, getTarget } = useTextAreaCodeEditor(
+    textAreaRef,
+    EDITOR_INTENT_SPACE_COUNT
+  );
 
   const [submitState, submit] = useAsyncCallback<object, MatrixError, [object]>(
     useCallback(
@@ -220,7 +189,7 @@ function StateEventEdit({ type, stateKey, content, requestClose }: StateEventEdi
 type StateEventViewProps = {
   content: object;
   eventJSONStr: string;
-  onEditContent: (content: object) => void;
+  onEditContent?: (content: object) => void;
 };
 function StateEventView({ content, eventJSONStr, onEditContent }: StateEventViewProps) {
   return (
@@ -230,17 +199,19 @@ function StateEventView({ content, eventJSONStr, onEditContent }: StateEventView
           <Box grow="Yes">
             <Text size="L400">State Event</Text>
           </Box>
-          <Box shrink="No" gap="200">
-            <Chip
-              variant="Secondary"
-              fill="Soft"
-              radii="300"
-              outlined
-              onClick={() => onEditContent(content)}
-            >
-              <Text size="B300">Edit</Text>
-            </Chip>
-          </Box>
+          {onEditContent && (
+            <Box shrink="No" gap="200">
+              <Chip
+                variant="Secondary"
+                fill="Soft"
+                radii="300"
+                outlined
+                onClick={() => onEditContent(content)}
+              >
+                <Text size="B300">Edit</Text>
+              </Chip>
+            </Box>
+          )}
         </Box>
         <SequenceCard variant="SurfaceVariant">
           <Scroll visibility="Always" size="300" hideTrack>
@@ -268,9 +239,13 @@ export type StateEventEditorProps = StateEventInfo & {
 };
 
 export function StateEventEditor({ type, stateKey, requestClose }: StateEventEditorProps) {
+  const mx = useMatrixClient();
   const room = useRoom();
   const stateEvent = useStateEvent(room, type as unknown as StateEvent, stateKey);
   const [editContent, setEditContent] = useState<object>();
+  const powerLevels = usePowerLevels(room);
+  const { getPowerLevel, canSendStateEvent } = usePowerLevelsAPI(powerLevels);
+  const canEdit = canSendStateEvent(type, getPowerLevel(mx.getSafeUserId()));
 
   const eventJSONStr = useMemo(() => {
     if (!stateEvent) return '';
@@ -313,7 +288,7 @@ export function StateEventEditor({ type, stateKey, requestClose }: StateEventEdi
         ) : (
           <StateEventView
             content={stateEvent?.getContent() ?? {}}
-            onEditContent={setEditContent}
+            onEditContent={canEdit ? setEditContent : undefined}
             eventJSONStr={eventJSONStr}
           />
         )}

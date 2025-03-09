@@ -1,12 +1,4 @@
-import React, {
-  FormEventHandler,
-  KeyboardEventHandler,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Text,
@@ -22,12 +14,9 @@ import {
   Scroll,
   config,
 } from 'folds';
-import { isKeyHotkey } from 'is-hotkey';
 import { MatrixError } from 'matrix-js-sdk';
 import * as css from './styles.css';
-import { useTextAreaIntentHandler } from '../../../hooks/useTextAreaIntent';
-import { Cursor, Intent, TextArea, TextAreaOperations } from '../../../plugins/text-area';
-import { GetTarget } from '../../../plugins/text-area/type';
+import { Cursor } from '../../../plugins/text-area';
 import { syntaxErrorPosition } from '../../../utils/dom';
 import { AsyncStatus, useAsyncCallback } from '../../../hooks/useAsyncCallback';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
@@ -35,6 +24,7 @@ import { Page, PageHeader } from '../../../components/page';
 import { useAlive } from '../../../hooks/useAlive';
 import { SequenceCard } from '../../../components/sequence-card';
 import { TextViewerContent } from '../../../components/text-viewer';
+import { useTextAreaCodeEditor } from '../../../hooks/useTextAreaCodeEditor';
 
 const EDITOR_INTENT_SPACE_COUNT = 2;
 
@@ -56,31 +46,10 @@ function AccountDataEdit({ type, defaultContent, onCancel, onSave }: AccountData
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const [jsonError, setJSONError] = useState<SyntaxError>();
 
-  const getTarget: GetTarget = useCallback(() => {
-    const target = textAreaRef.current;
-    if (!target) throw new Error('TextArea element not found!');
-    return target;
-  }, []);
-
-  const { textArea, operations, intent } = useMemo(() => {
-    const ta = new TextArea(getTarget);
-    const op = new TextAreaOperations(getTarget);
-    return {
-      textArea: ta,
-      operations: op,
-      intent: new Intent(EDITOR_INTENT_SPACE_COUNT, ta, op),
-    };
-  }, [getTarget]);
-
-  const intentHandler = useTextAreaIntentHandler(textArea, operations, intent);
-
-  const handleKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = (evt) => {
-    intentHandler(evt);
-    if (isKeyHotkey('escape', evt)) {
-      const cursor = Cursor.fromTextAreaElement(getTarget());
-      operations.deselect(cursor);
-    }
-  };
+  const { handleKeyDown, operations, getTarget } = useTextAreaCodeEditor(
+    textAreaRef,
+    EDITOR_INTENT_SPACE_COUNT
+  );
 
   const [submitState, submit] = useAsyncCallback<object, MatrixError, [string, object]>(
     useCallback((dataType, data) => mx.setAccountData(dataType, data), [mx])
