@@ -1,20 +1,247 @@
-import React, { useMemo } from 'react';
-import { Box, Text, Icon, Icons, IconButton, Chip, Scroll, config } from 'folds';
-import { MatrixEvent } from 'matrix-js-sdk';
+import React, {
+  FormEventHandler,
+  KeyboardEventHandler,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import {
+  Box,
+  Text,
+  Icon,
+  Icons,
+  IconButton,
+  Chip,
+  Scroll,
+  config,
+  TextArea as TextAreaComponent,
+  color,
+  Spinner,
+  Button,
+} from 'folds';
+import { MatrixError } from 'matrix-js-sdk';
+import { isKeyHotkey } from 'is-hotkey';
 import { Page, PageHeader } from '../../../components/page';
 import { SequenceCard } from '../../../components/sequence-card';
 import { TextViewerContent } from '../../../components/text-viewer';
+import { useStateEvent } from '../../../hooks/useStateEvent';
+import { useRoom } from '../../../hooks/useRoom';
+import { StateEvent } from '../../../../types/matrix/room';
+import { useMatrixClient } from '../../../hooks/useMatrixClient';
+import { useAlive } from '../../../hooks/useAlive';
+import { GetTarget } from '../../../plugins/text-area/type';
+import { TextAreaOperations, TextArea, Intent, Cursor } from '../../../plugins/text-area';
+import { useTextAreaIntentHandler } from '../../../hooks/useTextAreaIntent';
+import { AsyncStatus, useAsyncCallback } from '../../../hooks/useAsyncCallback';
+import { syntaxErrorPosition } from '../../../utils/dom';
+import { SettingTile } from '../../../components/setting-tile';
+import { SequenceCardStyle } from '../styles.css';
 
 const EDITOR_INTENT_SPACE_COUNT = 2;
 
-type StateEventViewProps = {
-  eventJSONStr: string;
+type StateEventEditProps = {
+  type: string;
+  stateKey: string;
+  content: object;
+  requestClose: () => void;
 };
-function StateEventView({ eventJSONStr }: StateEventViewProps) {
+function StateEventEdit({ type, stateKey, content, requestClose }: StateEventEditProps) {
+  const mx = useMatrixClient();
+  const room = useRoom();
+  const alive = useAlive();
+
+  const defaultContentStr = useMemo(
+    () => JSON.stringify(content, undefined, EDITOR_INTENT_SPACE_COUNT),
+    [content]
+  );
+
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const [jsonError, setJSONError] = useState<SyntaxError>();
+
+  const getTarget: GetTarget = useCallback(() => {
+    const target = textAreaRef.current;
+    if (!target) throw new Error('TextArea element not found!');
+    return target;
+  }, []);
+
+  const { textArea, operations, intent } = useMemo(() => {
+    const ta = new TextArea(getTarget);
+    const op = new TextAreaOperations(getTarget);
+    return {
+      textArea: ta,
+      operations: op,
+      intent: new Intent(EDITOR_INTENT_SPACE_COUNT, ta, op),
+    };
+  }, [getTarget]);
+
+  const intentHandler = useTextAreaIntentHandler(textArea, operations, intent);
+
+  const handleKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = (evt) => {
+    intentHandler(evt);
+    if (isKeyHotkey('escape', evt)) {
+      const cursor = Cursor.fromTextAreaElement(getTarget());
+      operations.deselect(cursor);
+    }
+  };
+
+  const [submitState, submit] = useAsyncCallback<object, MatrixError, [object]>(
+    useCallback(
+      (c) => mx.sendStateEvent(room.roomId, type as any, c, stateKey),
+      [mx, room, type, stateKey]
+    )
+  );
+  const submitting = submitState.status === AsyncStatus.Loading;
+
+  const handleSubmit: FormEventHandler<HTMLFormElement> = (evt) => {
+    evt.preventDefault();
+    if (submitting) return;
+
+    const target = evt.target as HTMLFormElement | undefined;
+    const contentTextArea = target?.contentTextArea as HTMLTextAreaElement | undefined;
+    if (!contentTextArea) return;
+
+    const contentStr = contentTextArea.value.trim();
+
+    let parsedContent: object;
+    try {
+      parsedContent = JSON.parse(contentStr);
+    } catch (e) {
+      setJSONError(e as SyntaxError);
+      return;
+    }
+    setJSONError(undefined);
+
+    if (
+      parsedContent === null ||
+      defaultContentStr === JSON.stringify(parsedContent, null, EDITOR_INTENT_SPACE_COUNT)
+    ) {
+      return;
+    }
+
+    submit(parsedContent).then(() => {
+      if (alive()) {
+        requestClose();
+      }
+    });
+  };
+
+  useEffect(() => {
+    if (jsonError) {
+      const errorPosition = syntaxErrorPosition(jsonError) ?? 0;
+      const cursor = new Cursor(errorPosition, errorPosition, 'none');
+      operations.select(cursor);
+      getTarget()?.focus();
+    }
+  }, [jsonError, operations, getTarget]);
+
+  return (
+    <Box
+      as="form"
+      onSubmit={handleSubmit}
+      grow="Yes"
+      style={{ padding: config.space.S400 }}
+      direction="Column"
+      gap="400"
+      aria-disabled={submitting}
+    >
+      <Box shrink="No" direction="Column" gap="100">
+        <Text size="L400">State Event</Text>
+        <SequenceCard
+          className={SequenceCardStyle}
+          variant="SurfaceVariant"
+          direction="Column"
+          gap="400"
+        >
+          <SettingTile
+            title={type}
+            description={stateKey}
+            after={
+              <Box gap="200">
+                <Button
+                  variant="Success"
+                  size="300"
+                  radii="300"
+                  type="submit"
+                  disabled={submitting}
+                  before={submitting && <Spinner variant="Primary" fill="Solid" size="300" />}
+                >
+                  <Text size="B300">Save</Text>
+                </Button>
+                <Button
+                  variant="Secondary"
+                  fill="Soft"
+                  size="300"
+                  radii="300"
+                  onClick={requestClose}
+                  disabled={submitting}
+                >
+                  <Text size="B300">Cancel</Text>
+                </Button>
+              </Box>
+            }
+          />
+        </SequenceCard>
+
+        {submitState.status === AsyncStatus.Error && (
+          <Text size="T200" style={{ color: color.Critical.Main }}>
+            <b>{submitState.error.message}</b>
+          </Text>
+        )}
+      </Box>
+      <Box grow="Yes" direction="Column" gap="100">
+        <Box shrink="No">
+          <Text size="L400">JSON Content</Text>
+        </Box>
+        <TextAreaComponent
+          ref={textAreaRef}
+          name="contentTextArea"
+          style={{ fontFamily: 'monospace' }}
+          onKeyDown={handleKeyDown}
+          defaultValue={defaultContentStr}
+          resize="None"
+          spellCheck="false"
+          required
+          readOnly={submitting}
+        />
+        {jsonError && (
+          <Text size="T200" style={{ color: color.Critical.Main }}>
+            <b>
+              {jsonError.name}: {jsonError.message}
+            </b>
+          </Text>
+        )}
+      </Box>
+    </Box>
+  );
+}
+
+type StateEventViewProps = {
+  content: object;
+  eventJSONStr: string;
+  onEditContent: (content: object) => void;
+};
+function StateEventView({ content, eventJSONStr, onEditContent }: StateEventViewProps) {
   return (
     <Box direction="Column" style={{ padding: config.space.S400 }} gap="400">
       <Box grow="Yes" direction="Column" gap="100">
-        <Text size="L400">State Event</Text>
+        <Box gap="200" alignItems="End">
+          <Box grow="Yes">
+            <Text size="L400">State Event</Text>
+          </Box>
+          <Box shrink="No" gap="200">
+            <Chip
+              variant="Secondary"
+              fill="Soft"
+              radii="300"
+              outlined
+              onClick={() => onEditContent(content)}
+            >
+              <Text size="B300">Edit</Text>
+            </Chip>
+          </Box>
+        </Box>
         <SequenceCard variant="SurfaceVariant">
           <Scroll visibility="Always" size="300" hideTrack>
             <TextViewerContent
@@ -32,16 +259,27 @@ function StateEventView({ eventJSONStr }: StateEventViewProps) {
   );
 }
 
-export type StateEventEditorProps = {
-  stateEvent: MatrixEvent;
+export type StateEventInfo = {
+  type: string;
+  stateKey: string;
+};
+export type StateEventEditorProps = StateEventInfo & {
   requestClose: () => void;
 };
 
-export function StateEventEditor({ stateEvent, requestClose }: StateEventEditorProps) {
-  const eventJSONStr = useMemo(
-    () => JSON.stringify(stateEvent.event, null, EDITOR_INTENT_SPACE_COUNT),
-    [stateEvent]
-  );
+export function StateEventEditor({ type, stateKey, requestClose }: StateEventEditorProps) {
+  const room = useRoom();
+  const stateEvent = useStateEvent(room, type as unknown as StateEvent, stateKey);
+  const [editContent, setEditContent] = useState<object>();
+
+  const eventJSONStr = useMemo(() => {
+    if (!stateEvent) return '';
+    return JSON.stringify(stateEvent.event, null, EDITOR_INTENT_SPACE_COUNT);
+  }, [stateEvent]);
+
+  const handleCloseEdit = useCallback(() => {
+    setEditContent(undefined);
+  }, []);
 
   return (
     <Page>
@@ -65,7 +303,20 @@ export function StateEventEditor({ stateEvent, requestClose }: StateEventEditorP
         </Box>
       </PageHeader>
       <Box grow="Yes" direction="Column">
-        <StateEventView eventJSONStr={eventJSONStr} />
+        {editContent ? (
+          <StateEventEdit
+            type={type}
+            stateKey={stateKey}
+            content={editContent}
+            requestClose={handleCloseEdit}
+          />
+        ) : (
+          <StateEventView
+            content={stateEvent?.getContent() ?? {}}
+            onEditContent={setEditContent}
+            eventJSONStr={eventJSONStr}
+          />
+        )}
       </Box>
     </Page>
   );

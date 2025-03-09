@@ -12,7 +12,6 @@ import {
   config,
   Chip,
 } from 'folds';
-import { MatrixEvent } from 'matrix-js-sdk';
 import { Page, PageContent, PageHeader } from '../../../components/page';
 import { SequenceCard } from '../../../components/sequence-card';
 import { SequenceCardStyle } from '../styles.css';
@@ -23,7 +22,7 @@ import { copyToClipboard } from '../../../utils/dom';
 import { useRoom } from '../../../hooks/useRoom';
 import { useRoomState } from '../../../hooks/useRoomState';
 import { ContainerColor } from '../../../styles/ContainerColor.css';
-import { StateEventEditor } from './StateEventEditor';
+import { StateEventEditor, StateEventInfo } from './StateEventEditor';
 
 type DeveloperToolsProps = {
   requestClose: () => void;
@@ -35,12 +34,12 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
   const roomState = useRoomState(room);
 
   const [expandState, setExpandState] = useState<string>();
-  const [openStateEvent, setOpenStateEvent] = useState<MatrixEvent>();
+  const [openStateEvent, setOpenStateEvent] = useState<StateEventInfo>();
 
   const handleClose = useCallback(() => setOpenStateEvent(undefined), []);
 
   if (openStateEvent) {
-    return <StateEventEditor stateEvent={openStateEvent} requestClose={handleClose} />;
+    return <StateEventEditor {...openStateEvent} requestClose={handleClose} />;
   }
 
   return (
@@ -164,7 +163,10 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
                               {Array.from(stateKeyToEvents.keys()).map((stateKey) => (
                                 <MenuItem
                                   onClick={() => {
-                                    setOpenStateEvent(stateKeyToEvents.get(stateKey));
+                                    setOpenStateEvent({
+                                      type: eventType,
+                                      stateKey,
+                                    });
                                   }}
                                   key={stateKey}
                                   variant="Surface"
