@@ -1,17 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import {
-  Box,
-  Text,
-  IconButton,
-  Icon,
-  Icons,
-  Scroll,
-  Switch,
-  Button,
-  MenuItem,
-  config,
-  Chip,
-} from 'folds';
+import { Box, Text, IconButton, Icon, Icons, Scroll, Switch, Button, MenuItem, Chip } from 'folds';
 import { Page, PageContent, PageHeader } from '../../../components/page';
 import { SequenceCard } from '../../../components/sequence-card';
 import { SequenceCardStyle } from '../styles.css';
@@ -21,9 +9,10 @@ import { settingsAtom } from '../../../state/settings';
 import { copyToClipboard } from '../../../utils/dom';
 import { useRoom } from '../../../hooks/useRoom';
 import { useRoomState } from '../../../hooks/useRoomState';
-import { ContainerColor } from '../../../styles/ContainerColor.css';
 import { StateEventEditor, StateEventInfo } from './StateEventEditor';
 import { SendRoomEvent } from './SendRoomEvent';
+import { useRoomAccountData } from '../../../hooks/useRoomAccountData';
+import { CutoutCard } from '../../../components/cutout-card';
 
 type DeveloperToolsProps = {
   requestClose: () => void;
@@ -33,10 +22,13 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
   const room = useRoom();
 
   const roomState = useRoomState(room);
+  const accountData = useRoomAccountData(room);
 
   const [expandState, setExpandState] = useState<string>();
   const [openStateEvent, setOpenStateEvent] = useState<StateEventInfo>();
   const [composeEvent, setComposeEvent] = useState<{ type?: string; stateKey?: string }>();
+
+  const [expandAccountData, setExpandAccountData] = useState(false);
 
   const handleClose = useCallback(() => {
     setOpenStateEvent(undefined);
@@ -123,7 +115,8 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
                       gap="400"
                     >
                       <SettingTile
-                        title="Send Message Event"
+                        title="New Message Event"
+                        description="Create and send a new message event within the room."
                         after={
                           <Button
                             onClick={() => setComposeEvent({})}
@@ -143,7 +136,7 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
               </Box>
               {developerTools && (
                 <Box direction="Column" gap="100">
-                  <Text size="L400">Room State</Text>
+                  <Text size="L400">State</Text>
                   <SequenceCard
                     className={SequenceCardStyle}
                     variant="SurfaceVariant"
@@ -151,7 +144,8 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
                     gap="400"
                   >
                     <SettingTile
-                      title="Send State Event"
+                      title="New State Event"
+                      description="Create and send a new state event within the room."
                       after={
                         <Button
                           onClick={() => setComposeEvent({ stateKey: '' })}
@@ -207,15 +201,7 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
                               <Text size="L400">Events</Text>
                               <Text size="L400">Total: {stateKeyToEvents.size}</Text>
                             </Box>
-                            <Box
-                              className={ContainerColor({ variant: 'Surface' })}
-                              style={{
-                                borderRadius: config.radii.R300,
-                                borderWidth: config.borderWidth.B300,
-                                overflow: 'hidden',
-                              }}
-                              direction="Column"
-                            >
+                            <CutoutCard>
                               <MenuItem
                                 onClick={() => setComposeEvent({ type: eventType, stateKey: '' })}
                                 variant="Surface"
@@ -254,12 +240,89 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
                                     </Box>
                                   </MenuItem>
                                 ))}
-                            </Box>
+                            </CutoutCard>
                           </Box>
                         )}
                       </SequenceCard>
                     );
                   })}
+                </Box>
+              )}
+
+              {developerTools && (
+                <Box direction="Column" gap="100">
+                  <Text size="L400">Data</Text>
+                  <SequenceCard
+                    className={SequenceCardStyle}
+                    variant="SurfaceVariant"
+                    direction="Column"
+                    gap="400"
+                  >
+                    <SettingTile
+                      title="Account Data"
+                      description="Private personalization data stored within room."
+                      after={
+                        <Button
+                          onClick={() => setExpandAccountData(!expandAccountData)}
+                          variant="Secondary"
+                          fill="Soft"
+                          size="300"
+                          radii="300"
+                          outlined
+                          before={
+                            <Icon
+                              src={expandAccountData ? Icons.ChevronTop : Icons.ChevronBottom}
+                              size="100"
+                              filled
+                            />
+                          }
+                        >
+                          <Text size="B300">{expandAccountData ? 'Collapse' : 'Expand'}</Text>
+                        </Button>
+                      }
+                    />
+                    {expandAccountData && (
+                      <Box direction="Column" gap="100">
+                        <Box justifyContent="SpaceBetween">
+                          <Text size="L400">Events</Text>
+                          <Text size="L400">Total: {accountData.size}</Text>
+                        </Box>
+                        <CutoutCard>
+                          <MenuItem
+                            variant="Surface"
+                            fill="None"
+                            size="300"
+                            radii="0"
+                            before={<Icon size="50" src={Icons.Plus} />}
+                          >
+                            <Box grow="Yes">
+                              <Text size="B300" truncate>
+                                Add New
+                              </Text>
+                            </Box>
+                          </MenuItem>
+                          {Array.from(accountData.keys())
+                            .sort()
+                            .map((type) => (
+                              <MenuItem
+                                key={type}
+                                variant="Surface"
+                                fill="None"
+                                size="300"
+                                radii="0"
+                                after={<Icon size="50" src={Icons.ChevronRight} />}
+                              >
+                                <Box grow="Yes">
+                                  <Text size="B300" truncate>
+                                    {type}
+                                  </Text>
+                                </Box>
+                              </MenuItem>
+                            ))}
+                        </CutoutCard>
+                      </Box>
+                    )}
+                  </SequenceCard>
                 </Box>
               )}
             </Box>
