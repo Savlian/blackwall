@@ -241,7 +241,7 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
                                   before={<Icon size="50" src={Icons.Plus} />}
                                 >
                                   <Box grow="Yes">
-                                    <Text size="B300" truncate>
+                                    <Text size="T200" truncate>
                                       Add New
                                     </Text>
                                   </Box>
@@ -264,7 +264,7 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
                                       after={<Icon size="50" src={Icons.ChevronRight} />}
                                     >
                                       <Box grow="Yes">
-                                        <Text size="B300" truncate>
+                                        <Text size="T200" truncate>
                                           {stateKey ? `"${stateKey}"` : 'Default'}
                                         </Text>
                                       </Box>
@@ -327,7 +327,7 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
                             onClick={() => setAccountDataType(null)}
                           >
                             <Box grow="Yes">
-                              <Text size="B300" truncate>
+                              <Text size="T200" truncate>
                                 Add New
                               </Text>
                             </Box>
@@ -345,7 +345,7 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
                                 onClick={() => setAccountDataType(type)}
                               >
                                 <Box grow="Yes">
-                                  <Text size="B300" truncate>
+                                  <Text size="T200" truncate>
                                     {type}
                                   </Text>
                                 </Box>
