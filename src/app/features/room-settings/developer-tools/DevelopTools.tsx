@@ -13,12 +13,18 @@ import { StateEventEditor, StateEventInfo } from './StateEventEditor';
 import { SendRoomEvent } from './SendRoomEvent';
 import { useRoomAccountData } from '../../../hooks/useRoomAccountData';
 import { CutoutCard } from '../../../components/cutout-card';
+import {
+  AccountDataEditor,
+  AccountDataSubmitCallback,
+} from '../../../components/AccountDataEditor';
+import { useMatrixClient } from '../../../hooks/useMatrixClient';
 
 type DeveloperToolsProps = {
   requestClose: () => void;
 };
 export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
   const [developerTools, setDeveloperTools] = useSetting(settingsAtom, 'developerTools');
+  const mx = useMatrixClient();
   const room = useRoom();
 
   const roomState = useRoomState(room);
@@ -29,11 +35,31 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
   const [composeEvent, setComposeEvent] = useState<{ type?: string; stateKey?: string }>();
 
   const [expandAccountData, setExpandAccountData] = useState(false);
+  const [accountDataType, setAccountDataType] = useState<string | null>();
 
   const handleClose = useCallback(() => {
     setOpenStateEvent(undefined);
     setComposeEvent(undefined);
+    setAccountDataType(undefined);
   }, []);
+
+  const submitAccountData: AccountDataSubmitCallback = useCallback(
+    async (type, content) => {
+      await mx.setRoomAccountData(room.roomId, type, content);
+    },
+    [mx, room.roomId]
+  );
+
+  if (accountDataType !== undefined) {
+    return (
+      <AccountDataEditor
+        type={accountDataType ?? undefined}
+        content={accountDataType ? accountData.get(accountDataType) : undefined}
+        submitChange={submitAccountData}
+        requestClose={handleClose}
+      />
+    );
+  }
 
   if (composeEvent) {
     return <SendRoomEvent {...composeEvent} requestClose={handleClose} />;
@@ -160,92 +186,96 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
                       }
                     />
                   </SequenceCard>
-                  {Array.from(roomState.entries()).map(([eventType, stateKeyToEvents]) => {
-                    const expanded = eventType === expandState;
+                  {Array.from(roomState.keys())
+                    .sort()
+                    .map((eventType) => {
+                      const expanded = eventType === expandState;
+                      const stateKeyToEvents = roomState.get(eventType);
+                      if (!stateKeyToEvents) return null;
 
-                    return (
-                      <SequenceCard
-                        id={eventType}
-                        key={eventType}
-                        className={SequenceCardStyle}
-                        variant="SurfaceVariant"
-                        direction="Column"
-                        gap="400"
-                      >
-                        <SettingTile
-                          title={eventType}
-                          after={
-                            <Chip
-                              variant="Secondary"
-                              fill="Soft"
-                              radii="Pill"
-                              before={
-                                <Icon
-                                  size="100"
-                                  src={expanded ? Icons.ChevronTop : Icons.ChevronBottom}
-                                />
-                              }
-                              onClick={() => setExpandState(expanded ? undefined : eventType)}
-                            >
-                              {expanded ? (
-                                <Text size="B300">Collapse</Text>
-                              ) : (
-                                <Text size="B300">Expand</Text>
-                              )}
-                            </Chip>
-                          }
-                        />
-                        {expanded && (
-                          <Box direction="Column" gap="100">
-                            <Box justifyContent="SpaceBetween">
-                              <Text size="L400">Events</Text>
-                              <Text size="L400">Total: {stateKeyToEvents.size}</Text>
-                            </Box>
-                            <CutoutCard>
-                              <MenuItem
-                                onClick={() => setComposeEvent({ type: eventType, stateKey: '' })}
-                                variant="Surface"
-                                fill="None"
-                                size="300"
-                                radii="0"
-                                before={<Icon size="50" src={Icons.Plus} />}
+                      return (
+                        <SequenceCard
+                          id={eventType}
+                          key={eventType}
+                          className={SequenceCardStyle}
+                          variant="SurfaceVariant"
+                          direction="Column"
+                          gap="400"
+                        >
+                          <SettingTile
+                            title={eventType}
+                            after={
+                              <Chip
+                                variant="Secondary"
+                                fill="Soft"
+                                radii="Pill"
+                                before={
+                                  <Icon
+                                    size="100"
+                                    src={expanded ? Icons.ChevronTop : Icons.ChevronBottom}
+                                  />
+                                }
+                                onClick={() => setExpandState(expanded ? undefined : eventType)}
                               >
-                                <Box grow="Yes">
-                                  <Text size="B300" truncate>
-                                    Add New
-                                  </Text>
-                                </Box>
-                              </MenuItem>
-                              {Array.from(stateKeyToEvents.keys())
-                                .sort()
-                                .map((stateKey) => (
-                                  <MenuItem
-                                    onClick={() => {
-                                      setOpenStateEvent({
-                                        type: eventType,
-                                        stateKey,
-                                      });
-                                    }}
-                                    key={stateKey}
-                                    variant="Surface"
-                                    fill="None"
-                                    size="300"
-                                    radii="0"
-                                    after={<Icon size="50" src={Icons.ChevronRight} />}
-                                  >
-                                    <Box grow="Yes">
-                                      <Text size="B300" truncate>
-                                        {stateKey ? `"${stateKey}"` : 'Default'}
-                                      </Text>
-                                    </Box>
-                                  </MenuItem>
-                                ))}
-                            </CutoutCard>
-                          </Box>
-                        )}
-                      </SequenceCard>
-                    );
-                  })}
+                                {expanded ? (
+                                  <Text size="B300">Collapse</Text>
+                                ) : (
+                                  <Text size="B300">Expand</Text>
+                                )}
+                              </Chip>
+                            }
+                          />
+                          {expanded && (
+                            <Box direction="Column" gap="100">
+                              <Box justifyContent="SpaceBetween">
+                                <Text size="L400">Events</Text>
+                                <Text size="L400">Total: {stateKeyToEvents.size}</Text>
+                              </Box>
+                              <CutoutCard>
+                                <MenuItem
+                                  onClick={() => setComposeEvent({ type: eventType, stateKey: '' })}
+                                  variant="Surface"
+                                  fill="None"
+                                  size="300"
+                                  radii="0"
+                                  before={<Icon size="50" src={Icons.Plus} />}
+                                >
+                                  <Box grow="Yes">
+                                    <Text size="B300" truncate>
+                                      Add New
+                                    </Text>
+                                  </Box>
+                                </MenuItem>
+                                {Array.from(stateKeyToEvents.keys())
+                                  .sort()
+                                  .map((stateKey) => (
+                                    <MenuItem
+                                      onClick={() => {
+                                        setOpenStateEvent({
+                                          type: eventType,
+                                          stateKey,
+                                        });
+                                      }}
+                                      key={stateKey}
+                                      variant="Surface"
+                                      fill="None"
+                                      size="300"
+                                      radii="0"
+                                      after={<Icon size="50" src={Icons.ChevronRight} />}
+                                    >
+                                      <Box grow="Yes">
+                                        <Text size="B300" truncate>
+                                          {stateKey ? `"${stateKey}"` : 'Default'}
+                                        </Text>
+                                      </Box>
+                                    </MenuItem>
+                                  ))}
+                              </CutoutCard>
+                            </Box>
+                          )}
+                        </SequenceCard>
+                      );
+                    })}
                 </Box>
               )}
 
@@ -294,6 +324,7 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
                             size="300"
                             radii="0"
                             before={<Icon size="50" src={Icons.Plus} />}
+                            onClick={() => setAccountDataType(null)}
                           >
                             <Box grow="Yes">
                               <Text size="B300" truncate>
@@ -311,6 +342,7 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
                                 size="300"
                                 radii="0"
                                 after={<Icon size="50" src={Icons.ChevronRight} />}
+                                onClick={() => setAccountDataType(type)}
                               >
                                 <Box grow="Yes">
                                   <Text size="B300" truncate>
