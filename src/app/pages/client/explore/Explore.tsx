@@ -1,4 +1,4 @@
-import React, { FormEventHandler, useCallback, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FocusTrap from 'focus-trap-react';
 import {
@@ -18,11 +18,13 @@ import {
   color,
   config,
 } from 'folds';
+import { useFocusWithin, useHover } from 'react-aria';
 import {
   NavCategory,
   NavCategoryHeader,
   NavItem,
   NavItemContent,
+  NavItemOptions,
   NavLink,
 } from '../../../components/nav';
 import { getExploreFeaturedPath, getExploreServerPath } from '../../pathUtils';
@@ -37,11 +39,13 @@ import { AsyncStatus, useAsyncCallback } from '../../../hooks/useAsyncCallback';
 import { useNavToActivePathMapper } from '../../../hooks/useNavToActivePathMapper';
 import { PageNav, PageNavContent, PageNavHeader } from '../../../components/page';
 import { stopPropagation } from '../../../utils/keyboard';
+import { useExploreServers } from '../../../hooks/useExploreServers';
 
-export function AddServer() {
+export function AddExploreServerPrompt() {
   const mx = useMatrixClient();
   const navigate = useNavigate();
   const [dialog, setDialog] = useState(false);
+  const [, setExploreServers] = useExploreServers();
   const serverInputRef = useRef<HTMLInputElement>(null);
 
   const [exploreState] = useAsyncCallback(
@@ -55,22 +59,14 @@ export function AddServer() {
     return server || undefined;
   };
 
-  const handleSubmit: FormEventHandler<HTMLFormElement> = (evt) => {
-    evt.preventDefault();
+  const handleSubmit = useCallback(() => {
     const server = getInputServer();
     if (!server) return;
-    // explore(server);
 
-    navigate(getExploreServerPath(server));
     setDialog(false);
-  };
-
-  const handleView = () => {
-    const server = getInputServer();
-    if (!server) return;
+    setExploreServers({ type: 'APPEND', server });
     navigate(getExploreServerPath(server));
-    setDialog(false);
-  };
+  }, [navigate, setExploreServers]);
 
   return (
     <>
@@ -102,7 +98,10 @@ export function AddServer() {
               </Header>
               <Box
                 as="form"
-                onSubmit={handleSubmit}
+                onSubmit={(evt) => {
+                  evt.preventDefault();
+                  handleSubmit();
+                }}
                 style={{ padding: config.space.S400 }}
                 direction="Column"
                 gap="400"
@@ -131,7 +130,7 @@ export function AddServer() {
                     <Text size="B400">Save</Text>
                   </Button> */}
 
-                  <Button type="submit" onClick={handleView} variant="Secondary" fill="Soft">
+                  <Button type="submit" onClick={handleSubmit} variant="Secondary" fill="Soft">
                     <Text size="B400">View</Text>
                   </Button>
                 </Box>
@@ -155,14 +154,62 @@ export function AddServer() {
   );
 }
 
+type ExploreServerNavItemProps = {
+  server: string;
+  selected: boolean;
+  onRemove?: (() => void) | null;
+};
+export function ExploreServerNavItem({
+  server,
+  selected,
+  onRemove = null,
+}: ExploreServerNavItemProps) {
+  const [hover, setHover] = useState(false);
+  const { hoverProps } = useHover({ onHoverChange: setHover });
+  const { focusWithinProps } = useFocusWithin({ onFocusWithinChange: setHover });
+
+  return (
+    <NavItem
+      variant="Background"
+      radii="400"
+      aria-selected={selected}
+      {...hoverProps}
+      {...focusWithinProps}
+    >
+      <NavLink to={getExploreServerPath(server)}>
+        <NavItemContent>
+          <Box as="span" grow="Yes" alignItems="Center" gap="200">
+            <Avatar size="200" radii="400">
+              <Icon src={Icons.Category} size="100" filled={selected} />
+            </Avatar>
+            <Box as="span" grow="Yes">
+              <Text as="span" size="Inherit" truncate>
+                {server}
+              </Text>
+            </Box>
+          </Box>
+        </NavItemContent>
+      </NavLink>
+      {onRemove !== null && hover && (
+        <NavItemOptions>
+          <IconButton onClick={onRemove} variant="Background" fill="None" size="300" radii="300">
+            <Icon size="50" src={Icons.Minus} />
+          </IconButton>
+        </NavItemOptions>
+      )}
+    </NavItem>
+  );
+}
+
 export function Explore() {
   const mx = useMatrixClient();
   useNavToActivePathMapper('explore');
   const userId = mx.getUserId();
   const clientConfig = useClientConfig();
   const userServer = userId ? getMxIdServer(userId) : undefined;
-  const servers =
+  const featuredServers =
     clientConfig.featuredCommunities?.servers?.filter((server) => server !== userServer) ?? [];
+  const [exploreServers, setExploreServers] = useExploreServers();
 
   const featuredSelected = useExploreFeaturedSelected();
   const selectedServer = useExploreServer();
@@ -225,44 +272,30 @@ export function Explore() {
               </NavItem>
             )}
           </NavCategory>
-          {servers.length > 0 && (
-            <NavCategory>
-              <NavCategoryHeader>
-                <Text size="O400" style={{ paddingLeft: config.space.S200 }}>
-                  Servers
-                </Text>
-              </NavCategoryHeader>
-              {servers.map((server) => (
-                <NavItem
-                  key={server}
-                  variant="Background"
-                  radii="400"
-                  aria-selected={server === selectedServer}
-                >
-                  <NavLink to={getExploreServerPath(server)}>
-                    <NavItemContent>
-                      <Box as="span" grow="Yes" alignItems="Center" gap="200">
-                        <Avatar size="200" radii="400">
-                          <Icon
-                            src={Icons.Category}
-                            size="100"
-                            filled={server === selectedServer}
-                          />
-                        </Avatar>
-                        <Box as="span" grow="Yes">
-                          <Text as="span" size="Inherit" truncate>
-                            {server}
-                          </Text>
-                        </Box>
-                      </Box>
-                    </NavItemContent>
-                  </NavLink>
-                </NavItem>
-              ))}
-            </NavCategory>
-          )}
+          <NavCategory>
+            <NavCategoryHeader>
+              <Text size="O400" style={{ paddingLeft: config.space.S200 }}>
+                Servers
+              </Text>
+            </NavCategoryHeader>
+            {featuredServers.map((server) => (
+              <ExploreServerNavItem
+                key={server}
+                server={server}
+                selected={server === selectedServer}
+              />
+            ))}
+            {exploreServers.map((server) => (
+              <ExploreServerNavItem
+                key={server}
+                server={server}
+                selected={server === selectedServer}
+                onRemove={() => setExploreServers({ type: 'DELETE', server })}
+              />
+            ))}
+          </NavCategory>
           <Box direction="Column">
-            <AddServer />
+            <AddExploreServerPrompt />
           </Box>
         </Box>
       </PageNavContent>
