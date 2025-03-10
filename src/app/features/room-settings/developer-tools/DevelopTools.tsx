@@ -1,5 +1,17 @@
 import React, { useCallback, useState } from 'react';
-import { Box, Text, IconButton, Icon, Icons, Scroll, Switch, Button, MenuItem, Chip } from 'folds';
+import {
+  Box,
+  Text,
+  IconButton,
+  Icon,
+  Icons,
+  Scroll,
+  Switch,
+  Button,
+  MenuItem,
+  config,
+  color,
+} from 'folds';
 import { Page, PageContent, PageHeader } from '../../../components/page';
 import { SequenceCard } from '../../../components/sequence-card';
 import { SequenceCardStyle } from '../styles.css';
@@ -30,7 +42,8 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
   const roomState = useRoomState(room);
   const accountData = useRoomAccountData(room);
 
-  const [expandState, setExpandState] = useState<string>();
+  const [expandState, setExpandState] = useState(false);
+  const [expandStateType, setExpandStateType] = useState<string>();
   const [openStateEvent, setOpenStateEvent] = useState<StateEventInfo>();
   const [composeEvent, setComposeEvent] = useState<{ type?: string; stateKey?: string }>();
 
@@ -109,60 +122,6 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
                   />
                 </SequenceCard>
                 {developerTools && (
-                  <>
-                    <SequenceCard
-                      className={SequenceCardStyle}
-                      variant="SurfaceVariant"
-                      direction="Column"
-                      gap="400"
-                    >
-                      <SettingTile
-                        title="Room ID"
-                        description={`Copy room ID to clipboard. ("${room.roomId}")`}
-                        after={
-                          <Button
-                            onClick={() => copyToClipboard(room.roomId ?? '<NO_ROOM_ID_FOUND>')}
-                            variant="Secondary"
-                            fill="Soft"
-                            size="300"
-                            radii="300"
-                            outlined
-                          >
-                            <Text size="B300">Copy</Text>
-                          </Button>
-                        }
-                      />
-                    </SequenceCard>
-
-                    <SequenceCard
-                      className={SequenceCardStyle}
-                      variant="SurfaceVariant"
-                      direction="Column"
-                      gap="400"
-                    >
-                      <SettingTile
-                        title="New Message Event"
-                        description="Create and send a new message event within the room."
-                        after={
-                          <Button
-                            onClick={() => setComposeEvent({})}
-                            variant="Secondary"
-                            fill="Soft"
-                            size="300"
-                            radii="300"
-                            outlined
-                          >
-                            <Text size="B300">Compose</Text>
-                          </Button>
-                        }
-                      />
-                    </SequenceCard>
-                  </>
-                )}
-              </Box>
-              {developerTools && (
-                <Box direction="Column" gap="100">
-                  <Text size="L400">State</Text>
                   <SequenceCard
                     className={SequenceCardStyle}
                     variant="SurfaceVariant"
@@ -170,11 +129,41 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
                     gap="400"
                   >
                     <SettingTile
-                      title="New State Event"
-                      description="Create and send a new state event within the room."
+                      title="Room ID"
+                      description={`Copy room ID to clipboard. ("${room.roomId}")`}
                       after={
                         <Button
-                          onClick={() => setComposeEvent({ stateKey: '' })}
+                          onClick={() => copyToClipboard(room.roomId ?? '<NO_ROOM_ID_FOUND>')}
+                          variant="Secondary"
+                          fill="Soft"
+                          size="300"
+                          radii="300"
+                          outlined
+                        >
+                          <Text size="B300">Copy</Text>
+                        </Button>
+                      }
+                    />
+                  </SequenceCard>
+                )}
+              </Box>
+
+              {developerTools && (
+                <Box direction="Column" gap="100">
+                  <Text size="L400">Data</Text>
+
+                  <SequenceCard
+                    className={SequenceCardStyle}
+                    variant="SurfaceVariant"
+                    direction="Column"
+                    gap="400"
+                  >
+                    <SettingTile
+                      title="New Message Event"
+                      description="Create and send a new message event within the room."
+                      after={
+                        <Button
+                          onClick={() => setComposeEvent({})}
                           variant="Secondary"
                           fill="Soft"
                           size="300"
@@ -186,102 +175,143 @@ export function DeveloperTools({ requestClose }: DeveloperToolsProps) {
                       }
                     />
                   </SequenceCard>
-                  {Array.from(roomState.keys())
-                    .sort()
-                    .map((eventType) => {
-                      const expanded = eventType === expandState;
-                      const stateKeyToEvents = roomState.get(eventType);
-                      if (!stateKeyToEvents) return null;
-
-                      return (
-                        <SequenceCard
-                          id={eventType}
-                          key={eventType}
-                          className={SequenceCardStyle}
-                          variant="SurfaceVariant"
-                          direction="Column"
-                          gap="400"
+                  <SequenceCard
+                    className={SequenceCardStyle}
+                    variant="SurfaceVariant"
+                    direction="Column"
+                    gap="400"
+                  >
+                    <SettingTile
+                      title="Room State"
+                      description="State events of the room."
+                      after={
+                        <Button
+                          onClick={() => setExpandState(!expandState)}
+                          variant="Secondary"
+                          fill="Soft"
+                          size="300"
+                          radii="300"
+                          outlined
+                          before={
+                            <Icon
+                              src={expandState ? Icons.ChevronTop : Icons.ChevronBottom}
+                              size="100"
+                              filled
+                            />
+                          }
                         >
-                          <SettingTile
-                            title={eventType}
-                            after={
-                              <Chip
-                                variant="Secondary"
-                                fill="Soft"
-                                radii="Pill"
-                                before={
-                                  <Icon
-                                    size="100"
-                                    src={expanded ? Icons.ChevronTop : Icons.ChevronBottom}
-                                  />
-                                }
-                                onClick={() => setExpandState(expanded ? undefined : eventType)}
-                              >
-                                {expanded ? (
-                                  <Text size="B300">Collapse</Text>
-                                ) : (
-                                  <Text size="B300">Expand</Text>
-                                )}
-                              </Chip>
-                            }
-                          />
-                          {expanded && (
-                            <Box direction="Column" gap="100">
-                              <Box justifyContent="SpaceBetween">
-                                <Text size="L400">Events</Text>
-                                <Text size="L400">Total: {stateKeyToEvents.size}</Text>
-                              </Box>
-                              <CutoutCard>
-                                <MenuItem
-                                  onClick={() => setComposeEvent({ type: eventType, stateKey: '' })}
-                                  variant="Surface"
-                                  fill="None"
-                                  size="300"
-                                  radii="0"
-                                  before={<Icon size="50" src={Icons.Plus} />}
-                                >
-                                  <Box grow="Yes">
-                                    <Text size="T200" truncate>
-                                      Add New
-                                    </Text>
-                                  </Box>
-                                </MenuItem>
-                                {Array.from(stateKeyToEvents.keys())
-                                  .sort()
-                                  .map((stateKey) => (
-                                    <MenuItem
-                                      onClick={() => {
-                                        setOpenStateEvent({
-                                          type: eventType,
-                                          stateKey,
-                                        });
-                                      }}
-                                      key={stateKey}
-                                      variant="Surface"
-                                      fill="None"
-                                      size="300"
-                                      radii="0"
-                                      after={<Icon size="50" src={Icons.ChevronRight} />}
-                                    >
-                                      <Box grow="Yes">
-                                        <Text size="T200" truncate>
-                                          {stateKey ? `"${stateKey}"` : 'Default'}
-                                        </Text>
-                                      </Box>
-                                    </MenuItem>
-                                  ))}
-                              </CutoutCard>
+                          <Text size="B300">{expandState ? 'Collapse' : 'Expand'}</Text>
+                        </Button>
+                      }
+                    />
+                    {expandState && (
+                      <Box direction="Column" gap="100">
+                        <Box justifyContent="SpaceBetween">
+                          <Text size="L400">Events</Text>
+                          <Text size="L400">Total: {roomState.size}</Text>
+                        </Box>
+                        <CutoutCard>
+                          <MenuItem
+                            onClick={() => setComposeEvent({ stateKey: '' })}
+                            variant="Surface"
+                            fill="None"
+                            size="300"
+                            radii="0"
+                            before={<Icon size="50" src={Icons.Plus} />}
+                          >
+                            <Box grow="Yes">
+                              <Text size="T200" truncate>
+                                Add New
+                              </Text>
                             </Box>
-                          )}
-                        </SequenceCard>
-                      );
-                    })}
-                </Box>
-              )}
+                          </MenuItem>
+                          {Array.from(roomState.keys())
+                            .sort()
+                            .map((eventType) => {
+                              const expanded = eventType === expandStateType;
+                              const stateKeyToEvents = roomState.get(eventType);
+                              if (!stateKeyToEvents) return null;
 
-              {developerTools && (
-                <Box direction="Column" gap="100">
-                  <Text size="L400">Data</Text>
+                              return (
+                                <Box id={eventType} key={eventType} direction="Column" gap="100">
+                                  <MenuItem
+                                    onClick={() =>
+                                      setExpandStateType(expanded ? undefined : eventType)
+                                    }
+                                    variant="Surface"
+                                    fill="None"
+                                    size="300"
+                                    radii="0"
+                                    before={
+                                      <Icon
+                                        size="50"
+                                        src={expanded ? Icons.ChevronBottom : Icons.ChevronRight}
+                                      />
+                                    }
+                                    after={<Text size="L400">{stateKeyToEvents.size}</Text>}
+                                  >
+                                    <Box grow="Yes">
+                                      <Text size="T200" truncate>
+                                        {eventType}
+                                      </Text>
+                                    </Box>
+                                  </MenuItem>
+                                  {expanded && (
+                                    <div
+                                      style={{
+                                        marginLeft: config.space.S400,
+                                        borderLeft: `${config.borderWidth.B300} solid ${color.Surface.ContainerLine}`,
+                                      }}
+                                    >
+                                      <MenuItem
+                                        onClick={() =>
+                                          setComposeEvent({ type: eventType, stateKey: '' })
+                                        }
+                                        variant="Surface"
+                                        fill="None"
+                                        size="300"
+                                        radii="0"
+                                        before={<Icon size="50" src={Icons.Plus} />}
+                                      >
+                                        <Box grow="Yes">
+                                          <Text size="T200" truncate>
+                                            Add New
+                                          </Text>
+                                        </Box>
+                                      </MenuItem>
+                                      {Array.from(stateKeyToEvents.keys())
+                                        .sort()
+                                        .map((stateKey) => (
+                                          <MenuItem
+                                            onClick={() => {
+                                              setOpenStateEvent({
+                                                type: eventType,
+                                                stateKey,
+                                              });
+                                            }}
+                                            key={stateKey}
+                                            variant="Surface"
+                                            fill="None"
+                                            size="300"
+                                            radii="0"
+                                            after={<Icon size="50" src={Icons.ChevronRight} />}
+                                          >
+                                            <Box grow="Yes">
+                                              <Text size="T200" truncate>
+                                                {stateKey ? `"${stateKey}"` : 'Default'}
+                                              </Text>
+                                            </Box>
+                                          </MenuItem>
+                                        ))}
+                                    </div>
+                                  )}
+                                </Box>
+                              );
+                            })}
+                        </CutoutCard>
+                      </Box>
+                    )}
+                  </SequenceCard>
                   <SequenceCard
                     className={SequenceCardStyle}
                     variant="SurfaceVariant"
