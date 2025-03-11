@@ -1,4 +1,4 @@
-import React, { FormEventHandler, useCallback, useMemo } from 'react';
+import React, { FormEventHandler, useCallback, useMemo, useState } from 'react';
 import {
   Box,
   Text,
@@ -13,10 +13,18 @@ import {
   Input,
   Spinner,
   color,
+  IconButton,
+  Menu,
 } from 'folds';
 import { MatrixError } from 'matrix-js-sdk';
 import { SequenceCard } from '../../../components/sequence-card';
-import { ImagePack, ImageUsage, PackContent } from '../../../plugins/custom-emoji';
+import {
+  ImagePack,
+  ImageUsage,
+  PackAddress,
+  packAddressEqual,
+  PackContent,
+} from '../../../plugins/custom-emoji';
 import { useRoom } from '../../../hooks/useRoom';
 import { useRoomImagePacks } from '../../../hooks/useImagePacks';
 import { LineClamp2 } from '../../../styles/Text.css';
@@ -135,19 +143,53 @@ export function RoomPacks({ onViewPack }: RoomPacksProps) {
   const mx = useMatrixClient();
   const useAuthentication = useMediaAuthentication();
   const room = useRoom();
+  const alive = useAlive();
+
   const powerLevels = usePowerLevels(room);
   const { canSendStateEvent, getPowerLevel } = usePowerLevelsAPI(powerLevels);
   const canEdit = canSendStateEvent(StateEvent.PoniesRoomEmotes, getPowerLevel(mx.getSafeUserId()));
-  const removed = false;
 
   const unfilteredPacks = useRoomImagePacks(room);
   const packs = useMemo(() => unfilteredPacks.filter((pack) => !pack.deleted), [unfilteredPacks]);
+
+  const [removedPacks, setRemovedPacks] = useState<PackAddress[]>([]);
+  const hasChanges = removedPacks.length > 0;
+
+  const [applyState, applyChanges] = useAsyncCallback(
+    useCallback(async () => {
+      for (let i = 0; i < removedPacks.length; i += 1) {
+        const addr = removedPacks[i];
+        // eslint-disable-next-line no-await-in-loop
+        await mx.sendStateEvent(room.roomId, StateEvent.PoniesRoomEmotes as any, {}, addr.stateKey);
+      }
+    }, [mx, room, removedPacks])
+  );
+  const applyingChanges = applyState.status === AsyncStatus.Loading;
+
+  const handleRemove = (address: PackAddress) => {
+    setRemovedPacks((addresses) => [...addresses, address]);
+  };
+
+  const handleUndoRemove = (address: PackAddress) => {
+    setRemovedPacks((addresses) => addresses.filter((addr) => !packAddressEqual(addr, address)));
+  };
+
+  const handleCancelChanges = () => setRemovedPacks([]);
+
+  const handleApplyChanges = () => {
+    applyChanges().then(() => {
+      if (alive()) {
+        setRemovedPacks([]);
+      }
+    });
+  };
 
   const renderPack = (pack: ImagePack) => {
     const avatarMxc = pack.getAvatarUrl(ImageUsage.Emoticon);
     const avatarUrl = avatarMxc ? mxcUrlToHttp(mx, avatarMxc, useAuthentication) : undefined;
     const { address } = pack;
     if (!address) return null;
+    const removed = !!removedPacks.find((addr) => packAddressEqual(addr, address));
 
     return (
       <SequenceCard
@@ -166,31 +208,28 @@ export function RoomPacks({ onViewPack }: RoomPacksProps) {
           description={<span className={LineClamp2}>{pack.meta.attribution}</span>}
           before={
             <Box alignItems="Center" gap="300">
-              {/* {canEdit && (
-                <>
-                  {removed ? (
-                    <IconButton
-                      size="300"
-                      radii="Pill"
-                      variant="Critical"
-                      onClick={() => handleUndoRemove(address)}
-                      disabled={applyingChanges}
-                    >
-                      <Icon src={Icons.Plus} size="100" />
-                    </IconButton>
-                  ) : (
-                    <IconButton
-                      size="300"
-                      radii="Pill"
-                      variant="Secondary"
-                      onClick={() => handleRemove(address)}
-                      disabled={applyingChanges}
-                    >
-                      <Icon src={Icons.Cross} size="100" />
-                    </IconButton>
-                  )}
-                </>
-              )} */}
+              {canEdit &&
+                (removed ? (
+                  <IconButton
+                    size="300"
+                    radii="Pill"
+                    variant="Critical"
+                    onClick={() => handleUndoRemove(address)}
+                    disabled={applyingChanges}
+                  >
+                    <Icon src={Icons.Plus} size="100" />
+                  </IconButton>
+                ) : (
+                  <IconButton
+                    size="300"
+                    radii="Pill"
+                    variant="Secondary"
+                    onClick={() => handleRemove(address)}
+                    disabled={applyingChanges}
+                  >
+                    <Icon src={Icons.Cross} size="100" />
+                  </IconButton>
+                ))}
               <Avatar size="300" radii="300">
                 {avatarUrl ? (
                   <AvatarImage style={{ objectFit: 'contain' }} src={avatarUrl} />
@@ -222,36 +261,89 @@ export function RoomPacks({ onViewPack }: RoomPacksProps) {
   };
 
   return (
-    <Box direction="Column" gap="100">
-      <Text size="L400">Packs</Text>
-      {canEdit && <CreatePackTile roomId={room.roomId} packs={packs} />}
-      {packs.map(renderPack)}
-      {packs.length === 0 && (
-        <SequenceCard
-          className={SequenceCardStyle}
-          variant="SurfaceVariant"
-          direction="Column"
-          gap="400"
-        >
-          <Box
-            justifyContent="Center"
+    <>
+      <Box direction="Column" gap="100">
+        <Text size="L400">Packs</Text>
+        {canEdit && <CreatePackTile roomId={room.roomId} packs={packs} />}
+        {packs.map(renderPack)}
+        {packs.length === 0 && (
+          <SequenceCard
+            className={SequenceCardStyle}
+            variant="SurfaceVariant"
             direction="Column"
-            gap="200"
-            style={{
-              padding: `${config.space.S700} ${config.space.S400}`,
-              maxWidth: toRem(300),
-              margin: 'auto',
-            }}
+            gap="400"
           >
-            <Text size="H5" align="Center">
-              No Packs
-            </Text>
-            <Text size="T200" align="Center">
-              There are no emoji or sticker packs to display at the moment.
-            </Text>
+            <Box
+              justifyContent="Center"
+              direction="Column"
+              gap="200"
+              style={{
+                padding: `${config.space.S700} ${config.space.S400}`,
+                maxWidth: toRem(300),
+                margin: 'auto',
+              }}
+            >
+              <Text size="H5" align="Center">
+                No Packs
+              </Text>
+              <Text size="T200" align="Center">
+                There are no emoji or sticker packs to display at the moment.
+              </Text>
+            </Box>
+          </SequenceCard>
+        )}
+      </Box>
+
+      {hasChanges && (
+        <Menu
+          style={{
+            position: 'sticky',
+            padding: config.space.S200,
+            paddingLeft: config.space.S400,
+            bottom: config.space.S400,
+            left: config.space.S400,
+            right: 0,
+            zIndex: 1,
+          }}
+          variant="Critical"
+        >
+          <Box alignItems="Center" gap="400">
+            <Box grow="Yes" direction="Column">
+              {applyState.status === AsyncStatus.Error ? (
+                <Text size="T200">
+                  <b>Failed to remove packs! Please try again.</b>
+                </Text>
+              ) : (
+                <Text size="T200">
+                  <b>Delete selected packs. ({removedPacks.length} selected)</b>
+                </Text>
+              )}
+            </Box>
+            <Box shrink="No" gap="200">
+              <Button
+                size="300"
+                variant="Critical"
+                fill="None"
+                radii="300"
+                disabled={applyingChanges}
+                onClick={handleCancelChanges}
+              >
+                <Text size="B300">Cancel</Text>
+              </Button>
+              <Button
+                size="300"
+                variant="Critical"
+                radii="300"
+                disabled={applyingChanges}
+                before={applyingChanges && <Spinner variant="Critical" fill="Solid" size="100" />}
+                onClick={handleApplyChanges}
+              >
+                <Text size="B300">Delete</Text>
+              </Button>
+            </Box>
           </Box>
-        </SequenceCard>
+        </Menu>
       )}
-    </Box>
+    </>
   );
 }
