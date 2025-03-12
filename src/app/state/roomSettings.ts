@@ -3,9 +3,8 @@ import { atom } from 'jotai';
 export enum RoomSettingsPage {
   GeneralPage,
   MembersPage,
-  EmojisStickersPage,
   PermissionsPage,
-  SecurityPage,
+  EmojisStickersPage,
   DeveloperToolsPage,
 }
 

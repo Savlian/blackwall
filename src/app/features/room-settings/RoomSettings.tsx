@@ -14,7 +14,6 @@ import { General } from './general';
 import { Members } from './members';
 import { EmojisStickers } from './emojis-stickers';
 import { Permissions } from './permissions';
-import { Security } from './security';
 import { RoomSettingsPage } from '../../state/roomSettings';
 import { useRoom } from '../../hooks/useRoom';
 import { DeveloperTools } from './developer-tools';
@@ -32,11 +31,6 @@ const useRoomSettingsMenuItems = (): RoomSettingsMenuItem[] =>
         page: RoomSettingsPage.GeneralPage,
         name: 'General',
         icon: Icons.Setting,
-      },
-      {
-        page: RoomSettingsPage.SecurityPage,
-        name: 'Security',
-        icon: Icons.Lock,
       },
       {
         page: RoomSettingsPage.MembersPage,
@@ -164,14 +158,11 @@ export function RoomSettings({ initialPage, requestClose }: RoomSettingsProps) {
       {activePage === RoomSettingsPage.MembersPage && (
         <Members requestClose={handlePageRequestClose} />
       )}
-      {activePage === RoomSettingsPage.EmojisStickersPage && (
-        <EmojisStickers requestClose={handlePageRequestClose} />
-      )}
       {activePage === RoomSettingsPage.PermissionsPage && (
         <Permissions requestClose={handlePageRequestClose} />
       )}
-      {activePage === RoomSettingsPage.SecurityPage && (
-        <Security requestClose={handlePageRequestClose} />
+      {activePage === RoomSettingsPage.EmojisStickersPage && (
+        <EmojisStickers requestClose={handlePageRequestClose} />
       )}
       {activePage === RoomSettingsPage.DeveloperToolsPage && (
         <DeveloperTools requestClose={handlePageRequestClose} />
