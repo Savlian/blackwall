@@ -312,7 +312,7 @@ export function Members({ requestClose }: MembersProps) {
                             after={
                               server && (
                                 <Box as="span" shrink="No" alignSelf="End">
-                                  <ServerBadge server={server} fill="Solid" />
+                                  <ServerBadge server={server} fill="None" />
                                 </Box>
                               )
                             }

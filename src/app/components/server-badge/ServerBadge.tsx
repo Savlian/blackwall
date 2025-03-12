@@ -1,6 +1,5 @@
 import React from 'react';
-import { as, Badge, color, Text } from 'folds';
-import colorMXID from '../../../util/colorMXID';
+import { as, Badge, Text } from 'folds';
 
 export const ServerBadge = as<
   'div',
@@ -9,24 +8,7 @@ export const ServerBadge = as<
     fill?: 'Solid' | 'None';
   }
 >(({ as: AsServerBadge = 'div', fill, server, ...props }, ref) => (
-  <Badge
-    as={AsServerBadge}
-    fill="Solid"
-    radii="300"
-    style={
-      fill === 'None'
-        ? {
-            color: colorMXID(server),
-            background: 'transparent',
-          }
-        : {
-            background: colorMXID(server),
-            color: color.Surface.Container,
-          }
-    }
-    {...props}
-    ref={ref}
-  >
+  <Badge as={AsServerBadge} variant="Secondary" fill={fill} radii="300" {...props} ref={ref}>
     <Text as="span" size="L400" truncate>
       {server}
     </Text>
