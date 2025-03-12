@@ -1,6 +1,7 @@
-import React, { MouseEventHandler, useMemo, useRef } from 'react';
-import { Box, config, Icon, IconButton, Icons, Scroll, Spinner, Text } from 'folds';
+import React, { ChangeEventHandler, MouseEventHandler, useCallback, useMemo, useRef } from 'react';
+import { Box, config, Icon, IconButton, Icons, Input, Scroll, Spinner, Text } from 'folds';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { RoomMember } from 'matrix-js-sdk';
 import { Page, PageContent, PageHeader } from '../../../components/page';
 import { useRoom } from '../../../hooks/useRoom';
 import { useRoomMembers } from '../../../hooks/useRoomMembers';
@@ -13,9 +14,30 @@ import {
 import { VirtualTile } from '../../../components/virtualizer';
 import { MemberTile } from '../../../components/member-tile';
 import { useMediaAuthentication } from '../../../hooks/useMediaAuthentication';
-import { getMxIdServer } from '../../../utils/matrix';
+import { getMxIdLocalPart, getMxIdServer } from '../../../utils/matrix';
 import { ServerBadge } from '../../../components/server-badge';
 import { openProfileViewer } from '../../../../client/action/navigation';
+import { useDebounce } from '../../../hooks/useDebounce';
+import {
+  SearchItemStrGetter,
+  useAsyncSearch,
+  UseAsyncSearchOptions,
+} from '../../../hooks/useAsyncSearch';
+import { getMemberSearchStr } from '../../../utils/room';
+
+const SEARCH_OPTIONS: UseAsyncSearchOptions = {
+  limit: 1000,
+  matchOptions: {
+    contain: true,
+  },
+  normalizeOptions: {
+    ignoreWhitespace: false,
+  },
+};
+
+const mxIdToName = (mxId: string) => getMxIdLocalPart(mxId) ?? mxId;
+const getRoomMemberStr: SearchItemStrGetter<RoomMember> = (m, query) =>
+  getMemberSearchStr(m, query, mxIdToName);
 
 type MembersProps = {
   requestClose: () => void;
@@ -32,14 +54,22 @@ export function Members({ requestClose }: MembersProps) {
   const getPowerLevelTag = usePowerLevelTags();
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const sortedMembers = useMemo(
     () => Array.from(members).sort((a, b) => b.powerLevel - a.powerLevel),
     [members]
   );
 
-  const flattenTagMembers = useFlattenPowerLevelTagMembers(
+  const [result, search, resetSearch] = useAsyncSearch(
     sortedMembers,
+    getRoomMemberStr,
+    SEARCH_OPTIONS
+  );
+  if (!result && searchInputRef.current?.value) search(searchInputRef.current.value);
+
+  const flattenTagMembers = useFlattenPowerLevelTagMembers(
+    result?.items ?? sortedMembers,
     getPowerLevel,
     getPowerLevelTag
   );
@@ -50,6 +80,17 @@ export function Members({ requestClose }: MembersProps) {
     estimateSize: () => 40,
     overscan: 10,
   });
+
+  const handleSearchChange: ChangeEventHandler<HTMLInputElement> = useDebounce(
+    useCallback(
+      (evt) => {
+        if (evt.target.value) search(evt.target.value);
+        else resetSearch();
+      },
+      [search, resetSearch]
+    ),
+    { wait: 200 }
+  );
 
   const handleMemberClick: MouseEventHandler<HTMLButtonElement> = (evt) => {
     const btn = evt.currentTarget as HTMLButtonElement;
@@ -64,7 +105,7 @@ export function Members({ requestClose }: MembersProps) {
         <Box grow="Yes" gap="200">
           <Box grow="Yes" alignItems="Center" gap="200">
             <Text size="H3" truncate>
-              Members ({room.getJoinedMemberCount()})
+              {room.getJoinedMemberCount()} Members
             </Text>
           </Box>
           <Box shrink="No">
@@ -77,68 +118,85 @@ export function Members({ requestClose }: MembersProps) {
       <Box grow="Yes">
         <Scroll ref={scrollRef} hideTrack visibility="Hover">
           <PageContent>
-            <Box
-              style={{
-                position: 'relative',
-                height: virtualizer.getTotalSize(),
-              }}
-              direction="Column"
-              gap="100"
-            >
-              {virtualizer.getVirtualItems().map((vItem) => {
-                const tagOrMember = flattenTagMembers[vItem.index];
+            <Box direction="Column" gap="600">
+              <Box
+                style={{ position: 'sticky', top: config.space.S100, zIndex: 1 }}
+                direction="Column"
+                gap="100"
+              >
+                <Input
+                  ref={searchInputRef}
+                  onChange={handleSearchChange}
+                  before={<Icon size="200" src={Icons.Search} />}
+                  variant="SurfaceVariant"
+                  size="500"
+                  placeholder="Search"
+                  outlined
+                />
+              </Box>
+              <Box
+                style={{
+                  position: 'relative',
+                  height: virtualizer.getTotalSize(),
+                }}
+                direction="Column"
+                gap="100"
+              >
+                {virtualizer.getVirtualItems().map((vItem) => {
+                  const tagOrMember = flattenTagMembers[vItem.index];
 
-                if ('userId' in tagOrMember) {
-                  const server = getMxIdServer(tagOrMember.userId);
+                  if ('userId' in tagOrMember) {
+                    const server = getMxIdServer(tagOrMember.userId);
+                    return (
+                      <VirtualTile
+                        virtualItem={vItem}
+                        key={tagOrMember.userId}
+                        ref={virtualizer.measureElement}
+                      >
+                        <div style={{ paddingTop: config.space.S200 }}>
+                          <MemberTile
+                            data-user-id={tagOrMember.userId}
+                            onClick={handleMemberClick}
+                            mx={mx}
+                            room={room}
+                            member={tagOrMember}
+                            useAuthentication={useAuthentication}
+                            after={
+                              server && (
+                                <Box as="span" shrink="No" alignSelf="End">
+                                  <ServerBadge server={server} fill="Solid" />
+                                </Box>
+                              )
+                            }
+                          />
+                        </div>
+                      </VirtualTile>
+                    );
+                  }
+
                   return (
                     <VirtualTile
                       virtualItem={vItem}
                       key={vItem.index}
                       ref={virtualizer.measureElement}
                     >
-                      <div style={{ paddingTop: config.space.S100 }}>
-                        <MemberTile
-                          data-user-id={tagOrMember.userId}
-                          onClick={handleMemberClick}
-                          mx={mx}
-                          room={room}
-                          member={tagOrMember}
-                          useAuthentication={useAuthentication}
-                          after={
-                            server && (
-                              <Box as="span" shrink="No" alignSelf="Start">
-                                <ServerBadge server={server} fill="Solid" />
-                              </Box>
-                            )
-                          }
-                        />
+                      <div
+                        style={{
+                          paddingTop: vItem.index === 0 ? undefined : config.space.S500,
+                        }}
+                      >
+                        <Text size="L400">{tagOrMember.name}</Text>
                       </div>
                     </VirtualTile>
                   );
-                }
+                })}
 
-                return (
-                  <VirtualTile
-                    virtualItem={vItem}
-                    key={vItem.index}
-                    ref={virtualizer.measureElement}
-                  >
-                    <div
-                      style={{
-                        paddingTop: vItem.index === 0 ? undefined : config.space.S500,
-                      }}
-                    >
-                      <Text size="L400">{tagOrMember.name}</Text>
-                    </div>
-                  </VirtualTile>
-                );
-              })}
-
-              {fetchingMembers && (
-                <Box justifyContent="Center">
-                  <Spinner />
-                </Box>
-              )}
+                {fetchingMembers && (
+                  <Box justifyContent="Center">
+                    <Spinner />
+                  </Box>
+                )}
+              </Box>
             </Box>
           </PageContent>
         </Scroll>
