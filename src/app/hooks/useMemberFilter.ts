@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { RoomMember } from 'matrix-js-sdk';
-import { ContainerColor } from 'folds';
 import { Membership } from '../../types/matrix/room';
 
 export const MembershipFilter = {
@@ -20,7 +19,6 @@ export type MembershipFilterFn = (m: RoomMember) => boolean;
 export type MembershipFilterItem = {
   name: string;
   filterFn: MembershipFilterFn;
-  color: ContainerColor;
 };
 
 export const useMembershipFilterMenu = (): MembershipFilterItem[] =>
@@ -29,27 +27,22 @@ export const useMembershipFilterMenu = (): MembershipFilterItem[] =>
       {
         name: 'Joined',
         filterFn: MembershipFilter.filterJoined,
-        color: 'Background',
       },
       {
         name: 'Invited',
         filterFn: MembershipFilter.filterInvited,
-        color: 'Success',
       },
       {
         name: 'Left',
         filterFn: MembershipFilter.filterLeaved,
-        color: 'Secondary',
       },
       {
         name: 'Kicked',
         filterFn: MembershipFilter.filterKicked,
-        color: 'Warning',
       },
       {
         name: 'Banned',
         filterFn: MembershipFilter.filterBanned,
-        color: 'Critical',
       },
     ],
     []

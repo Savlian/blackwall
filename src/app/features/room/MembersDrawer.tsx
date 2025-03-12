@@ -16,7 +16,6 @@ import {
   IconButton,
   Icons,
   Input,
-  Menu,
   MenuItem,
   PopOut,
   RectCords,
@@ -29,7 +28,6 @@ import {
 } from 'folds';
 import { Room, RoomMember } from 'matrix-js-sdk';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import FocusTrap from 'focus-trap-react';
 import classNames from 'classnames';
 
 import { openProfileViewer } from '../../../client/action/navigation';
@@ -52,11 +50,12 @@ import { millify } from '../../plugins/millify';
 import { ScrollTopContainer } from '../../components/scroll-top-container';
 import { UserAvatar } from '../../components/user-avatar';
 import { useRoomTypingMember } from '../../hooks/useRoomTypingMembers';
-import { stopPropagation } from '../../utils/keyboard';
 import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
 import { useMembershipFilter, useMembershipFilterMenu } from '../../hooks/useMemberFilter';
 import { useMemberSort, useMemberSortMenu } from '../../hooks/useMemberSort';
 import { usePowerLevelsAPI, usePowerLevelsContext } from '../../hooks/usePowerLevels';
+import { MembershipFilterMenu } from '../../components/MembershipFilterMenu';
+import { MemberSortMenu } from '../../components/MemberSortMenu';
 
 const SEARCH_OPTIONS: UseAsyncSearchOptions = {
   limit: 1000,
@@ -192,38 +191,11 @@ export function MembersDrawer({ room, members }: MembersDrawerProps) {
                       align="Start"
                       offset={4}
                       content={
-                        <FocusTrap
-                          focusTrapOptions={{
-                            initialFocus: false,
-                            onDeactivate: () => setAnchor(undefined),
-                            clickOutsideDeactivates: true,
-                            isKeyForward: (evt: KeyboardEvent) => evt.key === 'ArrowDown',
-                            isKeyBackward: (evt: KeyboardEvent) => evt.key === 'ArrowUp',
-                            escapeDeactivates: stopPropagation,
-                          }}
-                        >
-                          <Menu style={{ padding: config.space.S100 }}>
-                            {membershipFilterMenu.map((menuItem, index) => (
-                              <MenuItem
-                                key={menuItem.name}
-                                variant={
-                                  menuItem.name === membershipFilter.name
-                                    ? menuItem.color
-                                    : 'Surface'
-                                }
-                                aria-pressed={menuItem.name === membershipFilter.name}
-                                size="300"
-                                radii="300"
-                                onClick={() => {
-                                  setMembershipFilterIndex(index);
-                                  setAnchor(undefined);
-                                }}
-                              >
-                                <Text size="T300">{menuItem.name}</Text>
-                              </MenuItem>
-                            ))}
-                          </Menu>
-                        </FocusTrap>
+                        <MembershipFilterMenu
+                          selected={membershipFilterIndex}
+                          onSelect={setMembershipFilterIndex}
+                          requestClose={() => setAnchor(undefined)}
+                        />
                       }
                     >
                       <Chip
@@ -233,7 +205,7 @@ export function MembersDrawer({ room, members }: MembersDrawerProps) {
                               evt.currentTarget.getBoundingClientRect()
                             )) as MouseEventHandler<HTMLButtonElement>
                         }
-                        variant={membershipFilter.color}
+                        variant="Background"
                         size="400"
                         radii="300"
                         before={<Icon src={Icons.Filter} size="50" />}
@@ -251,34 +223,11 @@ export function MembersDrawer({ room, members }: MembersDrawerProps) {
                       align="End"
                       offset={4}
                       content={
-                        <FocusTrap
-                          focusTrapOptions={{
-                            initialFocus: false,
-                            onDeactivate: () => setAnchor(undefined),
-                            clickOutsideDeactivates: true,
-                            isKeyForward: (evt: KeyboardEvent) => evt.key === 'ArrowDown',
-                            isKeyBackward: (evt: KeyboardEvent) => evt.key === 'ArrowUp',
-                            escapeDeactivates: stopPropagation,
-                          }}
-                        >
-                          <Menu style={{ padding: config.space.S100 }}>
-                            {sortFilterMenu.map((menuItem, index) => (
-                              <MenuItem
-                                key={menuItem.name}
-                                variant="Surface"
-                                aria-pressed={menuItem.name === memberSort.name}
-                                size="300"
-                                radii="300"
-                                onClick={() => {
-                                  setSortFilterIndex(index);
-                                  setAnchor(undefined);
-                                }}
-                              >
-                                <Text size="T300">{menuItem.name}</Text>
-                              </MenuItem>
-                            ))}
-                          </Menu>
-                        </FocusTrap>
+                        <MemberSortMenu
+                          selected={sortFilterIndex}
+                          onSelect={setSortFilterIndex}
+                          requestClose={() => setAnchor(undefined)}
+                        />
                       }
                     >
                       <Chip

@@ -1,5 +1,26 @@
-import React, { ChangeEventHandler, MouseEventHandler, useCallback, useMemo, useRef } from 'react';
-import { Box, Chip, config, Icon, IconButton, Icons, Input, Scroll, Spinner, Text } from 'folds';
+import React, {
+  ChangeEventHandler,
+  MouseEventHandler,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import {
+  Box,
+  Chip,
+  config,
+  Icon,
+  IconButton,
+  Icons,
+  Input,
+  PopOut,
+  RectCords,
+  Scroll,
+  Spinner,
+  Text,
+  toRem,
+} from 'folds';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { RoomMember } from 'matrix-js-sdk';
 import { Page, PageContent, PageHeader } from '../../../components/page';
@@ -24,6 +45,14 @@ import {
   UseAsyncSearchOptions,
 } from '../../../hooks/useAsyncSearch';
 import { getMemberSearchStr } from '../../../utils/room';
+import { useMembershipFilter, useMembershipFilterMenu } from '../../../hooks/useMemberFilter';
+import { useMemberSort, useMemberSortMenu } from '../../../hooks/useMemberSort';
+import { settingsAtom } from '../../../state/settings';
+import { useSetting } from '../../../state/hooks/settings';
+import { UseStateProvider } from '../../../components/UseStateProvider';
+import { MembershipFilterMenu } from '../../../components/MembershipFilterMenu';
+import { MemberSortMenu } from '../../../components/MemberSortMenu';
+import { ScrollTopContainer } from '../../../components/scroll-top-container';
 
 const SEARCH_OPTIONS: UseAsyncSearchOptions = {
   limit: 1000,
@@ -53,12 +82,22 @@ export function Members({ requestClose }: MembersProps) {
   const { getPowerLevel } = usePowerLevelsAPI(powerLevels);
   const getPowerLevelTag = usePowerLevelTags();
 
+  const [membershipFilterIndex, setMembershipFilterIndex] = useState(0);
+  const [sortFilterIndex, setSortFilterIndex] = useSetting(settingsAtom, 'memberSortFilterIndex');
+  const membershipFilter = useMembershipFilter(membershipFilterIndex, useMembershipFilterMenu());
+  const memberSort = useMemberSort(sortFilterIndex, useMemberSortMenu());
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const scrollTopAnchorRef = useRef<HTMLDivElement>(null);
 
   const sortedMembers = useMemo(
-    () => Array.from(members).sort((a, b) => b.powerLevel - a.powerLevel),
-    [members]
+    () =>
+      Array.from(members)
+        .filter(membershipFilter.filterFn)
+        .sort(memberSort.sortFn)
+        .sort((a, b) => b.powerLevel - a.powerLevel),
+    [members, membershipFilter, memberSort]
   );
 
   const [result, search, resetSearch] = useAsyncSearch(
@@ -123,10 +162,10 @@ export function Members({ requestClose }: MembersProps) {
           </Box>
         </Box>
       </PageHeader>
-      <Box grow="Yes">
+      <Box grow="Yes" style={{ position: 'relative' }}>
         <Scroll ref={scrollRef} hideTrack visibility="Hover">
           <PageContent>
-            <Box direction="Column" gap="600">
+            <Box direction="Column" gap="200">
               <Box
                 style={{ position: 'sticky', top: config.space.S100, zIndex: 1 }}
                 direction="Column"
@@ -161,6 +200,88 @@ export function Members({ requestClose }: MembersProps) {
                   }
                 />
               </Box>
+              <Box ref={scrollTopAnchorRef} alignItems="Center" justifyContent="End" gap="200">
+                <UseStateProvider initial={undefined}>
+                  {(anchor: RectCords | undefined, setAnchor) => (
+                    <PopOut
+                      anchor={anchor}
+                      position="Bottom"
+                      align="Start"
+                      offset={4}
+                      content={
+                        <MembershipFilterMenu
+                          selected={membershipFilterIndex}
+                          onSelect={setMembershipFilterIndex}
+                          requestClose={() => setAnchor(undefined)}
+                        />
+                      }
+                    >
+                      <Chip
+                        onClick={
+                          ((evt) =>
+                            setAnchor(
+                              evt.currentTarget.getBoundingClientRect()
+                            )) as MouseEventHandler<HTMLButtonElement>
+                        }
+                        variant="SurfaceVariant"
+                        size="400"
+                        radii="300"
+                        before={<Icon src={Icons.Filter} size="50" />}
+                      >
+                        <Text size="T200">{membershipFilter.name}</Text>
+                      </Chip>
+                    </PopOut>
+                  )}
+                </UseStateProvider>
+                <UseStateProvider initial={undefined}>
+                  {(anchor: RectCords | undefined, setAnchor) => (
+                    <PopOut
+                      anchor={anchor}
+                      position="Bottom"
+                      align="End"
+                      offset={4}
+                      content={
+                        <MemberSortMenu
+                          selected={sortFilterIndex}
+                          onSelect={setSortFilterIndex}
+                          requestClose={() => setAnchor(undefined)}
+                        />
+                      }
+                    >
+                      <Chip
+                        onClick={
+                          ((evt) =>
+                            setAnchor(
+                              evt.currentTarget.getBoundingClientRect()
+                            )) as MouseEventHandler<HTMLButtonElement>
+                        }
+                        variant="SurfaceVariant"
+                        size="400"
+                        radii="300"
+                        after={<Icon src={Icons.Sort} size="50" />}
+                      >
+                        <Text size="T200">{memberSort.name}</Text>
+                      </Chip>
+                    </PopOut>
+                  )}
+                </UseStateProvider>
+              </Box>
+              <ScrollTopContainer
+                style={{ top: toRem(64) }}
+                scrollRef={scrollRef}
+                anchorRef={scrollTopAnchorRef}
+              >
+                <IconButton
+                  onClick={() => virtualizer.scrollToOffset(0)}
+                  variant="Surface"
+                  radii="Pill"
+                  outlined
+                  size="300"
+                  aria-label="Scroll to Top"
+                >
+                  <Icon src={Icons.ChevronTop} size="300" />
+                </IconButton>
+              </ScrollTopContainer>
               <Box
                 style={{
                   position: 'relative',
@@ -209,7 +330,7 @@ export function Members({ requestClose }: MembersProps) {
                     >
                       <div
                         style={{
-                          paddingTop: vItem.index === 0 ? undefined : config.space.S500,
+                          paddingTop: vItem.index === 0 ? 0 : config.space.S500,
                         }}
                       >
                         <Text size="L400">{tagOrMember.name}</Text>
