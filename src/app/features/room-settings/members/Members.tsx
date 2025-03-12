@@ -1,5 +1,5 @@
 import React, { ChangeEventHandler, MouseEventHandler, useCallback, useMemo, useRef } from 'react';
-import { Box, config, Icon, IconButton, Icons, Input, Scroll, Spinner, Text } from 'folds';
+import { Box, Chip, config, Icon, IconButton, Icons, Input, Scroll, Spinner, Text } from 'folds';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { RoomMember } from 'matrix-js-sdk';
 import { Page, PageContent, PageHeader } from '../../../components/page';
@@ -92,6 +92,14 @@ export function Members({ requestClose }: MembersProps) {
     { wait: 200 }
   );
 
+  const handleSearchReset = () => {
+    if (searchInputRef.current) {
+      searchInputRef.current.value = '';
+      searchInputRef.current.focus();
+    }
+    resetSearch();
+  };
+
   const handleMemberClick: MouseEventHandler<HTMLButtonElement> = (evt) => {
     const btn = evt.currentTarget as HTMLButtonElement;
     const userId = btn.getAttribute('data-user-id');
@@ -132,6 +140,25 @@ export function Members({ requestClose }: MembersProps) {
                   size="500"
                   placeholder="Search"
                   outlined
+                  after={
+                    result && (
+                      <Chip
+                        variant={result.items.length > 0 ? 'Success' : 'Critical'}
+                        outlined
+                        size="400"
+                        radii="Pill"
+                        aria-pressed
+                        onClick={handleSearchReset}
+                        after={<Icon size="50" src={Icons.Cross} />}
+                      >
+                        <Text size="B300">
+                          {result.items.length === 0
+                            ? 'No Results'
+                            : `${result.items.length} Results`}
+                        </Text>
+                      </Chip>
+                    )
+                  }
                 />
               </Box>
               <Box
