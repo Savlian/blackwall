@@ -111,7 +111,7 @@ export function RoomSettings({ initialPage, requestClose }: RoomSettingsProps) {
                   />
                 </Avatar>
                 <Text size="H4" truncate>
-                  Settings
+                  {roomName}
                 </Text>
               </Box>
               <Box shrink="No">
