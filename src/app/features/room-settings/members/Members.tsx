@@ -298,7 +298,7 @@ export function Members({ requestClose }: MembersProps) {
                     return (
                       <VirtualTile
                         virtualItem={vItem}
-                        key={tagOrMember.userId}
+                        key={`${tagOrMember.userId}-${vItem.index}`}
                         ref={virtualizer.measureElement}
                       >
                         <div style={{ paddingTop: config.space.S200 }}>
