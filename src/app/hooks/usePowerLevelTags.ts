@@ -4,8 +4,7 @@ import { IPowerLevels } from './usePowerLevels';
 import { useStateEvent } from './useStateEvent';
 import { StateEvent } from '../../types/matrix/room';
 
-export type PowerLevelTag = {
-  fallback?: true; // if tag does not exist.
+export type IPowerLevelTag = {
   name: string;
   color?: string;
   // icon?: {
@@ -13,8 +12,11 @@ export type PowerLevelTag = {
   //   url: string;
   // };
 };
+export type PowerLevelTagContent = Record<number, IPowerLevelTag>;
 
-export type PowerLevelTagContent = Record<number, PowerLevelTag>;
+export type PowerLevelTag = {
+  fallback?: true; // if tag does not exist.
+} & IPowerLevelTag;
 
 export type PowerLevelTags = Record<number, PowerLevelTag>;
 
@@ -80,10 +82,17 @@ const DEFAULT_TAGS: PowerLevelTags = {
   },
 };
 
-const generateFallbackTag = (power: number): PowerLevelTag => ({
-  fallback: true,
-  name: `Team ${power}`,
-});
+const generateFallbackTag = (powerLevelTags: PowerLevelTags, power: number): PowerLevelTag => {
+  const highToLow = sortPowers(getPowers(powerLevelTags));
+
+  const tagPower = highToLow.find((p) => p < power);
+  const tag = typeof tagPower === 'number' ? powerLevelTags[tagPower] : undefined;
+
+  return {
+    fallback: true,
+    name: tag ? `${tag.name} ${power}` : `Team ${power}`,
+  };
+};
 
 export type GetPowerLevelTag = (powerLevel: number) => PowerLevelTag;
 
@@ -100,7 +109,7 @@ export const usePowerLevelTags = (
     const powers = getUsedPowers(powerLevels);
     Array.from(powers).forEach((power) => {
       if (powerToTags[power]?.name === undefined) {
-        powerToTags[power] = DEFAULT_TAGS[power] ?? generateFallbackTag(power);
+        powerToTags[power] = DEFAULT_TAGS[power] ?? generateFallbackTag(DEFAULT_TAGS, power);
       }
     });
 
@@ -110,7 +119,7 @@ export const usePowerLevelTags = (
   const getTag: GetPowerLevelTag = useCallback(
     (power) => {
       const tag: PowerLevelTag | undefined = powerLevelTags[power];
-      return tag ?? generateFallbackTag(power);
+      return tag ?? generateFallbackTag(DEFAULT_TAGS, power);
     },
     [powerLevelTags]
   );
