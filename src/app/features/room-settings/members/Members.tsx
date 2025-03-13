@@ -80,7 +80,7 @@ export function Members({ requestClose }: MembersProps) {
 
   const powerLevels = usePowerLevels(room);
   const { getPowerLevel } = usePowerLevelsAPI(powerLevels);
-  const [, getPowerLevelTag] = usePowerLevelTags();
+  const [, getPowerLevelTag] = usePowerLevelTags(room, powerLevels);
 
   const [membershipFilterIndex, setMembershipFilterIndex] = useState(0);
   const [sortFilterIndex, setSortFilterIndex] = useSetting(settingsAtom, 'memberSortFilterIndex');

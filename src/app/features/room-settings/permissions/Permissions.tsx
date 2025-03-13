@@ -1,11 +1,33 @@
 import React from 'react';
 import { Box, Icon, IconButton, Icons, Scroll, Text } from 'folds';
 import { Page, PageContent, PageHeader } from '../../../components/page';
+import { Powers } from './Powers';
+import { useRoom } from '../../../hooks/useRoom';
+import { usePowerLevels, usePowerLevelsAPI } from '../../../hooks/usePowerLevels';
+import { useMatrixClient } from '../../../hooks/useMatrixClient';
+import { StateEvent } from '../../../../types/matrix/room';
 
 type PermissionsProps = {
   requestClose: () => void;
 };
 export function Permissions({ requestClose }: PermissionsProps) {
+  const mx = useMatrixClient();
+  const room = useRoom();
+  const powerLevels = usePowerLevels(room);
+  const { getPowerLevel, canSendStateEvent } = usePowerLevelsAPI(powerLevels);
+  const canEditPowers = canSendStateEvent(
+    StateEvent.PowerLevelTags,
+    getPowerLevel(mx.getSafeUserId())
+  );
+
+  const handleEditPowers = () => {
+    console.log('editing powers');
+  };
+
+  const handleViewPower = (power: number) => {
+    console.log(power);
+  };
+
   return (
     <Page>
       <PageHeader outlined={false}>
@@ -26,7 +48,11 @@ export function Permissions({ requestClose }: PermissionsProps) {
         <Scroll hideTrack visibility="Hover">
           <PageContent>
             <Box direction="Column" gap="700">
-              <span>some</span>
+              <Powers
+                powerLevels={powerLevels}
+                onEdit={canEditPowers ? handleEditPowers : undefined}
+                onView={handleViewPower}
+              />
             </Box>
           </PageContent>
         </Scroll>

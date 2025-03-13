@@ -40,7 +40,7 @@ const useRoomSettingsMenuItems = (): RoomSettingsMenuItem[] =>
       {
         page: RoomSettingsPage.PermissionsPage,
         name: 'Permissions',
-        icon: Icons.ShieldUser,
+        icon: Icons.Lock,
       },
       {
         page: RoomSettingsPage.EmojisStickersPage,

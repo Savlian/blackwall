@@ -20,7 +20,7 @@ enum DefaultPowerLevels {
   historical = 0,
 }
 
-export interface IPowerLevels {
+export type IPowerLevels = {
   users_default?: number;
   state_default?: number;
   events_default?: number;
@@ -33,7 +33,7 @@ export interface IPowerLevels {
   events?: Record<string, number>;
   users?: Record<string, number>;
   notifications?: Record<string, number>;
-}
+};
 
 export function usePowerLevels(room: Room): IPowerLevels {
   const powerLevelsEvent = useStateEvent(room, StateEvent.RoomPowerLevels);

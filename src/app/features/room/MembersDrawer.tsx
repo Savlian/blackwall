@@ -78,7 +78,8 @@ export function MembersDrawer({ room, members }: MembersDrawerProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const scrollTopAnchorRef = useRef<HTMLDivElement>(null);
-  const getPowerLevelTag = usePowerLevelTags();
+  const powerLevels = usePowerLevelsContext();
+  const [, getPowerLevelTag] = usePowerLevelTags(room, powerLevels);
   const fetchingMembers = members.length < room.getJoinedMemberCount();
   const setPeopleDrawer = useSetSetting(settingsAtom, 'isPeopleDrawer');
 
@@ -86,7 +87,6 @@ export function MembersDrawer({ room, members }: MembersDrawerProps) {
   const sortFilterMenu = useMemberSortMenu();
   const [sortFilterIndex, setSortFilterIndex] = useSetting(settingsAtom, 'memberSortFilterIndex');
   const [membershipFilterIndex, setMembershipFilterIndex] = useState(0);
-  const powerLevels = usePowerLevelsContext();
   const { getPowerLevel } = usePowerLevelsAPI(powerLevels);
 
   const membershipFilter = useMembershipFilter(membershipFilterIndex, membershipFilterMenu);

@@ -1,46 +1,121 @@
-import { RoomMember } from 'matrix-js-sdk';
+import { Room, RoomMember } from 'matrix-js-sdk';
 import { useCallback, useMemo } from 'react';
+import { IPowerLevels } from './usePowerLevels';
+import { useStateEvent } from './useStateEvent';
+import { StateEvent } from '../../types/matrix/room';
 
 export type PowerLevelTag = {
+  fallback?: true; // if tag does not exist.
   name: string;
+  color?: string;
+  // icon?: {
+  //   info?: IImageInfo;
+  //   url: string;
+  // };
 };
+
+export type PowerLevelTagContent = Record<number, PowerLevelTag>;
+
+export type PowerLevelTags = Record<number, PowerLevelTag>;
+
+export const powerSortFn = (a: number, b: number) => b - a;
+export const sortPowers = (powers: number[]): number[] => powers.sort(powerSortFn);
+
+export const getPowers = (tags: PowerLevelTags): number[] => {
+  const powers: number[] = Object.keys(tags).map((p) => parseInt(p, 10));
+
+  return sortPowers(powers);
+};
+
+export const getUsedPowers = (powerLevels: IPowerLevels): Set<number> => {
+  const powers: Set<number> = new Set();
+
+  const findAndAddPower = (data: Record<string, unknown>) => {
+    Object.keys(data).forEach((key) => {
+      const powerOrAny: unknown = data[key];
+
+      if (typeof powerOrAny === 'number') {
+        powers.add(powerOrAny);
+        return;
+      }
+      if (powerOrAny && typeof powerOrAny === 'object') {
+        findAndAddPower(powerOrAny as Record<string, unknown>);
+      }
+    });
+  };
+
+  findAndAddPower(powerLevels);
+
+  return powers;
+};
+
+const DEFAULT_TAGS: PowerLevelTags = {
+  9000: {
+    fallback: true,
+    name: 'Goku',
+    color: '#ff6a00',
+  },
+  101: {
+    fallback: true,
+    name: 'Founder',
+    color: '#0000ff',
+  },
+  100: {
+    fallback: true,
+    name: 'Admin',
+    color: '#a000e4',
+  },
+  50: {
+    fallback: true,
+    name: 'Moderator',
+    color: '#1fd81f',
+  },
+  0: {
+    fallback: true,
+    name: 'Members',
+  },
+  [-1]: {
+    fallback: true,
+    name: 'Muted',
+  },
+};
+
+const generateFallbackTag = (power: number): PowerLevelTag => ({
+  fallback: true,
+  name: `Team ${power}`,
+});
 
 export type GetPowerLevelTag = (powerLevel: number) => PowerLevelTag;
 
-export const usePowerLevelTags = (): GetPowerLevelTag => {
-  const powerLevelTags = useMemo(
-    () => ({
-      9000: {
-        name: 'Goku',
-      },
-      101: {
-        name: 'Founder',
-      },
-      100: {
-        name: 'Admin',
-      },
-      50: {
-        name: 'Moderator',
-      },
-      0: {
-        name: 'Default',
-      },
-    }),
-    []
-  );
+export const usePowerLevelTags = (
+  room: Room,
+  powerLevels: IPowerLevels
+): [PowerLevelTags, GetPowerLevelTag] => {
+  const tagsEvent = useStateEvent(room, StateEvent.PowerLevelTags);
+
+  const powerLevelTags: PowerLevelTags = useMemo(() => {
+    const content = tagsEvent?.getContent<PowerLevelTagContent>();
+    const powerToTags: PowerLevelTags = { ...content };
+
+    const powers = getUsedPowers(powerLevels);
+    Array.from(powers).forEach((power) => {
+      if (powerToTags[power]?.name === undefined) {
+        powerToTags[power] = DEFAULT_TAGS[power] ?? generateFallbackTag(power);
+      }
+    });
+
+    return powerToTags;
+  }, [powerLevels, tagsEvent]);
 
   const getTag: GetPowerLevelTag = useCallback(
-    (powerLevel) => {
-      if (powerLevel >= 9000) return powerLevelTags[9000];
-      if (powerLevel >= 101) return powerLevelTags[101];
-      if (powerLevel === 100) return powerLevelTags[100];
-      if (powerLevel >= 50) return powerLevelTags[50];
-      return powerLevelTags[0];
+    (power) => {
+      const tag: PowerLevelTag | undefined = powerLevelTags[power];
+      return tag ?? generateFallbackTag(power);
     },
     [powerLevelTags]
   );
 
-  return getTag;
+  return [powerLevelTags, getTag];
 };
 
 export const useFlattenPowerLevelTagMembers = (
