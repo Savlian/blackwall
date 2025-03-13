@@ -4,7 +4,7 @@ import { IPowerLevels } from './usePowerLevels';
 import { useStateEvent } from './useStateEvent';
 import { StateEvent } from '../../types/matrix/room';
 
-export type IPowerLevelTag = {
+export type PowerLevelTag = {
   name: string;
   color?: string;
   // icon?: {
@@ -12,11 +12,6 @@ export type IPowerLevelTag = {
   //   url: string;
   // };
 };
-export type PowerLevelTagContent = Record<number, IPowerLevelTag>;
-
-export type PowerLevelTag = {
-  fallback?: true; // if tag does not exist.
-} & IPowerLevelTag;
 
 export type PowerLevelTags = Record<number, PowerLevelTag>;
 
@@ -52,32 +47,30 @@ export const getUsedPowers = (powerLevels: IPowerLevels): Set<number> => {
 };
 
 const DEFAULT_TAGS: PowerLevelTags = {
-  9000: {
-    fallback: true,
+  9001: {
     name: 'Goku',
     color: '#ff6a00',
   },
+  102: {
+    name: 'Goku Reborn',
+    color: '#ff6a7f',
+  },
   101: {
-    fallback: true,
     name: 'Founder',
     color: '#0000ff',
   },
   100: {
-    fallback: true,
     name: 'Admin',
     color: '#a000e4',
   },
   50: {
-    fallback: true,
     name: 'Moderator',
     color: '#1fd81f',
   },
   0: {
-    fallback: true,
     name: 'Members',
   },
   [-1]: {
-    fallback: true,
     name: 'Muted',
   },
 };
@@ -89,7 +82,6 @@ const generateFallbackTag = (powerLevelTags: PowerLevelTags, power: number): Pow
   const tag = typeof tagPower === 'number' ? powerLevelTags[tagPower] : undefined;
 
   return {
-    fallback: true,
     name: tag ? `${tag.name} ${power}` : `Team ${power}`,
   };
 };
@@ -103,7 +95,7 @@ export const usePowerLevelTags = (
   const tagsEvent = useStateEvent(room, StateEvent.PowerLevelTags);
 
   const powerLevelTags: PowerLevelTags = useMemo(() => {
-    const content = tagsEvent?.getContent<PowerLevelTagContent>();
+    const content = tagsEvent?.getContent<PowerLevelTags>();
     const powerToTags: PowerLevelTags = { ...content };
 
     const powers = getUsedPowers(powerLevels);

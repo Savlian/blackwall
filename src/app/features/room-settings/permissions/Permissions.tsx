@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Icon, IconButton, Icons, Scroll, Text } from 'folds';
 import { Page, PageContent, PageHeader } from '../../../components/page';
 import { Powers } from './Powers';
@@ -6,6 +6,7 @@ import { useRoom } from '../../../hooks/useRoom';
 import { usePowerLevels, usePowerLevelsAPI } from '../../../hooks/usePowerLevels';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { StateEvent } from '../../../../types/matrix/room';
+import { PowersEditor } from './PowersEditor';
 
 type PermissionsProps = {
   requestClose: () => void;
@@ -20,13 +21,19 @@ export function Permissions({ requestClose }: PermissionsProps) {
     getPowerLevel(mx.getSafeUserId())
   );
 
+  const [powerEditor, setPowerEditor] = useState(false);
+
   const handleEditPowers = () => {
-    console.log('editing powers');
+    setPowerEditor(true);
   };
 
   const handleViewPower = (power: number) => {
     console.log(power);
   };
+
+  if (powerEditor) {
+    return <PowersEditor powerLevels={powerLevels} requestClose={() => setPowerEditor(false)} />;
+  }
 
   return (
     <Page>

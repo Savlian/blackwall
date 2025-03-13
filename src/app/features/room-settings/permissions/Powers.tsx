@@ -1,11 +1,12 @@
 import React from 'react';
-import { Box, Button, Chip, color, config, Text, toRem } from 'folds';
+import { Box, Button, Chip, Text } from 'folds';
 import { SequenceCard } from '../../../components/sequence-card';
 import { SequenceCardStyle } from '../styles.css';
 import { getPowers, getUsedPowers, usePowerLevelTags } from '../../../hooks/usePowerLevelTags';
 import { SettingTile } from '../../../components/setting-tile';
 import { IPowerLevels } from '../../../hooks/usePowerLevels';
 import { useRoom } from '../../../hooks/useRoom';
+import { PowerColorBadge } from '../../../components/power-color';
 
 type PowersProps = {
   powerLevels: IPowerLevels;
@@ -58,17 +59,7 @@ export function Powers({ powerLevels, onEdit, onView }: PowersProps) {
                   onClick={() => onView(power)}
                   variant="Secondary"
                   radii="300"
-                  before={
-                    <div
-                      style={{
-                        width: toRem(16),
-                        height: toRem(16),
-                        backgroundColor: tag.color ?? color.Surface.OnContainer,
-                        borderRadius: config.radii.Pill,
-                        border: `${config.borderWidth.B300} solid ${color.SurfaceVariant.ContainerLine}`,
-                      }}
-                    />
-                  }
+                  before={<PowerColorBadge color={tag.color} />}
                   after={
                     <Text size="T200" priority="300">
                       ({power})
