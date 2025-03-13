@@ -326,6 +326,8 @@ export function Space() {
   const getToLink = (roomId: string) =>
     getSpaceRoomPath(spaceIdOrAlias, getCanonicalAliasOrRoomId(mx, roomId));
 
+  const [roomAvatars] = useSetting(settingsAtom, 'roomAvatars');
+
   return (
     <PageNav>
       <SpaceHeader />
@@ -405,7 +407,7 @@ export function Space() {
                   <RoomNavItem
                     room={room}
                     selected={selectedRoomId === roomId}
-                    showAvatar={mDirects.has(roomId)}
+                    showAvatar={mDirects.has(roomId) || roomAvatars}
                     direct={mDirects.has(roomId)}
                     linkPath={getToLink(roomId)}
                     notificationMode={getRoomNotificationMode(notificationPreferences, room.roomId)}
