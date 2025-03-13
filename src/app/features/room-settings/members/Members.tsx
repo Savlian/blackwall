@@ -80,7 +80,7 @@ export function Members({ requestClose }: MembersProps) {
 
   const powerLevels = usePowerLevels(room);
   const { getPowerLevel } = usePowerLevelsAPI(powerLevels);
-  const getPowerLevelTag = usePowerLevelTags();
+  const [, getPowerLevelTag] = usePowerLevelTags();
 
   const [membershipFilterIndex, setMembershipFilterIndex] = useState(0);
   const [sortFilterIndex, setSortFilterIndex] = useSetting(settingsAtom, 'memberSortFilterIndex');
@@ -282,6 +282,11 @@ export function Members({ requestClose }: MembersProps) {
                   <Icon src={Icons.ChevronTop} size="300" />
                 </IconButton>
               </ScrollTopContainer>
+              {fetchingMembers && (
+                <Box justifyContent="Center">
+                  <Spinner />
+                </Box>
+              )}
               <Box
                 style={{
                   position: 'relative',
@@ -338,12 +343,6 @@ export function Members({ requestClose }: MembersProps) {
                     </VirtualTile>
                   );
                 })}
-
-                {fetchingMembers && (
-                  <Box justifyContent="Center">
-                    <Spinner />
-                  </Box>
-                )}
               </Box>
             </Box>
           </PageContent>
