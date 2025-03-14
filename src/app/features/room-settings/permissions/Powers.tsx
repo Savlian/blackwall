@@ -65,14 +65,7 @@ export function Powers({ powerLevels, onEdit, onView }: PowersProps) {
                   variant="Secondary"
                   radii="300"
                   before={<PowerColorBadge color={tag.color} />}
-                  after={
-                    <Box alignItems="Center" gap="200">
-                      {tagIconSrc && <PowerIcon size="50" iconSrc={tagIconSrc} />}
-                      <Text size="T200" priority="300">
-                        ({power})
-                      </Text>
-                    </Box>
-                  }
+                  after={tagIconSrc && <PowerIcon size="50" iconSrc={tagIconSrc} />}
                 >
                   <Text size="T300" truncate>
                     <b>{tag.name}</b>
