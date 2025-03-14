@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Button, Chip, Text } from 'folds';
 import { SequenceCard } from '../../../components/sequence-card';
 import { SequenceCardStyle } from '../styles.css';
-import { getPowers, getUsedPowers, usePowerLevelTags } from '../../../hooks/usePowerLevelTags';
+import { getPowers, usePowerLevelTags } from '../../../hooks/usePowerLevelTags';
 import { SettingTile } from '../../../components/setting-tile';
 import { IPowerLevels } from '../../../hooks/usePowerLevels';
 import { useRoom } from '../../../hooks/useRoom';
@@ -14,7 +14,6 @@ type PowersProps = {
   onView: (power: number) => void;
 };
 export function Powers({ powerLevels, onEdit, onView }: PowersProps) {
-  console.log(Array.from(getUsedPowers(powerLevels)));
   const room = useRoom();
   const [powerLevelTags] = usePowerLevelTags(room, powerLevels);
 
