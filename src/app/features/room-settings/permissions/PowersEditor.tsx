@@ -15,6 +15,8 @@ import {
   config,
   Spinner,
   toRem,
+  TooltipProvider,
+  Tooltip,
 } from 'folds';
 import { HexColorPicker } from 'react-colorful';
 import { useAtomValue } from 'jotai';
@@ -292,15 +294,28 @@ export function PowersEditor({ powerLevels, requestClose }: PowersEditorProps) {
   const useAuthentication = useMediaAuthentication();
   const room = useRoom();
   const alive = useAlive();
-  const [, maxPower] = useMemo(() => {
+  const [usedPowers, maxPower] = useMemo(() => {
     const up = getUsedPowers(powerLevels);
     return [up, Math.max(...Array.from(up))];
   }, [powerLevels]);
 
   const [powerLevelTags] = usePowerLevelTags(room, powerLevels);
   const [editedPowerTags, setEditedPowerTags] = useState<PowerLevelTags>();
+  const [deleted, setDeleted] = useState<Set<number>>(new Set());
 
   const [createTag, setCreateTag] = useState(false);
+
+  const handleToggleDelete = useCallback((power: number) => {
+    setDeleted((powers) => {
+      const newIds = new Set(powers);
+      if (newIds.has(power)) {
+        newIds.delete(power);
+      } else {
+        newIds.add(power);
+      }
+      return newIds;
+    });
+  }, []);
 
   const handleSaveTag = useCallback(
     (power: number, tag: PowerLevelTag) => {
@@ -315,12 +330,17 @@ export function PowersEditor({ powerLevels, requestClose }: PowersEditorProps) {
 
   const [applyState, applyChanges] = useAsyncCallback(
     useCallback(async () => {
-      await mx.sendStateEvent(room.roomId, StateEvent.PowerLevelTags as any, editedPowerTags);
-    }, [mx, room, editedPowerTags])
+      const content: PowerLevelTags = { ...(editedPowerTags ?? powerLevelTags) };
+      deleted.forEach((power) => {
+        delete content[power];
+      });
+      await mx.sendStateEvent(room.roomId, StateEvent.PowerLevelTags as any, content);
+    }, [mx, room, powerLevelTags, editedPowerTags, deleted])
   );
 
   const resetChanges = useCallback(() => {
     setEditedPowerTags(undefined);
+    setDeleted(new Set());
   }, []);
 
   const handleApplyChanges = () => {
@@ -332,6 +352,7 @@ export function PowersEditor({ powerLevels, requestClose }: PowersEditorProps) {
   };
 
   const applyingChanges = applyState.status === AsyncStatus.Loading;
+  const hasChanges = editedPowerTags || deleted.size > 0;
 
   const powerTags = editedPowerTags ?? powerLevelTags;
   return (
@@ -404,7 +425,7 @@ export function PowersEditor({ powerLevels, requestClose }: PowersEditorProps) {
                   return (
                     <SequenceCard
                       key={power}
-                      variant="SurfaceVariant"
+                      variant={deleted.has(power) ? 'Critical' : 'SurfaceVariant'}
                       className={SequenceCardStyle}
                       direction="Column"
                       gap="400"
@@ -424,7 +445,7 @@ export function PowersEditor({ powerLevels, requestClose }: PowersEditorProps) {
                               before={<PowerColorBadge color={tag.color} />}
                               title={
                                 <Box as="span" alignItems="Center" gap="200">
-                                  <b>{tag.name}</b>
+                                  <b>{deleted.has(power) ? <s>{tag.name}</s> : tag.name}</b>
                                   {tagIconSrc && <PowerIcon size="50" iconSrc={tagIconSrc} />}
                                   <Text as="span" size="T200" priority="300">
                                     ({power})
@@ -432,14 +453,61 @@ export function PowersEditor({ powerLevels, requestClose }: PowersEditorProps) {
                                 </Box>
                               }
                               after={
-                                <Chip
-                                  variant="Secondary"
-                                  radii="Pill"
-                                  disabled={applyingChanges}
-                                  onClick={() => setEdit(true)}
-                                >
-                                  <Text size="B300">Edit</Text>
-                                </Chip>
+                                deleted.has(power) ? (
+                                  <Chip
+                                    variant="Critical"
+                                    radii="Pill"
+                                    disabled={applyingChanges}
+                                    onClick={() => handleToggleDelete(power)}
+                                  >
+                                    <Text size="B300">Undo</Text>
+                                  </Chip>
+                                ) : (
+                                  <Box shrink="No" alignItems="Center" gap="200">
+                                    <TooltipProvider
+                                      tooltip={
+                                        <Tooltip style={{ maxWidth: toRem(200) }}>
+                                          {usedPowers.has(power) ? (
+                                            <Box direction="Column">
+                                              <Text size="L400">Used Power Level</Text>
+                                              <Text size="T200">
+                                                You have to remove its use before you can delete it.
+                                              </Text>
+                                            </Box>
+                                          ) : (
+                                            <Text>Delete</Text>
+                                          )}
+                                        </Tooltip>
+                                      }
+                                    >
+                                      {(triggerRef) => (
+                                        <Chip
+                                          ref={triggerRef}
+                                          variant="Secondary"
+                                          fill="None"
+                                          radii="Pill"
+                                          disabled={applyingChanges}
+                                          aria-disabled={usedPowers.has(power)}
+                                          onClick={
+                                            usedPowers.has(power)
+                                              ? undefined
+                                              : () => handleToggleDelete(power)
+                                          }
+                                        >
+                                          <Icon size="50" src={Icons.Delete} />
+                                        </Chip>
+                                      )}
+                                    </TooltipProvider>
+                                    <Chip
+                                      variant="Secondary"
+                                      radii="Pill"
+                                      disabled={applyingChanges}
+                                      onClick={() => setEdit(true)}
+                                    >
+                                      <Text size="B300">Edit</Text>
+                                    </Chip>
+                                  </Box>
+                                )
                               }
                             />
                           )
@@ -449,7 +517,7 @@ export function PowersEditor({ powerLevels, requestClose }: PowersEditorProps) {
                   );
                 })}
               </Box>
-              {editedPowerTags && (
+              {hasChanges && (
                 <Menu
                   style={{
                     position: 'sticky',
