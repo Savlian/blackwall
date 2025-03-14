@@ -3,6 +3,7 @@ import { EventTimelineSet, Room } from 'matrix-js-sdk';
 import React, { MouseEventHandler, ReactNode, useCallback, useMemo } from 'react';
 import classNames from 'classnames';
 import { HTMLReactParserOptions } from 'html-react-parser';
+import { Opts as LinkifyOpts } from 'linkifyjs';
 import colorMXID from '../../../util/colorMXID';
 import { getMemberDisplayName } from '../../utils/room';
 import { getMxIdLocalPart } from '../../utils/matrix';
@@ -10,10 +11,15 @@ import { LinePlaceholder } from './placeholder';
 import { randomNumberBetween } from '../../utils/common';
 import * as css from './Reply.css';
 import { MessageBadEncryptedContent, MessageDeletedContent, MessageFailedContent } from './content';
-import { getReactCustomHtmlParser, LINKIFY_OPTS } from '../../plugins/react-custom-html-parser';
+import {
+  factoryRenderLinkifyWithMention,
+  getReactCustomHtmlParser,
+  LINKIFY_OPTS, makeMentionCustomProps, renderMatrixMention
+} from '../../plugins/react-custom-html-parser';
 import { useRoomEvent } from '../../hooks/useRoomEvent';
 import { useMatrixClient } from '../../hooks/useMatrixClient';
 import { RenderBody } from './RenderBody';
+import { useMentionClickHandler } from '../../hooks/useMentionClickHandler';
 
 type ReplyLayoutProps = {
   userColor?: string;
@@ -57,13 +63,29 @@ type ReplyProps = {
 export const Reply = as<'div', ReplyProps>(
   ({ room, timelineSet, replyEventId, threadRootId, onClick, ...props }, ref) => {
     const mx = useMatrixClient();
+    const mentionClickHandler = useMentionClickHandler(room.roomId);
+    const linkifyOpts = useMemo<LinkifyOpts>(
+      () => ({
+        ...LINKIFY_OPTS,
+        render: factoryRenderLinkifyWithMention((href) =>
+          renderMatrixMention(mx, room.roomId, href, makeMentionCustomProps(mentionClickHandler))
+        ),
+      }),
+      [mx, room, mentionClickHandler]
+    );
+
+    // We're using the base LINKIFY_OPTS, we're setting useAuthentication to false,
+    // and we're not using any spoilerClickHandler, because we're not displaying any media,
+    // and we probably don't want to display a potentially truncated spoiler in the reply.
+
     const htmlReactParserOptions = useMemo<HTMLReactParserOptions>(
       () =>
         getReactCustomHtmlParser(mx, room.roomId, {
-          linkifyOpts: LINKIFY_OPTS,
-          useAuthentication: false
+          linkifyOpts,
+          useAuthentication: false,
+          handleMentionClick: mentionClickHandler,
         }),
-      [mx, room]
+      [mx, room, linkifyOpts, mentionClickHandler]
     );
     const placeholderWidth = useMemo(() => randomNumberBetween(40, 400), []);
     const getFromLocalTimeline = useCallback(
