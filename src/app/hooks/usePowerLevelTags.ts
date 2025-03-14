@@ -3,14 +3,16 @@ import { useCallback, useMemo } from 'react';
 import { IPowerLevels } from './usePowerLevels';
 import { useStateEvent } from './useStateEvent';
 import { StateEvent } from '../../types/matrix/room';
+import { IImageInfo } from '../../types/matrix/common';
 
+export type PowerLevelTagIcon = {
+  key?: string;
+  info?: IImageInfo;
+};
 export type PowerLevelTag = {
   name: string;
   color?: string;
-  // icon?: {
-  //   info?: IImageInfo;
-  //   url: string;
-  // };
+  icon?: PowerLevelTagIcon;
 };
 
 export type PowerLevelTags = Record<number, PowerLevelTag>;
