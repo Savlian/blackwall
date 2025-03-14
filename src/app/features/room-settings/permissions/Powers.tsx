@@ -6,7 +6,7 @@ import { getPowers, getUsedPowers, usePowerLevelTags } from '../../../hooks/useP
 import { SettingTile } from '../../../components/setting-tile';
 import { IPowerLevels } from '../../../hooks/usePowerLevels';
 import { useRoom } from '../../../hooks/useRoom';
-import { PowerColorBadge } from '../../../components/power-color';
+import { PowerColorBadge } from '../../../components/power';
 
 type PowersProps = {
   powerLevels: IPowerLevels;
