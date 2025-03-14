@@ -109,7 +109,8 @@ export const Reply = as<'div', ReplyProps>(
         body={body}
         customBody={formattedBody}
         htmlReactParserOptions={htmlReactParserOptions}
-        linkifyOpts={LINKIFY_OPTS} />
+        linkifyOpts={LINKIFY_OPTS}
+      />
     ) : fallbackBody;
 
     return (

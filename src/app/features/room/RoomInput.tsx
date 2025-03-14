@@ -30,6 +30,7 @@ import {
   toRem,
 } from 'folds';
 
+import { HTMLReactParserOptions } from 'html-react-parser';
 import { useMatrixClient } from '../../hooks/useMatrixClient';
 import {
   CustomEditor,
@@ -105,15 +106,15 @@ import {
   getAllParents,
   getMemberDisplayName,
   getMentionContent,
-  trimReplyFromBody,
 } from '../../utils/room';
 import { CommandAutocomplete } from './CommandAutocomplete';
 import { Command, SHRUG, TABLEFLIP, UNFLIP, useCommands } from '../../hooks/useCommands';
 import { mobileOrTablet } from '../../utils/user-agent';
 import { useElementSizeObserver } from '../../hooks/useElementSizeObserver';
-import { ReplyLayout, ThreadIndicator } from '../../components/message';
+import { RenderBody, ReplyLayout, ThreadIndicator } from '../../components/message';
 import { roomToParentsAtom } from '../../state/room/roomToParents';
 import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
+import { getReactCustomHtmlParser, LINKIFY_OPTS } from '../../plugins/react-custom-html-parser';
 
 interface RoomInputProps {
   editor: Editor;
@@ -422,6 +423,26 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
       });
     };
 
+    const linkifyOpts = LINKIFY_OPTS;
+
+    const htmlReactParserOptions = useMemo<HTMLReactParserOptions>(
+      () =>
+        getReactCustomHtmlParser(mx, room.roomId, {
+          linkifyOpts,
+          useAuthentication: false,
+        }),
+      [mx, room, linkifyOpts]
+    );
+
+    const replyDraftContent = replyDraft ? (
+        <RenderBody
+          body={replyDraft.body}
+          customBody={replyDraft.formattedBody}
+          htmlReactParserOptions={htmlReactParserOptions}
+          linkifyOpts={linkifyOpts}
+        />
+      ) : undefined;
+
     return (
       <div ref={ref}>
         {selectedFiles.length > 0 && (
@@ -550,7 +571,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
                       }
                     >
                       <Text size="T300" truncate>
-                        {trimReplyFromBody(replyDraft.body)}
+                        {replyDraftContent}
                       </Text>
                     </ReplyLayout>
                   </Box>
