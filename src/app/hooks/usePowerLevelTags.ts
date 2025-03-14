@@ -1,4 +1,4 @@
-import { Room, RoomMember } from 'matrix-js-sdk';
+import { MatrixClient, Room, RoomMember } from 'matrix-js-sdk';
 import { useCallback, useMemo } from 'react';
 import { IPowerLevels } from './usePowerLevels';
 import { useStateEvent } from './useStateEvent';
@@ -143,3 +143,12 @@ export const useFlattenPowerLevelTagMembers = (
 
   return PLTagOrRoomMember;
 };
+
+export const getTagIconSrc = (
+  mx: MatrixClient,
+  useAuthentication: boolean,
+  icon: PowerLevelTagIcon
+): string | undefined =>
+  icon?.key?.startsWith('mxc://')
+    ? mx.mxcUrlToHttp(icon.key, 96, 96, 'scale', undefined, undefined, useAuthentication) ?? '🌻'
+    : icon?.key;

@@ -31,7 +31,7 @@ export function Permissions({ requestClose }: PermissionsProps) {
     console.log(power);
   };
 
-  if (powerEditor) {
+  if (canEditPowers && powerEditor) {
     return <PowersEditor powerLevels={powerLevels} requestClose={() => setPowerEditor(false)} />;
   }
 

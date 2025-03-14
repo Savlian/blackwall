@@ -2,11 +2,14 @@ import React from 'react';
 import { Box, Button, Chip, Text } from 'folds';
 import { SequenceCard } from '../../../components/sequence-card';
 import { SequenceCardStyle } from '../styles.css';
-import { getPowers, usePowerLevelTags } from '../../../hooks/usePowerLevelTags';
+import { getPowers, getTagIconSrc, usePowerLevelTags } from '../../../hooks/usePowerLevelTags';
 import { SettingTile } from '../../../components/setting-tile';
 import { IPowerLevels } from '../../../hooks/usePowerLevels';
 import { useRoom } from '../../../hooks/useRoom';
 import { PowerColorBadge } from '../../../components/power';
+import { useMatrixClient } from '../../../hooks/useMatrixClient';
+import { useMediaAuthentication } from '../../../hooks/useMediaAuthentication';
+import { PowerIcon } from '../../../components/power/PowerIcon';
 
 type PowersProps = {
   powerLevels: IPowerLevels;
@@ -14,6 +17,8 @@ type PowersProps = {
   onView: (power: number) => void;
 };
 export function Powers({ powerLevels, onEdit, onView }: PowersProps) {
+  const mx = useMatrixClient();
+  const useAuthentication = useMediaAuthentication();
   const room = useRoom();
   const [powerLevelTags] = usePowerLevelTags(room, powerLevels);
 
@@ -51,6 +56,7 @@ export function Powers({ powerLevels, onEdit, onView }: PowersProps) {
           <Box gap="200" wrap="Wrap">
             {getPowers(powerLevelTags).map((power) => {
               const tag = powerLevelTags[power];
+              const tagIconSrc = tag.icon && getTagIconSrc(mx, useAuthentication, tag.icon);
 
               return (
                 <Chip
@@ -60,9 +66,12 @@ export function Powers({ powerLevels, onEdit, onView }: PowersProps) {
                   radii="300"
                   before={<PowerColorBadge color={tag.color} />}
                   after={
-                    <Text size="T200" priority="300">
-                      ({power})
-                    </Text>
+                    <Box alignItems="Center" gap="200">
+                      {tagIconSrc && <PowerIcon size="50" iconSrc={tagIconSrc} />}
+                      <Text size="T200" priority="300">
+                        ({power})
+                      </Text>
+                    </Box>
                   }
                 >
                   <Text size="T300" truncate>

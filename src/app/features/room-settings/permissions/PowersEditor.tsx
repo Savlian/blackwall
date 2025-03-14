@@ -14,6 +14,7 @@ import {
   Menu,
   config,
   Spinner,
+  toRem,
 } from 'folds';
 import { HexColorPicker } from 'react-colorful';
 import { useAtomValue } from 'jotai';
@@ -24,6 +25,7 @@ import { SequenceCardStyle } from '../styles.css';
 import { SettingTile } from '../../../components/setting-tile';
 import {
   getPowers,
+  getTagIconSrc,
   getUsedPowers,
   PowerLevelTag,
   PowerLevelTagIcon,
@@ -66,9 +68,10 @@ function EditPower({ maxPower, power, tag, onSave, onClose }: EditPowerProps) {
   const [iconFile, setIconFile] = useState<File>();
   const pickFile = useFilePicker(setIconFile, false);
 
-  const [tagColor, setTagColor] = useState<string>();
-  const [tagIcon, setTagIcon] = useState<string>();
+  const [tagColor, setTagColor] = useState<string | undefined>(tag?.color);
+  const [tagIcon, setTagIcon] = useState<PowerLevelTagIcon | undefined>(tag?.icon);
   const uploadingIcon = iconFile && !tagIcon;
+  const tagIconSrc = tagIcon && getTagIconSrc(mx, useAuthentication, tagIcon);
 
   const iconUploadAtom = useMemo(() => {
     if (iconFile) return createUploadAtom(iconFile);
@@ -80,7 +83,9 @@ function EditPower({ maxPower, power, tag, onSave, onClose }: EditPowerProps) {
   }, []);
 
   const handleIconUploaded = useCallback((upload: UploadSuccess) => {
-    setTagIcon(upload.mxc);
+    setTagIcon({
+      key: upload.mxc,
+    });
     setIconFile(undefined);
   }, []);
 
@@ -95,19 +100,14 @@ function EditPower({ maxPower, power, tag, onSave, onClose }: EditPowerProps) {
 
     const tagPower = parseInt(powerInput.value, 10);
     if (Number.isNaN(tagPower)) return;
+    if (tagPower > maxPower) return;
     const tagName = nameInput.value.trim();
     if (!tagName) return;
-
-    const iconContent: PowerLevelTagIcon | undefined = tagIcon
-      ? {
-          key: tagIcon,
-        }
-      : undefined;
 
     const editedTag: PowerLevelTag = {
       name: tagName,
       color: tagColor,
-      icon: iconContent,
+      icon: tagIcon,
     };
 
     onSave(power ?? tagPower, editedTag);
@@ -117,128 +117,12 @@ function EditPower({ maxPower, power, tag, onSave, onClose }: EditPowerProps) {
   return (
     <Box onSubmit={handleSubmit} as="form" direction="Column" gap="400">
       <Box direction="Column" gap="300">
-        <Box direction="Column" gap="100">
-          <Text size="L400">Icon</Text>
-          {iconUploadAtom && !tagIcon ? (
-            <CompactUploadCardRenderer
-              uploadAtom={iconUploadAtom}
-              onRemove={handleRemoveIconUpload}
-              onComplete={handleIconUploaded}
-            />
-          ) : (
-            <Box gap="200" alignItems="Center">
-              {tagIcon ? (
-                <>
-                  <Text size="H3">
-                    <PowerIcon
-                      iconSrc={
-                        tagIcon.startsWith('mxc://')
-                          ? mx.mxcUrlToHttp(
-                              tagIcon,
-                              96,
-                              96,
-                              'scale',
-                              undefined,
-                              undefined,
-                              useAuthentication
-                            ) ?? 'X'
-                          : tagIcon
-                      }
-                    />
-                  </Text>
-                  <Button
-                    onClick={() => setTagIcon(undefined)}
-                    type="button"
-                    size="300"
-                    variant="Critical"
-                    fill="None"
-                    radii="300"
-                  >
-                    <Text size="B300">Remove</Text>
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <UseStateProvider initial={undefined}>
-                    {(cords: RectCords | undefined, setCords) => (
-                      <PopOut
-                        position="Bottom"
-                        anchor={cords}
-                        content={
-                          <EmojiBoard
-                            imagePackRooms={imagePackRooms}
-                            returnFocusOnDeactivate={false}
-                            allowTextCustomEmoji={false}
-                            addToRecentEmoji={false}
-                            onEmojiSelect={(key) => {
-                              setTagIcon(key);
-                              setCords(undefined);
-                            }}
-                            onCustomEmojiSelect={(mxc) => {
-                              setTagIcon(mxc);
-                              setCords(undefined);
-                            }}
-                            requestClose={() => {
-                              setCords(undefined);
-                            }}
-                          />
-                        }
-                      >
-                        <IconButton
-                          onClick={
-                            ((evt) =>
-                              setCords(
-                                evt.currentTarget.getBoundingClientRect()
-                              )) as MouseEventHandler<HTMLButtonElement>
-                          }
-                          type="button"
-                          size="400"
-                          variant="Secondary"
-                          fill="Soft"
-                          radii="300"
-                        >
-                          <Icon size="50" src={Icons.SmilePlus} />
-                        </IconButton>
-                      </PopOut>
-                    )}
-                  </UseStateProvider>
-                  <Button
-                    onClick={() => pickFile('image/*')}
-                    type="button"
-                    size="300"
-                    variant="Secondary"
-                    fill="Soft"
-                    radii="300"
-                  >
-                    <Text size="B300">Import</Text>
-                  </Button>
-                </>
-              )}
-            </Box>
-          )}
-        </Box>
         <Box gap="200">
-          <Box grow="Yes" direction="Column" gap="100">
-            <Text size="L400">Power</Text>
-            <Input
-              autoFocus
-              defaultValue={power}
-              name="powerInput"
-              size="300"
-              variant="Secondary"
-              radii="300"
-              type="number"
-              placeholder="75"
-              max={maxPower}
-              readOnly={typeof power === 'number'}
-              required
-            />
-          </Box>
           <Box shrink="No" direction="Column" gap="100">
             <Text size="L400">Color</Text>
             <Box gap="200">
               <HexColorPickerPopOut
-                picker={<HexColorPicker color={tagColor ?? tag?.color} onChange={setTagColor} />}
+                picker={<HexColorPicker color={tagColor} onChange={setTagColor} />}
                 onRemove={() => setTagColor(undefined)}
               >
                 {(openPicker, opened) => (
@@ -250,7 +134,7 @@ function EditPower({ maxPower, power, tag, onSave, onClose }: EditPowerProps) {
                     variant="Secondary"
                     fill="Soft"
                     radii="300"
-                    before={<PowerColorBadge color={tagColor ?? tag?.color} />}
+                    before={<PowerColorBadge color={tagColor} />}
                   >
                     <Text size="B300">Pick</Text>
                   </Button>
@@ -258,34 +142,142 @@ function EditPower({ maxPower, power, tag, onSave, onClose }: EditPowerProps) {
               </HexColorPickerPopOut>
             </Box>
           </Box>
+          <Box grow="Yes" direction="Column" gap="100">
+            <Text size="L400">Name</Text>
+            <Input
+              name="nameInput"
+              defaultValue={tag?.name}
+              placeholder="Bot"
+              size="300"
+              variant="Secondary"
+              radii="300"
+              required
+            />
+          </Box>
+          <Box style={{ maxWidth: toRem(74) }} grow="Yes" direction="Column" gap="100">
+            <Text size="L400">Power</Text>
+            <Input
+              defaultValue={power}
+              name="powerInput"
+              size="300"
+              variant={typeof power === 'number' ? 'SurfaceVariant' : 'Secondary'}
+              radii="300"
+              type="number"
+              placeholder="75"
+              max={maxPower}
+              outlined={typeof power === 'number'}
+              readOnly={typeof power === 'number'}
+              required
+            />
+          </Box>
         </Box>
-        <Box direction="Column" gap="100">
-          <Text size="L400">Name</Text>
-          <Input
-            name="nameInput"
-            defaultValue={tag?.name}
-            placeholder="Bot"
-            size="300"
-            variant="Secondary"
-            radii="300"
-            required
+      </Box>
+      <Box direction="Column" gap="100">
+        <Text size="L400">Icon</Text>
+        {iconUploadAtom && !tagIconSrc ? (
+          <CompactUploadCardRenderer
+            uploadAtom={iconUploadAtom}
+            onRemove={handleRemoveIconUpload}
+            onComplete={handleIconUploaded}
           />
-        </Box>
-        <Box direction="Row" gap="200">
-          <Button type="submit" size="300" variant="Success" radii="300" disabled={uploadingIcon}>
-            <Text size="B300">Save</Text>
-          </Button>
-          <Button
-            type="button"
-            size="300"
-            variant="Secondary"
-            fill="Soft"
-            radii="300"
-            onClick={onClose}
-          >
-            <Text size="B300">Cancel</Text>
-          </Button>
-        </Box>
+        ) : (
+          <Box gap="200" alignItems="Center">
+            {tagIconSrc ? (
+              <>
+                <PowerIcon size="500" iconSrc={tagIconSrc} />
+                <Button
+                  onClick={() => setTagIcon(undefined)}
+                  type="button"
+                  size="300"
+                  variant="Critical"
+                  fill="None"
+                  radii="300"
+                >
+                  <Text size="B300">Remove</Text>
+                </Button>
+              </>
+            ) : (
+              <>
+                <UseStateProvider initial={undefined}>
+                  {(cords: RectCords | undefined, setCords) => (
+                    <PopOut
+                      position="Bottom"
+                      anchor={cords}
+                      content={
+                        <EmojiBoard
+                          imagePackRooms={imagePackRooms}
+                          returnFocusOnDeactivate={false}
+                          allowTextCustomEmoji={false}
+                          addToRecentEmoji={false}
+                          onEmojiSelect={(key) => {
+                            setTagIcon({ key });
+                            setCords(undefined);
+                          }}
+                          onCustomEmojiSelect={(mxc) => {
+                            setTagIcon({ key: mxc });
+                            setCords(undefined);
+                          }}
+                          requestClose={() => {
+                            setCords(undefined);
+                          }}
+                        />
+                      }
+                    >
+                      <Button
+                        onClick={
+                          ((evt) =>
+                            setCords(
+                              evt.currentTarget.getBoundingClientRect()
+                            )) as MouseEventHandler<HTMLButtonElement>
+                        }
+                        type="button"
+                        size="300"
+                        variant="Secondary"
+                        fill="Soft"
+                        radii="300"
+                        before={<Icon size="50" src={Icons.SmilePlus} />}
+                      >
+                        <Text size="B300">Pick</Text>
+                      </Button>
+                    </PopOut>
+                  )}
+                </UseStateProvider>
+                <Button
+                  onClick={() => pickFile('image/*')}
+                  type="button"
+                  size="300"
+                  variant="Secondary"
+                  fill="None"
+                  radii="300"
+                >
+                  <Text size="B300">Import</Text>
+                </Button>
+              </>
+            )}
+          </Box>
+        )}
+      </Box>
+      <Box direction="Row" gap="200" justifyContent="Start">
+        <Button
+          style={{ minWidth: toRem(64) }}
+          type="submit"
+          size="300"
+          variant="Success"
+          radii="300"
+          disabled={uploadingIcon}
+        >
+          <Text size="B300">Save</Text>
+        </Button>
+        <Button
+          type="button"
+          size="300"
+          variant="Secondary"
+          fill="Soft"
+          radii="300"
+          onClick={onClose}
+        >
+          <Text size="B300">Cancel</Text>
+        </Button>
       </Box>
     </Box>
   );
@@ -297,6 +289,7 @@ type PowersEditorProps = {
 };
 export function PowersEditor({ powerLevels, requestClose }: PowersEditorProps) {
   const mx = useMatrixClient();
+  const useAuthentication = useMediaAuthentication();
   const room = useRoom();
   const alive = useAlive();
   const [, maxPower] = useMemo(() => {
@@ -406,6 +399,7 @@ export function PowersEditor({ powerLevels, requestClose }: PowersEditorProps) {
                 </SequenceCard>
                 {getPowers(powerTags).map((power) => {
                   const tag = powerTags[power];
+                  const tagIconSrc = tag.icon && getTagIconSrc(mx, useAuthentication, tag.icon);
 
                   return (
                     <SequenceCard
@@ -415,22 +409,42 @@ export function PowersEditor({ powerLevels, requestClose }: PowersEditorProps) {
                       direction="Column"
                       gap="400"
                     >
-                      <SettingTile
-                        before={<PowerColorBadge color={tag.color} />}
-                        title={
-                          <Box as="span" gap="100" alignItems="Center">
-                            <b>{tag.name}</b>
-                            <Text as="span" size="T200" priority="300">
-                              ({power})
-                            </Text>
-                          </Box>
+                      <UseStateProvider initial={false}>
+                        {(edit, setEdit) =>
+                          edit ? (
+                            <EditPower
+                              maxPower={maxPower}
+                              power={power}
+                              tag={tag}
+                              onSave={handleSaveTag}
+                              onClose={() => setEdit(false)}
+                            />
+                          ) : (
+                            <SettingTile
+                              before={<PowerColorBadge color={tag.color} />}
+                              title={
+                                <Box as="span" alignItems="Center" gap="200">
+                                  <b>{tag.name}</b>
+                                  {tagIconSrc && <PowerIcon size="50" iconSrc={tagIconSrc} />}
+                                  <Text as="span" size="T200" priority="300">
+                                    ({power})
+                                  </Text>
+                                </Box>
+                              }
+                              after={
+                                <Chip
+                                  variant="Secondary"
+                                  radii="Pill"
+                                  disabled={applyingChanges}
+                                  onClick={() => setEdit(true)}
+                                >
+                                  <Text size="B300">Edit</Text>
+                                </Chip>
+                              }
+                            />
+                          )
                         }
-                        after={
-                          <Chip variant="Secondary" radii="Pill" disabled={applyingChanges}>
-                            <Text size="B300">Edit</Text>
-                          </Chip>
-                        }
-                      />
+                      </UseStateProvider>
                     </SequenceCard>
                   );
                 })}
