@@ -1,20 +1,15 @@
 import React from 'react';
-import * as css from '../../styles/CustomHtml.css';
+import * as css from './style.css';
 import { JUMBO_EMOJI_REG } from '../../utils/regex';
 
-type PowerIconProps = {
+type PowerIconProps = css.PowerIconVariants & {
   iconSrc: string;
+  name?: string;
 };
-export function PowerIcon({ iconSrc }: PowerIconProps) {
-  return (
-    <span className={css.EmoticonBase}>
-      <span className={css.Emoticon()}>
-        {JUMBO_EMOJI_REG.test(iconSrc) ? (
-          iconSrc
-        ) : (
-          <img className={css.EmoticonImg} src={iconSrc} alt="some" />
-        )}
-      </span>
-    </span>
+export function PowerIcon({ size, iconSrc, name }: PowerIconProps) {
+  return JUMBO_EMOJI_REG.test(iconSrc) ? (
+    <span className={css.PowerIcon({ size })}>{iconSrc}</span>
+  ) : (
+    <img className={css.PowerIcon({ size })} src={iconSrc} alt={name} />
   );
 }
