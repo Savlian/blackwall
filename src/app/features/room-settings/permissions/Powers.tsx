@@ -24,7 +24,6 @@ export function Powers({ powerLevels, onEdit, onView }: PowersProps) {
 
   return (
     <Box direction="Column" gap="100">
-      <Text size="L400">Powers</Text>
       <SequenceCard
         variant="SurfaceVariant"
         className={SequenceCardStyle}
@@ -52,7 +51,6 @@ export function Powers({ powerLevels, onEdit, onView }: PowersProps) {
           }
         />
         <SettingTile>
-          <Text size="L400">Levels</Text>
           <Box gap="200" wrap="Wrap">
             {getPowers(powerLevelTags).map((power) => {
               const tag = powerLevelTags[power];

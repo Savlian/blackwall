@@ -361,7 +361,7 @@ export function PowersEditor({ powerLevels, requestClose }: PowersEditorProps) {
             <Box direction="Column" gap="700">
               <Box direction="Column" gap="100">
                 <Box alignItems="Baseline" gap="200" justifyContent="SpaceBetween">
-                  <Text size="L400">Powers Editor</Text>
+                  <Text size="L400">Power Levels</Text>
                   <BetaNoticeBadge />
                 </Box>
                 <SequenceCard
