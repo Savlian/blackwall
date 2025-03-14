@@ -2,15 +2,18 @@ import { Box, Icon, Icons, Text, as, color, toRem } from 'folds';
 import { EventTimelineSet, Room } from 'matrix-js-sdk';
 import React, { MouseEventHandler, ReactNode, useCallback, useMemo } from 'react';
 import classNames from 'classnames';
+import { HTMLReactParserOptions } from 'html-react-parser';
 import colorMXID from '../../../util/colorMXID';
-import { getMemberDisplayName, trimReplyFromBody } from '../../utils/room';
+import { getMemberDisplayName } from '../../utils/room';
 import { getMxIdLocalPart } from '../../utils/matrix';
 import { LinePlaceholder } from './placeholder';
 import { randomNumberBetween } from '../../utils/common';
 import * as css from './Reply.css';
 import { MessageBadEncryptedContent, MessageDeletedContent, MessageFailedContent } from './content';
-import { scaleSystemEmoji } from '../../plugins/react-custom-html-parser';
+import { getReactCustomHtmlParser, LINKIFY_OPTS } from '../../plugins/react-custom-html-parser';
 import { useRoomEvent } from '../../hooks/useRoomEvent';
+import { useMatrixClient } from '../../hooks/useMatrixClient';
+import { RenderBody } from './RenderBody';
 
 type ReplyLayoutProps = {
   userColor?: string;
@@ -53,14 +56,22 @@ type ReplyProps = {
 
 export const Reply = as<'div', ReplyProps>(
   ({ room, timelineSet, replyEventId, threadRootId, onClick, ...props }, ref) => {
+    const mx = useMatrixClient();
+    const htmlReactParserOptions = useMemo<HTMLReactParserOptions>(
+      () =>
+        getReactCustomHtmlParser(mx, room.roomId, {
+          linkifyOpts: LINKIFY_OPTS,
+          useAuthentication: false
+        }),
+      [mx, room]
+    );
     const placeholderWidth = useMemo(() => randomNumberBetween(40, 400), []);
     const getFromLocalTimeline = useCallback(
       () => timelineSet?.findEventById(replyEventId),
       [timelineSet, replyEventId]
     );
     const replyEvent = useRoomEvent(room, replyEventId, getFromLocalTimeline);
-
-    const { body } = replyEvent?.getContent() ?? {};
+    const { body, formatted_body: formattedBody } = replyEvent?.getContent() ?? {};
     const sender = replyEvent?.getSender();
 
     const fallbackBody = replyEvent?.isRedacted() ? (
@@ -70,7 +81,14 @@ export const Reply = as<'div', ReplyProps>(
     );
 
     const badEncryption = replyEvent?.getContent().msgtype === 'm.bad.encrypted';
-    const bodyJSX = body ? scaleSystemEmoji(trimReplyFromBody(body)) : fallbackBody;
+
+    const bodyJSX = body ? (
+      <RenderBody
+        body={body}
+        customBody={formattedBody}
+        htmlReactParserOptions={htmlReactParserOptions}
+        linkifyOpts={LINKIFY_OPTS} />
+    ) : fallbackBody;
 
     return (
       <Box direction="Column" alignItems="Start" {...props} ref={ref}>
