@@ -7,6 +7,7 @@ import { usePowerLevels, usePowerLevelsAPI } from '../../../hooks/usePowerLevels
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { StateEvent } from '../../../../types/matrix/room';
 import { PowersEditor } from './PowersEditor';
+import { PermissionGroups } from './PermissionGroups';
 
 type PermissionsProps = {
   requestClose: () => void;
@@ -60,6 +61,7 @@ export function Permissions({ requestClose }: PermissionsProps) {
                 onEdit={canEditPowers ? handleEditPowers : undefined}
                 onView={handleViewPower}
               />
+              <PermissionGroups powerLevels={powerLevels} />
             </Box>
           </PageContent>
         </Scroll>

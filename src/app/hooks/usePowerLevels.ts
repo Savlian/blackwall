@@ -8,17 +8,8 @@ import { useMatrixClient } from './useMatrixClient';
 import { getStateEvent } from '../utils/room';
 
 export type PowerLevelActions = 'invite' | 'redact' | 'kick' | 'ban' | 'historical';
-
-enum DefaultPowerLevels {
-  usersDefault = 0,
-  stateDefault = 50,
-  eventsDefault = 0,
-  invite = 0,
-  redact = 50,
-  kick = 50,
-  ban = 50,
-  historical = 0,
-}
+export type PowerLevelUsersDefaultKey = 'users_default';
+export type PowerLevelNotificationsAction = 'room';
 
 export type IPowerLevels = {
   users_default?: number;
@@ -35,10 +26,29 @@ export type IPowerLevels = {
   notifications?: Record<string, number>;
 };
 
+const DEFAULT_POWER_LEVELS: Record<
+  PowerLevelActions | PowerLevelUsersDefaultKey | 'state_default' | 'events_default',
+  number
+> & {
+  notifications: Record<PowerLevelNotificationsAction, number>;
+} = {
+  users_default: 0,
+  state_default: 50,
+  events_default: 0,
+  invite: 0,
+  redact: 50,
+  kick: 50,
+  ban: 50,
+  historical: 0,
+  notifications: {
+    room: 50,
+  },
+};
+
 export function usePowerLevels(room: Room): IPowerLevels {
   const powerLevelsEvent = useStateEvent(room, StateEvent.RoomPowerLevels);
   const powerLevels: IPowerLevels =
-    powerLevelsEvent?.getContent<IPowerLevels>() ?? DefaultPowerLevels;
+    powerLevelsEvent?.getContent<IPowerLevels>() ?? DEFAULT_POWER_LEVELS;
 
   return powerLevels;
 }
@@ -104,12 +114,18 @@ export type CanDoAction = (
   action: PowerLevelActions,
   powerLevel: number
 ) => boolean;
+export type CanDoNotificationAction = (
+  powerLevels: IPowerLevels,
+  action: PowerLevelNotificationsAction,
+  powerLevel: number
+) => boolean;
 
 export type PowerLevelsAPI = {
   getPowerLevel: GetPowerLevel;
   canSendEvent: CanSend;
   canSendStateEvent: CanSend;
   canDoAction: CanDoAction;
+  canDoNotificationAction: CanDoNotificationAction;
 };
 
 export const powerLevelAPI: PowerLevelsAPI = {
@@ -118,28 +134,35 @@ export const powerLevelAPI: PowerLevelsAPI = {
     if (userId && users && typeof users[userId] === 'number') {
       return users[userId];
     }
-    return usersDefault ?? DefaultPowerLevels.usersDefault;
+    return usersDefault ?? DEFAULT_POWER_LEVELS.users_default;
   },
   canSendEvent: (powerLevels, eventType, powerLevel) => {
     const { events, events_default: eventsDefault } = powerLevels;
     if (events && eventType && typeof events[eventType] === 'number') {
       return powerLevel >= events[eventType];
     }
-    return powerLevel >= (eventsDefault ?? DefaultPowerLevels.eventsDefault);
+    return powerLevel >= (eventsDefault ?? DEFAULT_POWER_LEVELS.events_default);
   },
   canSendStateEvent: (powerLevels, eventType, powerLevel) => {
     const { events, state_default: stateDefault } = powerLevels;
     if (events && eventType && typeof events[eventType] === 'number') {
       return powerLevel >= events[eventType];
     }
-    return powerLevel >= (stateDefault ?? DefaultPowerLevels.stateDefault);
+    return powerLevel >= (stateDefault ?? DEFAULT_POWER_LEVELS.state_default);
   },
   canDoAction: (powerLevels, action, powerLevel) => {
     const requiredPL = powerLevels[action];
     if (typeof requiredPL === 'number') {
       return powerLevel >= requiredPL;
     }
-    return powerLevel >= DefaultPowerLevels[action];
+    return powerLevel >= DEFAULT_POWER_LEVELS[action];
+  },
+  canDoNotificationAction: (powerLevels, action, powerLevel) => {
+    const requiredPL = powerLevels.notifications?.[action];
+    if (typeof requiredPL === 'number') {
+      return powerLevel >= requiredPL;
+    }
+    return powerLevel >= DEFAULT_POWER_LEVELS.notifications[action];
   },
 };
 
@@ -167,10 +190,17 @@ export const usePowerLevelsAPI = (powerLevels: IPowerLevels) => {
     [powerLevels]
   );
 
+  const canDoNotificationAction = useCallback(
+    (action: PowerLevelNotificationsAction, powerLevel: number) =>
+      powerLevelAPI.canDoNotificationAction(powerLevels, action, powerLevel),
+    [powerLevels]
+  );
+
   return {
     getPowerLevel,
     canSendEvent,
     canSendStateEvent,
     canDoAction,
+    canDoNotificationAction,
   };
 };
