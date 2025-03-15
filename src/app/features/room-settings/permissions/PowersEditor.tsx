@@ -446,10 +446,12 @@ export function PowersEditor({ powerLevels, requestClose }: PowersEditorProps) {
                               title={
                                 <Box as="span" alignItems="Center" gap="200">
                                   <b>{deleted.has(power) ? <s>{tag.name}</s> : tag.name}</b>
-                                  {tagIconSrc && <PowerIcon size="50" iconSrc={tagIconSrc} />}
-                                  <Text as="span" size="T200" priority="300">
-                                    ({power})
-                                  </Text>
+                                  <Box as="span" shrink="No" alignItems="Inherit" gap="Inherit">
+                                    {tagIconSrc && <PowerIcon size="50" iconSrc={tagIconSrc} />}
+                                    <Text as="span" size="T200" priority="300">
+                                      ({power})
+                                    </Text>
+                                  </Box>
                                 </Box>
                               }
                               after={
