@@ -4,6 +4,7 @@ import { color, config, DefaultReset, toRem } from 'folds';
 
 export const PowerColorBadge = style({
   display: 'inline-block',
+  flexShrink: 0,
   width: toRem(16),
   height: toRem(16),
   backgroundColor: color.Surface.OnContainer,
