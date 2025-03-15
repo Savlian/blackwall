@@ -128,41 +128,69 @@ export type PowerLevelsAPI = {
   canDoNotificationAction: CanDoNotificationAction;
 };
 
-export const powerLevelAPI: PowerLevelsAPI = {
-  getPowerLevel: (powerLevels, userId) => {
+export type ReadPowerLevelAPI = {
+  user: GetPowerLevel;
+  event: (powerLevels: IPowerLevels, eventType: string | undefined) => number;
+  state: (powerLevels: IPowerLevels, eventType: string | undefined) => number;
+  action: (powerLevels: IPowerLevels, action: PowerLevelActions) => number;
+  notification: (powerLevels: IPowerLevels, action: PowerLevelNotificationsAction) => number;
+};
+
+export const readPowerLevel: ReadPowerLevelAPI = {
+  user: (powerLevels, userId) => {
     const { users_default: usersDefault, users } = powerLevels;
     if (userId && users && typeof users[userId] === 'number') {
       return users[userId];
     }
     return usersDefault ?? DEFAULT_POWER_LEVELS.users_default;
   },
-  canSendEvent: (powerLevels, eventType, powerLevel) => {
+  event: (powerLevels, eventType) => {
     const { events, events_default: eventsDefault } = powerLevels;
     if (events && eventType && typeof events[eventType] === 'number') {
-      return powerLevel >= events[eventType];
+      return events[eventType];
     }
-    return powerLevel >= (eventsDefault ?? DEFAULT_POWER_LEVELS.events_default);
+    return eventsDefault ?? DEFAULT_POWER_LEVELS.events_default;
   },
-  canSendStateEvent: (powerLevels, eventType, powerLevel) => {
+  state: (powerLevels, eventType) => {
     const { events, state_default: stateDefault } = powerLevels;
     if (events && eventType && typeof events[eventType] === 'number') {
-      return powerLevel >= events[eventType];
+      return events[eventType];
     }
-    return powerLevel >= (stateDefault ?? DEFAULT_POWER_LEVELS.state_default);
+    return stateDefault ?? DEFAULT_POWER_LEVELS.state_default;
+  },
+  action: (powerLevels, action) => {
+    const powerLevel = powerLevels[action];
+    if (typeof powerLevel === 'number') {
+      return powerLevel;
+    }
+    return DEFAULT_POWER_LEVELS[action];
+  },
+  notification: (powerLevels, action) => {
+    const powerLevel = powerLevels.notifications?.[action];
+    if (typeof powerLevel === 'number') {
+      return powerLevel;
+    }
+    return DEFAULT_POWER_LEVELS.notifications[action];
+  },
+};
+
+export const powerLevelAPI: PowerLevelsAPI = {
+  getPowerLevel: (powerLevels, userId) => readPowerLevel.user(powerLevels, userId),
+  canSendEvent: (powerLevels, eventType, powerLevel) => {
+    const requiredPL = readPowerLevel.event(powerLevels, eventType);
+    return powerLevel >= requiredPL;
+  },
+  canSendStateEvent: (powerLevels, eventType, powerLevel) => {
+    const requiredPL = readPowerLevel.state(powerLevels, eventType);
+    return powerLevel >= requiredPL;
   },
   canDoAction: (powerLevels, action, powerLevel) => {
-    const requiredPL = powerLevels[action];
-    if (typeof requiredPL === 'number') {
-      return powerLevel >= requiredPL;
-    }
-    return powerLevel >= DEFAULT_POWER_LEVELS[action];
+    const requiredPL = readPowerLevel.action(powerLevels, action);
+    return powerLevel >= requiredPL;
   },
   canDoNotificationAction: (powerLevels, action, powerLevel) => {
-    const requiredPL = powerLevels.notifications?.[action];
-    if (typeof requiredPL === 'number') {
-      return powerLevel >= requiredPL;
-    }
-    return powerLevel >= DEFAULT_POWER_LEVELS.notifications[action];
+    const requiredPL = readPowerLevel.notification(powerLevels, action);
+    return powerLevel >= requiredPL;
   },
 };
 
@@ -203,4 +231,101 @@ export const usePowerLevelsAPI = (powerLevels: IPowerLevels) => {
     canDoAction,
     canDoNotificationAction,
   };
+};
+
+/**
+ * Permissions
+ */
+
+type DefaultPermissionLocation = {
+  userDefault: true;
+  key: PowerLevelUsersDefaultKey;
+};
+
+type ActionPermissionLocation = {
+  action: true;
+  key: PowerLevelActions;
+};
+
+type EventPermissionLocation = {
+  state?: true;
+  key?: string;
+};
+
+type NotificationPermissionLocation = {
+  notification: true;
+  key: PowerLevelNotificationsAction;
+};
+
+export type PermissionLocation =
+  | DefaultPermissionLocation
+  | ActionPermissionLocation
+  | EventPermissionLocation
+  | NotificationPermissionLocation;
+
+export const getPermissionPower = (
+  powerLevels: IPowerLevels,
+  location: PermissionLocation
+): number => {
+  if ('userDefault' in location) {
+    return readPowerLevel.user(powerLevels, undefined);
+  }
+  if ('action' in location) {
+    return readPowerLevel.action(powerLevels, location.key);
+  }
+  if ('notification' in location) {
+    return readPowerLevel.notification(powerLevels, location.key);
+  }
+  if ('state' in location) {
+    return readPowerLevel.state(powerLevels, location.key);
+  }
+
+  return readPowerLevel.event(powerLevels, location.key);
+};
+
+export const applyPermissionPower = (
+  powerLevels: IPowerLevels,
+  location: PermissionLocation,
+  power: number
+): IPowerLevels => {
+  if ('userDefault' in location) {
+    // eslint-disable-next-line no-param-reassign
+    powerLevels.users_default = power;
+    return powerLevels;
+  }
+  if ('action' in location) {
+    // eslint-disable-next-line no-param-reassign
+    powerLevels[location.key] = power;
+    return powerLevels;
+  }
+  if ('notification' in location) {
+    const notifications = powerLevels.notifications ?? {};
+    notifications[location.key] = power;
+    // eslint-disable-next-line no-param-reassign
+    powerLevels.notifications = notifications;
+    return powerLevels;
+  }
+  if ('state' in location) {
+    if (location.key) {
+      const events = powerLevels.events ?? {};
+      events[location.key] = power;
+      // eslint-disable-next-line no-param-reassign
+      powerLevels.events = events;
+      return powerLevels;
+    }
+    // eslint-disable-next-line no-param-reassign
+    powerLevels.state_default = power;
+    return powerLevels;
+  }
+
+  if (location.key) {
+    const events = powerLevels.events ?? {};
+    events[location.key] = power;
+    // eslint-disable-next-line no-param-reassign
+    powerLevels.events = events;
+    return powerLevels;
+  }
+  // eslint-disable-next-line no-param-reassign
+  powerLevels.events_default = power;
+  return powerLevels;
 };

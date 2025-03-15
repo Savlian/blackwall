@@ -1,41 +1,269 @@
 /* eslint-disable react/no-array-index-key */
-import React from 'react';
-import { Box, Chip, Text } from 'folds';
+import React, { MouseEventHandler, useCallback, useEffect, useState } from 'react';
+import {
+  Badge,
+  Box,
+  Button,
+  Chip,
+  config,
+  Icon,
+  Icons,
+  Menu,
+  PopOut,
+  RectCords,
+  Spinner,
+  Text,
+} from 'folds';
+import FocusTrap from 'focus-trap-react';
+import produce from 'immer';
 import { SequenceCard } from '../../../components/sequence-card';
 import { SequenceCardStyle } from '../styles.css';
 import { SettingTile } from '../../../components/setting-tile';
-import { IPowerLevels } from '../../../hooks/usePowerLevels';
+import {
+  applyPermissionPower,
+  getPermissionPower,
+  IPowerLevels,
+  PermissionLocation,
+  usePowerLevelsAPI,
+} from '../../../hooks/usePowerLevels';
 import { usePermissionGroups } from './usePermissionItems';
+import { usePowerLevelTags } from '../../../hooks/usePowerLevelTags';
+import { useRoom } from '../../../hooks/useRoom';
+import { useMatrixClient } from '../../../hooks/useMatrixClient';
+import { StateEvent } from '../../../../types/matrix/room';
+import { PowerSelector } from '../../../components/power';
+import { stopPropagation } from '../../../utils/keyboard';
+import { UseStateProvider } from '../../../components/UseStateProvider';
+import { AsyncStatus, useAsyncCallback } from '../../../hooks/useAsyncCallback';
+import { useAlive } from '../../../hooks/useAlive';
 
 type PermissionGroupsProps = {
   powerLevels: IPowerLevels;
 };
 export function PermissionGroups({ powerLevels }: PermissionGroupsProps) {
-  console.log(powerLevels);
+  const mx = useMatrixClient();
+  const room = useRoom();
+  const alive = useAlive();
+  const { getPowerLevel, canSendStateEvent } = usePowerLevelsAPI(powerLevels);
+  const canChangePermission = canSendStateEvent(
+    StateEvent.RoomPowerLevels,
+    getPowerLevel(mx.getSafeUserId())
+  );
+  const [powerLevelTags, getPowerLevelTag] = usePowerLevelTags(room, powerLevels);
+
   const permissionGroups = usePermissionGroups();
 
-  return permissionGroups.map((group, groupIndex) => (
-    <Box key={groupIndex} direction="Column" gap="100">
-      <Text size="L400">{group.name}</Text>
-      {group.items.map((item, itemIndex) => (
-        <SequenceCard
-          key={itemIndex}
-          variant="SurfaceVariant"
-          className={SequenceCardStyle}
-          direction="Column"
-          gap="400"
-        >
-          <SettingTile
-            title={item.name}
-            description={item.description}
-            after={
-              <Chip variant="Secondary" fill="Soft" radii="300">
-                <Text size="B300">Change</Text>
-              </Chip>
-            }
-          />
-        </SequenceCard>
+  const [permissionUpdate, setPermissionUpdate] = useState<Map<PermissionLocation, number>>(
+    new Map()
+  );
+
+  useEffect(() => {
+    // reset permission update if component rerender
+    // as permission location object reference has changed
+    setPermissionUpdate(new Map());
+  }, [permissionGroups]);
+
+  const handleChangePermission = (
+    location: PermissionLocation,
+    newPower: number,
+    currentPower: number
+  ) => {
+    setPermissionUpdate((p) => {
+      const up: typeof p = new Map();
+      p.forEach((value, key) => {
+        up.set(key, value);
+      });
+      if (newPower === currentPower) {
+        up.delete(location);
+      } else {
+        up.set(location, newPower);
+      }
+      return up;
+    });
+  };
+
+  const [applyState, applyChanges] = useAsyncCallback(
+    useCallback(async () => {
+      const editedPowerLevels = produce(powerLevels, (draftPowerLevels) => {
+        permissionGroups.forEach((group) =>
+          group.items.forEach((item) => {
+            const power = getPermissionPower(powerLevels, item.location);
+            applyPermissionPower(draftPowerLevels, item.location, power);
+          })
+        );
+        permissionUpdate.forEach((power, location) =>
+          applyPermissionPower(draftPowerLevels, location, power)
+        );
+        return draftPowerLevels;
+      });
+      await mx.sendStateEvent(room.roomId, StateEvent.RoomPowerLevels as any, editedPowerLevels);
+    }, [mx, room, powerLevels, permissionUpdate, permissionGroups])
+  );
+
+  const resetChanges = useCallback(() => {
+    setPermissionUpdate(new Map());
+  }, []);
+
+  const handleApplyChanges = () => {
+    applyChanges().then(() => {
+      if (alive()) {
+        resetChanges();
+      }
+    });
+  };
+
+  const applyingChanges = applyState.status === AsyncStatus.Loading;
+  const hasChanges = permissionUpdate.size > 0;
+
+  return (
+    <>
+      {permissionGroups.map((group, groupIndex) => (
+        <Box key={groupIndex} direction="Column" gap="100">
+          <Text size="L400">{group.name}</Text>
+          {group.items.map((item, itemIndex) => {
+            const power = getPermissionPower(powerLevels, item.location);
+            const powerUpdate = permissionUpdate.get(item.location);
+            const value = powerUpdate ?? power;
+
+            const tag = getPowerLevelTag(value);
+            const powerChanges = value !== power;
+
+            return (
+              <SequenceCard
+                key={itemIndex}
+                variant="SurfaceVariant"
+                className={SequenceCardStyle}
+                direction="Column"
+                gap="400"
+              >
+                <SettingTile
+                  title={item.name}
+                  description={item.description}
+                  after={
+                    <UseStateProvider initial={undefined}>
+                      {(menuCords: RectCords | undefined, setMenuCords) => (
+                        <PopOut
+                          anchor={menuCords}
+                          offset={5}
+                          position="Bottom"
+                          align="End"
+                          content={
+                            <FocusTrap
+                              focusTrapOptions={{
+                                initialFocus: false,
+                                onDeactivate: () => setMenuCords(undefined),
+                                clickOutsideDeactivates: true,
+                                isKeyForward: (evt: KeyboardEvent) =>
+                                  evt.key === 'ArrowDown' || evt.key === 'ArrowRight',
+                                isKeyBackward: (evt: KeyboardEvent) =>
+                                  evt.key === 'ArrowUp' || evt.key === 'ArrowLeft',
+                                escapeDeactivates: stopPropagation,
+                              }}
+                            >
+                              <PowerSelector
+                                powerLevelTags={powerLevelTags}
+                                value={value}
+                                onChange={(v) => {
+                                  handleChangePermission(item.location, v, power);
+                                  setMenuCords(undefined);
+                                }}
+                              />
+                            </FocusTrap>
+                          }
+                        >
+                          <Chip
+                            variant={powerChanges ? 'Success' : 'Secondary'}
+                            outlined={powerChanges}
+                            fill="Soft"
+                            radii="Pill"
+                            aria-selected={!!menuCords}
+                            disabled={!canChangePermission || applyingChanges}
+                            after={
+                              powerChanges && (
+                                <Badge size="200" variant="Success" fill="Solid" radii="Pill" />
+                              )
+                            }
+                            before={
+                              canChangePermission && (
+                                <Icon
+                                  size="50"
+                                  src={menuCords ? Icons.ChevronTop : Icons.ChevronBottom}
+                                />
+                              )
+                            }
+                            onClick={
+                              ((evt) =>
+                                setMenuCords(
+                                  evt.currentTarget.getBoundingClientRect()
+                                )) as MouseEventHandler<HTMLButtonElement>
+                            }
+                          >
+                            <Text size="B300" truncate>
+                              {tag.name}
+                            </Text>
+                            <Text size="T200">{value}</Text>
+                          </Chip>
+                        </PopOut>
+                      )}
+                    </UseStateProvider>
+                  }
+                />
+              </SequenceCard>
+            );
+          })}
+        </Box>
       ))}
-    </Box>
-  ));
+
+      {hasChanges && (
+        <Menu
+          style={{
+            position: 'sticky',
+            padding: config.space.S200,
+            paddingLeft: config.space.S400,
+            bottom: config.space.S400,
+            left: config.space.S400,
+            right: 0,
+            zIndex: 1,
+          }}
+          variant="Success"
+        >
+          <Box alignItems="Center" gap="400">
+            <Box grow="Yes" direction="Column">
+              {applyState.status === AsyncStatus.Error ? (
+                <Text size="T200">
+                  <b>Failed to apply changes! Please try again.</b>
+                </Text>
+              ) : (
+                <Text size="T200">
+                  <b>Changes saved! Apply when ready.</b>
+                </Text>
+              )}
+            </Box>
+            <Box shrink="No" gap="200">
+              <Button
+                size="300"
+                variant="Success"
+                fill="None"
+                radii="300"
+                disabled={applyingChanges}
+                onClick={resetChanges}
+              >
+                <Text size="B300">Reset</Text>
+              </Button>
+              <Button
+                size="300"
+                variant="Success"
+                radii="300"
+                disabled={applyingChanges}
+                before={applyingChanges && <Spinner variant="Success" fill="Solid" size="100" />}
+                onClick={handleApplyChanges}
+              >
+                <Text size="B300">Apply Changes</Text>
+              </Button>
+            </Box>
+          </Box>
+        </Menu>
+      )}
+    </>
+  );
 }

@@ -6,10 +6,9 @@ import { getPowers, getTagIconSrc, usePowerLevelTags } from '../../../hooks/useP
 import { SettingTile } from '../../../components/setting-tile';
 import { IPowerLevels } from '../../../hooks/usePowerLevels';
 import { useRoom } from '../../../hooks/useRoom';
-import { PowerColorBadge } from '../../../components/power';
+import { PowerColorBadge, PowerIcon } from '../../../components/power';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { useMediaAuthentication } from '../../../hooks/useMediaAuthentication';
-import { PowerIcon } from '../../../components/power/PowerIcon';
 
 type PowersProps = {
   powerLevels: IPowerLevels;

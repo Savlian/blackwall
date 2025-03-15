@@ -36,12 +36,11 @@ import {
 } from '../../../hooks/usePowerLevelTags';
 import { useRoom } from '../../../hooks/useRoom';
 import { HexColorPickerPopOut } from '../../../components/HexColorPickerPopOut';
-import { PowerColorBadge } from '../../../components/power';
+import { PowerColorBadge, PowerIcon } from '../../../components/power';
 import { UseStateProvider } from '../../../components/UseStateProvider';
 import { EmojiBoard } from '../../../components/emoji-board';
 import { useImagePackRooms } from '../../../hooks/useImagePackRooms';
 import { roomToParentsAtom } from '../../../state/room/roomToParents';
-import { PowerIcon } from '../../../components/power/PowerIcon';
 import { useMediaAuthentication } from '../../../hooks/useMediaAuthentication';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { useFilePicker } from '../../../hooks/useFilePicker';
