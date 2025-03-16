@@ -28,10 +28,6 @@ export function Permissions({ requestClose }: PermissionsProps) {
     setPowerEditor(true);
   };
 
-  const handleViewPower = (power: number) => {
-    console.log(power);
-  };
-
   if (canEditPowers && powerEditor) {
     return <PowersEditor powerLevels={powerLevels} requestClose={() => setPowerEditor(false)} />;
   }
@@ -59,7 +55,6 @@ export function Permissions({ requestClose }: PermissionsProps) {
               <Powers
                 powerLevels={powerLevels}
                 onEdit={canEditPowers ? handleEditPowers : undefined}
-                onView={handleViewPower}
               />
               <PermissionGroups powerLevels={powerLevels} />
             </Box>
