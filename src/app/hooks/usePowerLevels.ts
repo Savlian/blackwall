@@ -8,7 +8,6 @@ import { useMatrixClient } from './useMatrixClient';
 import { getStateEvent } from '../utils/room';
 
 export type PowerLevelActions = 'invite' | 'redact' | 'kick' | 'ban' | 'historical';
-export type PowerLevelUsersDefaultKey = 'users_default';
 export type PowerLevelNotificationsAction = 'room';
 
 export type IPowerLevels = {
@@ -27,7 +26,7 @@ export type IPowerLevels = {
 };
 
 const DEFAULT_POWER_LEVELS: Record<
-  PowerLevelActions | PowerLevelUsersDefaultKey | 'state_default' | 'events_default',
+  PowerLevelActions | 'users_default' | 'state_default' | 'events_default',
   number
 > & {
   notifications: Record<PowerLevelNotificationsAction, number>;
@@ -238,8 +237,8 @@ export const usePowerLevelsAPI = (powerLevels: IPowerLevels) => {
  */
 
 type DefaultPermissionLocation = {
-  userDefault: true;
-  key: PowerLevelUsersDefaultKey;
+  user: true;
+  key?: string;
 };
 
 type ActionPermissionLocation = {
@@ -267,8 +266,8 @@ export const getPermissionPower = (
   powerLevels: IPowerLevels,
   location: PermissionLocation
 ): number => {
-  if ('userDefault' in location) {
-    return readPowerLevel.user(powerLevels, undefined);
+  if ('user' in location) {
+    return readPowerLevel.user(powerLevels, location.key);
   }
   if ('action' in location) {
     return readPowerLevel.action(powerLevels, location.key);
@@ -288,7 +287,14 @@ export const applyPermissionPower = (
   location: PermissionLocation,
   power: number
 ): IPowerLevels => {
-  if ('userDefault' in location) {
+  if ('user' in location) {
+    if (typeof location.key === 'string') {
+      const users = powerLevels.users ?? {};
+      users[location.key] = power;
+      // eslint-disable-next-line no-param-reassign
+      powerLevels.users = users;
+      return powerLevels;
+    }
     // eslint-disable-next-line no-param-reassign
     powerLevels.users_default = power;
     return powerLevels;
@@ -306,7 +312,7 @@ export const applyPermissionPower = (
     return powerLevels;
   }
   if ('state' in location) {
-    if (location.key) {
+    if (typeof location.key === 'string') {
       const events = powerLevels.events ?? {};
       events[location.key] = power;
       // eslint-disable-next-line no-param-reassign
@@ -318,7 +324,7 @@ export const applyPermissionPower = (
     return powerLevels;
   }
 
-  if (location.key) {
+  if (typeof location.key === 'string') {
     const events = powerLevels.events ?? {};
     events[location.key] = power;
     // eslint-disable-next-line no-param-reassign

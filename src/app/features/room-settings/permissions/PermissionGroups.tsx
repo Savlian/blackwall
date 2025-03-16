@@ -1,20 +1,6 @@
 /* eslint-disable react/no-array-index-key */
-import React, { MouseEventHandler, useCallback, useEffect, useState } from 'react';
-import {
-  Badge,
-  Box,
-  Button,
-  Chip,
-  config,
-  Icon,
-  Icons,
-  Menu,
-  PopOut,
-  RectCords,
-  Spinner,
-  Text,
-} from 'folds';
-import FocusTrap from 'focus-trap-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Badge, Box, Button, Chip, config, Icon, Icons, Menu, Spinner, Text } from 'folds';
 import produce from 'immer';
 import { SequenceCard } from '../../../components/sequence-card';
 import { SequenceCardStyle } from '../styles.css';
@@ -31,11 +17,13 @@ import { usePowerLevelTags } from '../../../hooks/usePowerLevelTags';
 import { useRoom } from '../../../hooks/useRoom';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { StateEvent } from '../../../../types/matrix/room';
-import { PowerSelector } from '../../../components/power';
-import { stopPropagation } from '../../../utils/keyboard';
-import { UseStateProvider } from '../../../components/UseStateProvider';
+import { PowerSwitcher } from '../../../components/power';
 import { AsyncStatus, useAsyncCallback } from '../../../hooks/useAsyncCallback';
 import { useAlive } from '../../../hooks/useAlive';
+
+const USER_DEFAULT_LOCATION: PermissionLocation = {
+  user: true,
+};
 
 type PermissionGroupsProps = {
   powerLevels: IPowerLevels;
@@ -115,8 +103,68 @@ export function PermissionGroups({ powerLevels }: PermissionGroupsProps) {
   const applyingChanges = applyState.status === AsyncStatus.Loading;
   const hasChanges = permissionUpdate.size > 0;
 
+  const renderUserGroup = () => {
+    const power = getPermissionPower(powerLevels, USER_DEFAULT_LOCATION);
+    const powerUpdate = permissionUpdate.get(USER_DEFAULT_LOCATION);
+    const value = powerUpdate ?? power;
+
+    const tag = getPowerLevelTag(value);
+    const powerChanges = value !== power;
+
+    return (
+      <Box direction="Column" gap="100">
+        <Text size="L400">Users</Text>
+        <SequenceCard
+          variant="SurfaceVariant"
+          className={SequenceCardStyle}
+          direction="Column"
+          gap="400"
+        >
+          <SettingTile
+            title="Default Power"
+            description="Default power level for all users."
+            after={
+              <PowerSwitcher
+                powerLevelTags={powerLevelTags}
+                value={value}
+                onChange={(v) => handleChangePermission(USER_DEFAULT_LOCATION, v, power)}
+              >
+                {(handleOpen, opened) => (
+                  <Chip
+                    variant={powerChanges ? 'Success' : 'Secondary'}
+                    outlined={powerChanges}
+                    fill="Soft"
+                    radii="Pill"
+                    aria-selected={opened}
+                    disabled={!canChangePermission || applyingChanges}
+                    after={
+                      powerChanges && (
+                        <Badge size="200" variant="Success" fill="Solid" radii="Pill" />
+                      )
+                    }
+                    before={
+                      canChangePermission && (
+                        <Icon size="50" src={opened ? Icons.ChevronTop : Icons.ChevronBottom} />
+                      )
+                    }
+                    onClick={handleOpen}
+                  >
+                    <Text size="B300" truncate>
+                      {tag.name}
+                    </Text>
+                  </Chip>
+                )}
+              </PowerSwitcher>
+            }
+          />
+        </SequenceCard>
+      </Box>
+    );
+  };
+
   return (
     <>
+      {renderUserGroup()}
       {permissionGroups.map((group, groupIndex) => (
         <Box key={groupIndex} direction="Column" gap="100">
           <Text size="L400">{group.name}</Text>
@@ -140,72 +188,40 @@ export function PermissionGroups({ powerLevels }: PermissionGroupsProps) {
                   title={item.name}
                   description={item.description}
                   after={
-                    <UseStateProvider initial={undefined}>
-                      {(menuCords: RectCords | undefined, setMenuCords) => (
-                        <PopOut
-                          anchor={menuCords}
-                          offset={5}
-                          position="Bottom"
-                          align="End"
-                          content={
-                            <FocusTrap
-                              focusTrapOptions={{
-                                initialFocus: false,
-                                onDeactivate: () => setMenuCords(undefined),
-                                clickOutsideDeactivates: true,
-                                isKeyForward: (evt: KeyboardEvent) =>
-                                  evt.key === 'ArrowDown' || evt.key === 'ArrowRight',
-                                isKeyBackward: (evt: KeyboardEvent) =>
-                                  evt.key === 'ArrowUp' || evt.key === 'ArrowLeft',
-                                escapeDeactivates: stopPropagation,
-                              }}
-                            >
-                              <PowerSelector
-                                powerLevelTags={powerLevelTags}
-                                value={value}
-                                onChange={(v) => {
-                                  handleChangePermission(item.location, v, power);
-                                  setMenuCords(undefined);
-                                }}
-                              />
-                            </FocusTrap>
+                    <PowerSwitcher
+                      powerLevelTags={powerLevelTags}
+                      value={value}
+                      onChange={(v) => handleChangePermission(item.location, v, power)}
+                    >
+                      {(handleOpen, opened) => (
+                        <Chip
+                          variant={powerChanges ? 'Success' : 'Secondary'}
+                          outlined={powerChanges}
+                          fill="Soft"
+                          radii="Pill"
+                          aria-selected={opened}
+                          disabled={!canChangePermission || applyingChanges}
+                          after={
+                            powerChanges && (
+                              <Badge size="200" variant="Success" fill="Solid" radii="Pill" />
+                            )
                           }
+                          before={
+                            canChangePermission && (
+                              <Icon
+                                size="50"
+                                src={opened ? Icons.ChevronTop : Icons.ChevronBottom}
+                              />
+                            )
+                          }
+                          onClick={handleOpen}
                         >
-                          <Chip
-                            variant={powerChanges ? 'Success' : 'Secondary'}
-                            outlined={powerChanges}
-                            fill="Soft"
-                            radii="Pill"
-                            aria-selected={!!menuCords}
-                            disabled={!canChangePermission || applyingChanges}
-                            after={
-                              powerChanges && (
-                                <Badge size="200" variant="Success" fill="Solid" radii="Pill" />
-                              )
-                            }
-                            before={
-                              canChangePermission && (
-                                <Icon
-                                  size="50"
-                                  src={menuCords ? Icons.ChevronTop : Icons.ChevronBottom}
-                                />
-                              )
-                            }
-                            onClick={
-                              ((evt) =>
-                                setMenuCords(
-                                  evt.currentTarget.getBoundingClientRect()
-                                )) as MouseEventHandler<HTMLButtonElement>
-                            }
-                          >
-                            <Text size="B300" truncate>
-                              {tag.name}
-                            </Text>
-                            <Text size="T200">{value}</Text>
-                          </Chip>
-                        </PopOut>
+                          <Text size="B300" truncate>
+                            {tag.name} & Above
+                          </Text>
+                        </Chip>
                       )}
-                    </UseStateProvider>
+                    </PowerSwitcher>
                   }
                 />
               </SequenceCard>

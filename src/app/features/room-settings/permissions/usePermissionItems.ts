@@ -20,14 +20,6 @@ export const usePermissionGroups = (): PermissionGroup[] => {
       items: [
         {
           location: {
-            userDefault: true,
-            key: 'users_default',
-          },
-          name: 'Users Default',
-          description: 'Default power level for all members',
-        },
-        {
-          location: {
             key: MessageEvent.RoomMessage,
           },
           name: 'Send Messages',

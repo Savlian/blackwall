@@ -1,7 +1,9 @@
-import React, { forwardRef } from 'react';
-import { Box, config, Menu, MenuItem, Scroll, Text, toRem } from 'folds';
+import React, { forwardRef, MouseEventHandler, ReactNode, useState } from 'react';
+import FocusTrap from 'focus-trap-react';
+import { Box, config, Menu, MenuItem, PopOut, Scroll, Text, toRem, RectCords } from 'folds';
 import { getPowers, PowerLevelTags } from '../../hooks/usePowerLevelTags';
 import { PowerColorBadge } from './PowerColorBadge';
+import { stopPropagation } from '../../utils/keyboard';
 
 type PowerSelectorProps = {
   powerLevelTags: PowerLevelTags;
@@ -46,3 +48,47 @@ export const PowerSelector = forwardRef<HTMLDivElement, PowerSelectorProps>(
     </Menu>
   )
 );
+
+type PowerSwitcherProps = PowerSelectorProps & {
+  children: (handleOpen: MouseEventHandler<HTMLButtonElement>, opened: boolean) => ReactNode;
+};
+export function PowerSwitcher({ powerLevelTags, value, onChange, children }: PowerSwitcherProps) {
+  const [menuCords, setMenuCords] = useState<RectCords>();
+
+  const handleOpen: MouseEventHandler<HTMLButtonElement> = (evt) => {
+    setMenuCords(evt.currentTarget.getBoundingClientRect());
+  };
+
+  return (
+    <PopOut
+      anchor={menuCords}
+      offset={5}
+      position="Bottom"
+      align="End"
+      content={
+        <FocusTrap
+          focusTrapOptions={{
+            initialFocus: false,
+            onDeactivate: () => setMenuCords(undefined),
+            clickOutsideDeactivates: true,
+            isKeyForward: (evt: KeyboardEvent) =>
+              evt.key === 'ArrowDown' || evt.key === 'ArrowRight',
+            isKeyBackward: (evt: KeyboardEvent) => evt.key === 'ArrowUp' || evt.key === 'ArrowLeft',
+            escapeDeactivates: stopPropagation,
+          }}
+        >
+          <PowerSelector
+            powerLevelTags={powerLevelTags}
+            value={value}
+            onChange={(v) => {
+              onChange(v);
+              setMenuCords(undefined);
+            }}
+          />
+        </FocusTrap>
+      }
+    >
+      {children(handleOpen, !!menuCords)}
+    </PopOut>
+  );
+}
