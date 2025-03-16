@@ -217,8 +217,9 @@ export function PermissionGroups({ powerLevels }: PermissionGroupsProps) {
                           onClick={handleOpen}
                         >
                           <Text size="B300" truncate>
-                            {tag.name} & Above
+                            {tag.name}
                           </Text>
+                          <Text size="T200">& Above</Text>
                         </Chip>
                       )}
                     </PowerSwitcher>
