@@ -1,5 +1,5 @@
 /* eslint-disable react/no-array-index-key */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge, Box, Button, Chip, config, Icon, Icons, Menu, Spinner, Text } from 'folds';
 import produce from 'immer';
 import { SequenceCard } from '../../../components/sequence-card';
@@ -13,7 +13,7 @@ import {
   usePowerLevelsAPI,
 } from '../../../hooks/usePowerLevels';
 import { usePermissionGroups } from './usePermissionItems';
-import { usePowerLevelTags } from '../../../hooks/usePowerLevelTags';
+import { getPowers, usePowerLevelTags } from '../../../hooks/usePowerLevelTags';
 import { useRoom } from '../../../hooks/useRoom';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { StateEvent } from '../../../../types/matrix/room';
@@ -38,6 +38,7 @@ export function PermissionGroups({ powerLevels }: PermissionGroupsProps) {
     getPowerLevel(mx.getSafeUserId())
   );
   const [powerLevelTags, getPowerLevelTag] = usePowerLevelTags(room, powerLevels);
+  const maxPower = useMemo(() => Math.max(...getPowers(powerLevelTags)), [powerLevelTags]);
 
   const permissionGroups = usePermissionGroups();
 
@@ -219,7 +220,7 @@ export function PermissionGroups({ powerLevels }: PermissionGroupsProps) {
                           <Text size="B300" truncate>
                             {tag.name}
                           </Text>
-                          <Text size="T200">& Above</Text>
+                          {value < maxPower && <Text size="T200">& Above</Text>}
                         </Chip>
                       )}
                     </PowerSwitcher>

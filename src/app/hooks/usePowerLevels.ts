@@ -1,8 +1,8 @@
-import { Room } from 'matrix-js-sdk';
-import { createContext, useCallback, useContext, useMemo } from 'react';
+import { MatrixEvent, Room } from 'matrix-js-sdk';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import produce from 'immer';
 import { useStateEvent } from './useStateEvent';
 import { StateEvent } from '../../types/matrix/room';
-import { useForceUpdate } from './useForceUpdate';
 import { useStateEventCallback } from './useStateEventCallback';
 import { useMatrixClient } from './useMatrixClient';
 import { getStateEvent } from '../utils/room';
@@ -25,12 +25,7 @@ export type IPowerLevels = {
   notifications?: Record<string, number>;
 };
 
-const DEFAULT_POWER_LEVELS: Record<
-  PowerLevelActions | 'users_default' | 'state_default' | 'events_default',
-  number
-> & {
-  notifications: Record<PowerLevelNotificationsAction, number>;
-} = {
+const DEFAULT_POWER_LEVELS: Required<IPowerLevels> = {
   users_default: 0,
   state_default: 50,
   events_default: 0,
@@ -39,15 +34,42 @@ const DEFAULT_POWER_LEVELS: Record<
   kick: 50,
   ban: 50,
   historical: 0,
+  events: {},
+  users: {},
   notifications: {
     room: 50,
   },
 };
 
+const fillMissingPowers = (powerLevels: IPowerLevels): IPowerLevels =>
+  produce(powerLevels, (draftPl: IPowerLevels) => {
+    const keys = Object.keys(DEFAULT_POWER_LEVELS) as unknown as (keyof IPowerLevels)[];
+    keys.forEach((key) => {
+      if (draftPl[key] === undefined) {
+        // eslint-disable-next-line no-param-reassign
+        draftPl[key] = DEFAULT_POWER_LEVELS[key] as any;
+      }
+    });
+    if (draftPl.notifications && typeof draftPl.notifications.room !== 'number') {
+      // eslint-disable-next-line no-param-reassign
+      draftPl.notifications.room = DEFAULT_POWER_LEVELS.notifications.room;
+    }
+    return draftPl;
+  });
+
+const getPowersLevelFromMatrixEvent = (mEvent?: MatrixEvent): IPowerLevels => {
+  const pl = mEvent?.getContent<IPowerLevels>();
+  if (!pl) return DEFAULT_POWER_LEVELS;
+
+  return fillMissingPowers(pl);
+};
+
 export function usePowerLevels(room: Room): IPowerLevels {
   const powerLevelsEvent = useStateEvent(room, StateEvent.RoomPowerLevels);
-  const powerLevels: IPowerLevels =
-    powerLevelsEvent?.getContent<IPowerLevels>() ?? DEFAULT_POWER_LEVELS;
+  const powerLevels: IPowerLevels = useMemo(
+    () => getPowersLevelFromMatrixEvent(powerLevelsEvent),
+    [powerLevelsEvent]
+  );
 
   return powerLevels;
 }
@@ -64,7 +86,18 @@ export const usePowerLevelsContext = (): IPowerLevels => {
 
 export const useRoomsPowerLevels = (rooms: Room[]): Map<string, IPowerLevels> => {
   const mx = useMatrixClient();
-  const [updateCount, forceUpdate] = useForceUpdate();
+  const getRoomsPowerLevels = useCallback(() => {
+    const rToPl = new Map<string, IPowerLevels>();
+
+    rooms.forEach((room) => {
+      const mEvent = getStateEvent(room, StateEvent.RoomPowerLevels, '');
+      rToPl.set(room.roomId, getPowersLevelFromMatrixEvent(mEvent));
+    });
+
+    return rToPl;
+  }, [rooms]);
+
+  const [roomToPowerLevels, setRoomToPowerLevels] = useState(() => getRoomsPowerLevels());
 
   useStateEventCallback(
     mx,
@@ -77,26 +110,11 @@ export const useRoomsPowerLevels = (rooms: Room[]): Map<string, IPowerLevels> =>
           event.getStateKey() === '' &&
           rooms.find((r) => r.roomId === roomId)
         ) {
-          forceUpdate();
+          setRoomToPowerLevels(getRoomsPowerLevels());
         }
       },
-      [rooms, forceUpdate]
+      [rooms, getRoomsPowerLevels]
     )
-  );
-
-  const roomToPowerLevels = useMemo(
-    () => {
-      const rToPl = new Map<string, IPowerLevels>();
-
-      rooms.forEach((room) => {
-        const pl = getStateEvent(room, StateEvent.RoomPowerLevels, '')?.getContent<IPowerLevels>();
-        if (pl) rToPl.set(room.roomId, pl);
-      });
-
-      return rToPl;
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rooms, updateCount]
   );
 
   return roomToPowerLevels;
