@@ -10,6 +10,9 @@ import {
 import { SequenceCard } from '../../../components/sequence-card';
 import { SettingTile } from '../../../components/setting-tile';
 import { SequenceCardStyle } from '../styles.css';
+import { RoomProfile } from './RoomProfile';
+import { usePowerLevels } from '../../../hooks/usePowerLevels';
+import { useRoom } from '../../../hooks/useRoom';
 
 function RoomJoinRules() {
   const joinRules: Array<JoinRule> = useMemo(
@@ -52,6 +55,9 @@ type GeneralProps = {
   requestClose: () => void;
 };
 export function General({ requestClose }: GeneralProps) {
+  const room = useRoom();
+  const powerLevels = usePowerLevels(room);
+
   return (
     <Page>
       <PageHeader outlined={false}>
@@ -72,6 +78,7 @@ export function General({ requestClose }: GeneralProps) {
         <Scroll hideTrack visibility="Hover">
           <PageContent>
             <Box direction="Column" gap="700">
+              <RoomProfile powerLevels={powerLevels} />
               <RoomJoinRules />
             </Box>
           </PageContent>
