@@ -12,17 +12,54 @@ import {
 } from '../../state/room/roomInputDrafts';
 import { useObjectURL } from '../../hooks/useObjectURL';
 
-type RenderPreviewProps = {
-  style: React.CSSProperties;
-  src: string;
-  alt: string;
+type PreviewImageProps = {
+  fileItem: TUploadItem;
 };
+function PreviewImage({ fileItem }: PreviewImageProps) {
+  const { originalFile, metadata } = fileItem;
+  const fileUrl = useObjectURL(originalFile);
+
+  return (
+    <img
+      style={{
+        objectFit: 'contain',
+        width: '100%',
+        height: toRem(152),
+        filter: metadata.markedAsSpoiler ? 'blur(44px)' : undefined,
+      }}
+      alt={originalFile.name}
+      src={fileUrl}
+    />
+  );
+}
+
+type PreviewVideoProps = {
+  fileItem: TUploadItem;
+};
+function PreviewVideo({ fileItem }: PreviewVideoProps) {
+  const { originalFile, metadata } = fileItem;
+  const fileUrl = useObjectURL(originalFile);
+
+  return (
+    // eslint-disable-next-line jsx-a11y/media-has-caption
+    <video
+      style={{
+        objectFit: 'contain',
+        width: '100%',
+        height: toRem(152),
+        filter: metadata.markedAsSpoiler ? 'blur(44px)' : undefined,
+      }}
+      src={fileUrl}
+    />
+  );
+}
+
 type MediaPreviewProps = {
   fileItem: TUploadItem;
   onSpoiler: (marked: boolean) => void;
-  renderPreviewElement: (props: RenderPreviewProps) => ReactNode;
+  children: ReactNode;
 };
-function MediaPreview({ fileItem, onSpoiler, renderPreviewElement }: MediaPreviewProps) {
+function MediaPreview({ fileItem, onSpoiler, children }: MediaPreviewProps) {
   const { originalFile, metadata } = fileItem;
   const fileUrl = useObjectURL(originalFile);
 
@@ -35,16 +72,7 @@ function MediaPreview({ fileItem, onSpoiler, renderPreviewElement }: MediaPrevie
         position: 'relative',
       }}
     >
-      {renderPreviewElement({
-        style: {
-          objectFit: 'contain',
-          width: '100%',
-          height: toRem(152),
-          filter: fileItem.metadata.markedAsSpoiler ? 'blur(44px)' : undefined,
-        },
-        src: fileUrl,
-        alt: originalFile.name,
-      })}
+      {children}
       <Box
         justifyContent="End"
         style={{
@@ -138,19 +166,14 @@ export function UploadCardRenderer({
       bottom={
         <>
           {fileItem.originalFile.type.startsWith('image') && (
-            <MediaPreview
-              fileItem={fileItem}
-              onSpoiler={handleSpoiler}
-              renderPreviewElement={(p) => <img {...p} alt={p.alt} />}
-            />
+            <MediaPreview fileItem={fileItem} onSpoiler={handleSpoiler}>
+              <PreviewImage fileItem={fileItem} />
+            </MediaPreview>
           )}
           {fileItem.originalFile.type.startsWith('video') && (
-            <MediaPreview
-              fileItem={fileItem}
-              onSpoiler={handleSpoiler}
-              // eslint-disable-next-line jsx-a11y/media-has-caption
-              renderPreviewElement={(p) => <video {...p} />}
-            />
+            <MediaPreview fileItem={fileItem} onSpoiler={handleSpoiler}>
+              <PreviewVideo fileItem={fileItem} />
+            </MediaPreview>
           )}
           {upload.status === UploadStatus.Idle && (
             <UploadCardProgress sentBytes={0} totalBytes={file.size} />
