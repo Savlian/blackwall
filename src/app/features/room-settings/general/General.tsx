@@ -1,54 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import { Box, Icon, IconButton, Icons, Scroll, Text } from 'folds';
-import { JoinRule } from 'matrix-js-sdk';
 import { Page, PageContent, PageHeader } from '../../../components/page';
-import {
-  JoinRulesSwitcher,
-  useRoomJoinRuleIcon,
-  useRoomJoinRuleLabel,
-} from '../../../components/JoinRulesSwitcher';
-import { SequenceCard } from '../../../components/sequence-card';
-import { SettingTile } from '../../../components/setting-tile';
-import { SequenceCardStyle } from '../styles.css';
 import { RoomProfile } from './RoomProfile';
 import { usePowerLevels } from '../../../hooks/usePowerLevels';
 import { useRoom } from '../../../hooks/useRoom';
 import { RoomEncryption } from './RoomEncryption';
 import { RoomHistoryVisibility } from './RoomHistoryVisibility';
-
-function RoomJoinRules() {
-  const joinRules: Array<JoinRule> = useMemo(
-    () => [JoinRule.Invite, JoinRule.Knock, JoinRule.Restricted, JoinRule.Public],
-    []
-  );
-
-  const [rule, setRule] = useState(JoinRule.Invite);
-  const icons = useRoomJoinRuleIcon();
-  const labels = useRoomJoinRuleLabel();
-
-  return (
-    <SequenceCard
-      className={SequenceCardStyle}
-      variant="SurfaceVariant"
-      direction="Column"
-      gap="400"
-    >
-      <SettingTile
-        title="Room Access"
-        description="Change how people can join the room."
-        after={
-          <JoinRulesSwitcher
-            icons={icons}
-            labels={labels}
-            rules={joinRules}
-            value={rule}
-            onChange={setRule}
-          />
-        }
-      />
-    </SequenceCard>
-  );
-}
+import { RoomJoinRules } from './RoomJoinRules';
 
 type GeneralProps = {
   requestClose: () => void;
@@ -80,7 +38,7 @@ export function General({ requestClose }: GeneralProps) {
               <RoomProfile powerLevels={powerLevels} />
               <Box direction="Column" gap="100">
                 <Text size="L400">Options</Text>
-                <RoomJoinRules />
+                <RoomJoinRules powerLevels={powerLevels} />
                 <RoomHistoryVisibility powerLevels={powerLevels} />
                 <RoomEncryption powerLevels={powerLevels} />
               </Box>

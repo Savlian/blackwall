@@ -11,6 +11,7 @@ import {
   PopOut,
   Menu,
   Button,
+  Spinner,
 } from 'folds';
 import { JoinRule } from 'matrix-js-sdk';
 import FocusTrap from 'focus-trap-react';
@@ -35,8 +36,8 @@ export const useRoomJoinRuleLabel = (): JoinRuleLabels =>
     () => ({
       [JoinRule.Invite]: 'Invite Only',
       [JoinRule.Knock]: 'Knock & Invite',
-      [JoinRule.Restricted]: 'Via Space',
-      [JoinRule.Public]: 'Via Address',
+      [JoinRule.Restricted]: 'Space Members',
+      [JoinRule.Public]: 'Public',
       [JoinRule.Private]: 'Invite Only',
     }),
     []
@@ -49,6 +50,7 @@ type JoinRulesSwitcherProps<T extends JoinRule[]> = {
   value: T[number];
   onChange: (value: T[number]) => void;
   disabled?: boolean;
+  changing?: boolean;
 };
 export function JoinRulesSwitcher<T extends JoinRule[]>({
   icons,
@@ -57,6 +59,7 @@ export function JoinRulesSwitcher<T extends JoinRule[]>({
   value,
   onChange,
   disabled,
+  changing,
 }: JoinRulesSwitcherProps<T>) {
   const [cords, setCords] = useState<RectCords>();
 
@@ -102,14 +105,7 @@ export function JoinRulesSwitcher<T extends JoinRule[]>({
                   disabled={disabled}
                 >
                   <Box grow="Yes">
-                    <Text
-                      style={{
-                        fontWeight: value === rule ? config.fontWeight.W600 : undefined,
-                      }}
-                      size="T300"
-                    >
-                      {labels[rule]}
-                    </Text>
+                    <Text size="T300">{labels[rule]}</Text>
                   </Box>
                 </MenuItem>
               ))}
@@ -125,11 +121,17 @@ export function JoinRulesSwitcher<T extends JoinRule[]>({
         radii="300"
         outlined
         before={<Icon size="100" src={icons[value]} />}
-        after={<Icon size="100" src={Icons.ChevronBottom} />}
+        after={
+          changing ? (
+            <Spinner size="100" variant="Secondary" fill="Soft" />
+          ) : (
+            <Icon size="100" src={Icons.ChevronBottom} />
+          )
+        }
         onClick={handleOpenMenu}
         disabled={disabled}
       >
-        <Text size="T300">{labels[value]}</Text>
+        <Text size="B300">{labels[value]}</Text>
       </Button>
     </PopOut>
   );
