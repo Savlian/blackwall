@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { ReactNode, useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FocusTrap from 'focus-trap-react';
 import {
@@ -21,6 +21,7 @@ import {
 } from 'folds';
 import { useFocusWithin, useHover } from 'react-aria';
 import {
+  NavButton,
   NavCategory,
   NavCategoryHeader,
   NavItem,
@@ -42,16 +43,13 @@ import { PageNav, PageNavContent, PageNavHeader } from '../../../components/page
 import { stopPropagation } from '../../../utils/keyboard';
 import { useExploreServers } from '../../../hooks/useExploreServers';
 
-export function AddExploreServerPrompt() {
-  const mx = useMatrixClient();
-  const navigate = useNavigate();
+type AddExploreServerPromptProps = {
+  onSubmit: (server: string) => Promise<void>;
+  children: ReactNode;
+};
+export function AddExploreServerPrompt({ onSubmit, children }: AddExploreServerPromptProps) {
   const [dialog, setDialog] = useState(false);
-  const [, addServer] = useExploreServers();
   const serverInputRef = useRef<HTMLInputElement>(null);
-
-  const [exploreState] = useAsyncCallback(
-    useCallback((server: string) => mx.publicRooms({ server, limit: 1 }), [mx])
-  );
 
   const getInputServer = (): string | undefined => {
     const serverInput = serverInputRef.current;
@@ -60,14 +58,15 @@ export function AddExploreServerPrompt() {
     return server || undefined;
   };
 
-  const handleSubmit = useCallback(() => {
-    const server = getInputServer();
-    if (!server) return;
+  const [submitState, handleSubmit] = useAsyncCallback(
+    useCallback(async () => {
+      const server = getInputServer();
+      if (!server) return;
 
-    setDialog(false);
-    addServer(server);
-    navigate(getExploreServerPath(server));
-  }, [navigate, addServer]);
+      await onSubmit(server);
+      setDialog(false);
+    }, [onSubmit])
+  );
 
   return (
     <>
@@ -111,27 +110,25 @@ export function AddExploreServerPrompt() {
                 <Box direction="Column" gap="100">
                   <Text size="L400">Server Name</Text>
                   <Input ref={serverInputRef} name="serverInput" variant="Background" required />
-                  {exploreState.status === AsyncStatus.Error && (
+                  {submitState.status === AsyncStatus.Error && (
                     <Text style={{ color: color.Critical.Main }} size="T300">
                       Failed to load public rooms. Please try again.
                     </Text>
                   )}
                 </Box>
                 <Box direction="Column" gap="200">
-                  {/* <Button
+                  <Button
                     type="submit"
+                    onClick={handleSubmit}
                     variant="Secondary"
+                    fill="Soft"
                     before={
-                      exploreState.status === AsyncStatus.Loading ? (
+                      submitState.status === AsyncStatus.Loading && (
                         <Spinner fill="Solid" variant="Secondary" size="200" />
-                      ) : undefined
+                      )
                     }
-                    aria-disabled={exploreState.status === AsyncStatus.Loading}
+                    disabled={submitState.status === AsyncStatus.Loading}
                   >
-                    <Text size="B400">Save</Text>
-                  </Button> */}
-
-                  <Button type="submit" onClick={handleSubmit} variant="Secondary" fill="Soft">
                     <Text size="B400">View</Text>
                   </Button>
                 </Box>
@@ -140,17 +137,11 @@ export function AddExploreServerPrompt() {
           </FocusTrap>
         </OverlayCenter>
       </Overlay>
-      <Button
-        variant="Secondary"
-        fill="Soft"
-        size="300"
-        before={<Icon size="100" src={Icons.Plus} />}
-        onClick={() => setDialog(true)}
-      >
-        <Text size="B300" truncate>
-          Add Server
-        </Text>
-      </Button>
+      <NavItem variant="Secondary">
+        <NavButton onClick={() => setDialog(true)}>
+          <NavItemContent>{children}</NavItemContent>
+        </NavButton>
+      </NavItem>
     </>
   );
 }
@@ -224,16 +215,33 @@ export function ExploreServerNavItem({
 
 export function Explore() {
   const mx = useMatrixClient();
+  const navigate = useNavigate();
   useNavToActivePathMapper('explore');
   const userId = mx.getUserId();
   const clientConfig = useClientConfig();
   const userServer = userId ? getMxIdServer(userId) : undefined;
   const featuredServers =
     clientConfig.featuredCommunities?.servers?.filter((server) => server !== userServer) ?? [];
-  const [exploreServers, , removeServer] = useExploreServers();
+  const [exploreServers, addServer, removeServer] = useExploreServers();
 
   const featuredSelected = useExploreFeaturedSelected();
   const selectedServer = useExploreServer();
+
+  const addServerCallback = useCallback(
+    async (server: string) => {
+      await addServer(server);
+      navigate(getExploreServerPath(server));
+    },
+    [addServer, navigate]
+  );
+
+  const removeServerCallback = useCallback(
+    async (server: string) => {
+      navigate(getExploreFeaturedPath());
+      await removeServer(server);
+    },
+    [removeServer, navigate]
+  );
 
   return (
     <PageNav>
@@ -267,30 +275,7 @@ export function Explore() {
               </NavLink>
             </NavItem>
             {userServer && (
-              <NavItem
-                variant="Background"
-                radii="400"
-                aria-selected={selectedServer === userServer}
-              >
-                <NavLink to={getExploreServerPath(userServer)}>
-                  <NavItemContent>
-                    <Box as="span" grow="Yes" alignItems="Center" gap="200">
-                      <Avatar size="200" radii="400">
-                        <Icon
-                          src={Icons.Category}
-                          size="100"
-                          filled={selectedServer === userServer}
-                        />
-                      </Avatar>
-                      <Box as="span" grow="Yes">
-                        <Text as="span" size="Inherit" truncate>
-                          {userServer}
-                        </Text>
-                      </Box>
-                    </Box>
-                  </NavItemContent>
-                </NavLink>
-              </NavItem>
+              <ExploreServerNavItem server={userServer} selected={userServer === selectedServer} />
             )}
           </NavCategory>
           <NavCategory>
@@ -311,12 +296,23 @@ export function Explore() {
                 key={server}
                 server={server}
                 selected={server === selectedServer}
-                onRemove={() => removeServer(server)}
+                onRemove={() => removeServerCallback(server)}
               />
             ))}
           </NavCategory>
           <Box direction="Column">
-            <AddExploreServerPrompt />
+            <AddExploreServerPrompt onSubmit={addServerCallback}>
+              <Box as="span" grow="Yes" alignItems="Center" gap="200">
+                <Avatar size="200" radii="400">
+                  <Icon src={Icons.Plus} size="100" />
+                </Avatar>
+                <Box as="span" grow="Yes">
+                  <Text as="span" size="Inherit" truncate>
+                    Add Server
+                  </Text>
+                </Box>
+              </Box>
+            </AddExploreServerPrompt>
           </Box>
         </Box>
       </PageNavContent>
