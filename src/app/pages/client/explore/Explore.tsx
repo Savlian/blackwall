@@ -55,6 +55,7 @@ export function AddExploreServerPrompt({
   children,
   selected = false,
 }: AddExploreServerPromptProps) {
+  const mx = useMatrixClient();
   const [dialog, setDialog] = useState(false);
   const serverInputRef = useRef<HTMLInputElement>(null);
 
@@ -70,9 +71,10 @@ export function AddExploreServerPrompt({
       const server = getInputServer();
       if (!server) return;
 
+      await mx.publicRooms({ server, limit: 1 });
       await onSubmit(server);
       setDialog(false);
-    }, [onSubmit])
+    }, [onSubmit, mx])
   );
 
   return (
