@@ -32,7 +32,7 @@ import {
 import { getExploreFeaturedPath, getExploreServerPath } from '../../pathUtils';
 import { useClientConfig } from '../../../hooks/useClientConfig';
 import {
-  useExploreFeaturedSelected,
+  useExploringFeaturedRooms,
   useExploreServer,
 } from '../../../hooks/router/useExploreSelected';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
@@ -232,8 +232,8 @@ export function Explore() {
   );
   const [exploreServers, addServer, removeServer] = useExploreServers();
 
-  const featuredSelected = useExploreFeaturedSelected();
   const selectedServer = useExploreServer();
+  const exploringFeaturedRooms = useExploringFeaturedRooms();
   const exploringUnlistedServer = useMemo(
     () =>
       selectedServer !== undefined &&
@@ -245,10 +245,12 @@ export function Explore() {
 
   const addServerCallback = useCallback(
     async (server: string) => {
-      await addServer(server);
+      if (server !== userServer && featuredServers.indexOf(server) === -1) {
+        await addServer(server);
+      }
       navigate(getExploreServerPath(server));
     },
-    [addServer, navigate]
+    [addServer, navigate, userServer, featuredServers]
   );
 
   const removeServerCallback = useCallback(
@@ -281,22 +283,6 @@ export function Explore() {
       <PageNavContent>
         <Box direction="Column" gap="300">
           <NavCategory>
-            <NavItem variant="Background" radii="400" aria-selected={featuredSelected}>
-              <NavLink to={getExploreFeaturedPath()}>
-                <NavItemContent>
-                  <Box as="span" grow="Yes" alignItems="Center" gap="200">
-                    <Avatar size="200" radii="400">
-                      <Icon src={Icons.Bulb} size="100" filled={featuredSelected} />
-                    </Avatar>
-                    <Box as="span" grow="Yes">
-                      <Text as="span" size="Inherit" truncate>
-                        Featured
-                      </Text>
-                    </Box>
-                  </Box>
-                </NavItemContent>
-              </NavLink>
-            </NavItem>
             {userServer && (
               <ExploreServerNavItem server={userServer} selected={userServer === selectedServer} />
             )}
@@ -311,7 +297,7 @@ export function Explore() {
                 </Avatar>
                 <Box as="span" grow="Yes">
                   <Text as="span" size="Inherit" truncate>
-                    View with Address
+                    Explore with Address
                   </Text>
                 </Box>
               </Box>
@@ -320,9 +306,25 @@ export function Explore() {
           <NavCategory>
             <NavCategoryHeader>
               <Text size="O400" style={{ paddingLeft: config.space.S200 }}>
-                Servers
+                Featured
               </Text>
             </NavCategoryHeader>
+            <NavItem variant="Background" radii="400" aria-selected={exploringFeaturedRooms}>
+              <NavLink to={getExploreFeaturedPath()}>
+                <NavItemContent>
+                  <Box as="span" grow="Yes" alignItems="Center" gap="200">
+                    <Avatar size="200" radii="400">
+                      <Icon src={Icons.Bulb} size="100" filled={exploringFeaturedRooms} />
+                    </Avatar>
+                    <Box as="span" grow="Yes">
+                      <Text as="span" size="Inherit" truncate>
+                        Featured Rooms
+                      </Text>
+                    </Box>
+                  </Box>
+                </NavItemContent>
+              </NavLink>
+            </NavItem>
             {featuredServers.map((server) => (
               <ExploreServerNavItem
                 key={server}
@@ -330,6 +332,13 @@ export function Explore() {
                 selected={server === selectedServer}
               />
             ))}
+          </NavCategory>
+          <NavCategory>
+            <NavCategoryHeader>
+              <Text size="O400" style={{ paddingLeft: config.space.S200 }}>
+                Servers
+              </Text>
+            </NavCategoryHeader>
             {exploreServers.map((server) => (
               <ExploreServerNavItem
                 key={server}
@@ -340,7 +349,7 @@ export function Explore() {
             ))}
             <AddExploreServerPrompt
               onSubmit={addServerCallback}
-              header={<Text size="H4">View Server</Text>}
+              header={<Text size="H4">Add Server</Text>}
             >
               <Box as="span" grow="Yes" alignItems="Center" gap="200">
                 <Avatar size="200" radii="400">
