@@ -257,10 +257,9 @@ export function Explore() {
 
   const removeServerCallback = useCallback(
     async (server: string) => {
-      navigate(getExploreFeaturedPath());
       await removeServer(server);
     },
-    [removeServer, navigate]
+    [removeServer]
   );
 
   const exploreUnlistedServerCallback = useCallback(
