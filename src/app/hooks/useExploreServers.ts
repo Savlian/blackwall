@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from 'react';
 import { AccountDataEvent } from '../../types/matrix/accountData';
 import { useAccountData } from './useAccountData';
 import { useMatrixClient } from './useMatrixClient';
@@ -6,33 +7,37 @@ export type InCinnyExploreServersContent = {
   servers?: string[];
 };
 
-export type ExploreServerListAction =
-  | {
-      type: 'APPEND';
-      server: string;
-    }
-  | {
-      type: 'DELETE';
-      server: string;
-    };
-
-export const useExploreServers = (): [string[], (action: ExploreServerListAction) => void] => {
+export const useExploreServers = (): [
+  string[],
+  (server: string) => Promise<void>,
+  (server: string) => Promise<void>
+] => {
   const mx = useMatrixClient();
-  const userAddedServers =
-    useAccountData(AccountDataEvent.CinnyExploreServers)?.getContent<InCinnyExploreServersContent>()
-      ?.servers ?? [];
+  const accountData = useAccountData(AccountDataEvent.CinnyExploreServers);
+  const userAddedServers = useMemo(
+    () => accountData?.getContent<InCinnyExploreServersContent>()?.servers ?? [],
+    [accountData]
+  );
 
-  const setUserAddedServers = (action: ExploreServerListAction) => {
-    if (action.type === 'APPEND') {
-      mx.setAccountData(AccountDataEvent.CinnyExploreServers, {
-        servers: [...userAddedServers, action.server],
-      });
-    } else if (action.type === 'DELETE') {
-      mx.setAccountData(AccountDataEvent.CinnyExploreServers, {
-        servers: userAddedServers.filter((server) => server !== action.server),
-      });
-    }
-  };
+  const addServer = useCallback(
+    async (server: string) => {
+      if (userAddedServers.indexOf(server) === -1) {
+        await mx.setAccountData(AccountDataEvent.CinnyExploreServers, {
+          servers: [...userAddedServers, server],
+        });
+      }
+    },
+    [mx, userAddedServers]
+  );
 
-  return [userAddedServers, setUserAddedServers];
+  const removeServer = useCallback(
+    async (server: string) => {
+      await mx.setAccountData(AccountDataEvent.CinnyExploreServers, {
+        servers: userAddedServers.filter((addedServer) => server !== addedServer),
+      });
+    },
+    [mx, userAddedServers]
+  );
+
+  return [userAddedServers, addServer, removeServer];
 };

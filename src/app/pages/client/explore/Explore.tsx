@@ -14,6 +14,7 @@ import {
   Overlay,
   OverlayBackdrop,
   OverlayCenter,
+  Spinner,
   Text,
   color,
   config,
@@ -45,7 +46,7 @@ export function AddExploreServerPrompt() {
   const mx = useMatrixClient();
   const navigate = useNavigate();
   const [dialog, setDialog] = useState(false);
-  const [, setExploreServers] = useExploreServers();
+  const [, addServer] = useExploreServers();
   const serverInputRef = useRef<HTMLInputElement>(null);
 
   const [exploreState] = useAsyncCallback(
@@ -64,9 +65,9 @@ export function AddExploreServerPrompt() {
     if (!server) return;
 
     setDialog(false);
-    setExploreServers({ type: 'APPEND', server });
+    addServer(server);
     navigate(getExploreServerPath(server));
-  }, [navigate, setExploreServers]);
+  }, [navigate, addServer]);
 
   return (
     <>
@@ -157,7 +158,7 @@ export function AddExploreServerPrompt() {
 type ExploreServerNavItemProps = {
   server: string;
   selected: boolean;
-  onRemove?: (() => void) | null;
+  onRemove?: (() => Promise<void>) | null;
 };
 export function ExploreServerNavItem({
   server,
@@ -167,6 +168,15 @@ export function ExploreServerNavItem({
   const [hover, setHover] = useState(false);
   const { hoverProps } = useHover({ onHoverChange: setHover });
   const { focusWithinProps } = useFocusWithin({ onFocusWithinChange: setHover });
+  const [removeState, removeCallback] = useAsyncCallback(
+    useCallback(async () => {
+      if (onRemove !== null) {
+        await onRemove();
+      }
+    }, [onRemove])
+  );
+  const removeInProgress =
+    removeState.status === AsyncStatus.Loading || removeState.status === AsyncStatus.Success;
 
   return (
     <NavItem
@@ -190,10 +200,21 @@ export function ExploreServerNavItem({
           </Box>
         </NavItemContent>
       </NavLink>
-      {onRemove !== null && hover && (
+      {onRemove !== null && (hover || removeInProgress) && (
         <NavItemOptions>
-          <IconButton onClick={onRemove} variant="Background" fill="None" size="300" radii="300">
-            <Icon size="50" src={Icons.Minus} />
+          <IconButton
+            onClick={removeCallback}
+            variant="Background"
+            fill="None"
+            size="300"
+            radii="300"
+            disabled={removeInProgress}
+          >
+            {removeInProgress ? (
+              <Spinner variant="Secondary" fill="Solid" size="200" />
+            ) : (
+              <Icon size="50" src={Icons.Minus} />
+            )}
           </IconButton>
         </NavItemOptions>
       )}
@@ -209,7 +230,7 @@ export function Explore() {
   const userServer = userId ? getMxIdServer(userId) : undefined;
   const featuredServers =
     clientConfig.featuredCommunities?.servers?.filter((server) => server !== userServer) ?? [];
-  const [exploreServers, setExploreServers] = useExploreServers();
+  const [exploreServers, , removeServer] = useExploreServers();
 
   const featuredSelected = useExploreFeaturedSelected();
   const selectedServer = useExploreServer();
@@ -290,7 +311,7 @@ export function Explore() {
                 key={server}
                 server={server}
                 selected={server === selectedServer}
-                onRemove={() => setExploreServers({ type: 'DELETE', server })}
+                onRemove={() => removeServer(server)}
               />
             ))}
           </NavCategory>
