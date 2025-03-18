@@ -1,4 +1,16 @@
-import { Avatar, Box, Button, Chip, color, Icon, Icons, Input, Spinner, Text } from 'folds';
+import {
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  color,
+  Icon,
+  Icons,
+  Input,
+  Spinner,
+  Text,
+  TextArea,
+} from 'folds';
 import React, { FormEventHandler, useCallback, useMemo, useState } from 'react';
 import { useAtomValue } from 'jotai';
 import Linkify from 'linkify-react';
@@ -107,11 +119,11 @@ export function RoomProfileEdit({
 
     const target = evt.target as HTMLFormElement | undefined;
     const nameInput = target?.nameInput as HTMLInputElement | undefined;
-    const topicInput = target?.topicInput as HTMLInputElement | undefined;
-    if (!nameInput || !topicInput) return;
+    const topicTextArea = target?.topicTextArea as HTMLTextAreaElement | undefined;
+    if (!nameInput || !topicTextArea) return;
 
     const roomName = nameInput.value.trim();
-    const roomTopic = topicInput.value.trim();
+    const roomTopic = topicTextArea.value.trim();
 
     submit(
       roomAvatar === avatar ? undefined : roomAvatar || null,
@@ -204,8 +216,8 @@ export function RoomProfileEdit({
       </Box>
       <Box direction="Inherit" gap="100">
         <Text size="L400">Topic</Text>
-        <Input
-          name="topicInput"
+        <TextArea
+          name="topicTextArea"
           defaultValue={topic}
           variant="Secondary"
           radii="300"
