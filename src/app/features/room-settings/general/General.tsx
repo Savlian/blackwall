@@ -14,6 +14,7 @@ import { RoomProfile } from './RoomProfile';
 import { usePowerLevels } from '../../../hooks/usePowerLevels';
 import { useRoom } from '../../../hooks/useRoom';
 import { RoomEncryption } from './RoomEncryption';
+import { RoomHistoryVisibility } from './RoomHistoryVisibility';
 
 function RoomJoinRules() {
   const joinRules: Array<JoinRule> = useMemo(
@@ -80,6 +81,7 @@ export function General({ requestClose }: GeneralProps) {
               <Box direction="Column" gap="100">
                 <Text size="L400">Options</Text>
                 <RoomJoinRules />
+                <RoomHistoryVisibility powerLevels={powerLevels} />
                 <RoomEncryption powerLevels={powerLevels} />
               </Box>
             </Box>
