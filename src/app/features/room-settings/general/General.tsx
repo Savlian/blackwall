@@ -13,6 +13,7 @@ import { SequenceCardStyle } from '../styles.css';
 import { RoomProfile } from './RoomProfile';
 import { usePowerLevels } from '../../../hooks/usePowerLevels';
 import { useRoom } from '../../../hooks/useRoom';
+import { RoomEncryption } from './RoomEncryption';
 
 function RoomJoinRules() {
   const joinRules: Array<JoinRule> = useMemo(
@@ -25,29 +26,26 @@ function RoomJoinRules() {
   const labels = useRoomJoinRuleLabel();
 
   return (
-    <Box direction="Column" gap="100">
-      <Text size="L400">Options</Text>
-      <SequenceCard
-        className={SequenceCardStyle}
-        variant="SurfaceVariant"
-        direction="Column"
-        gap="400"
-      >
-        <SettingTile
-          title="Room Access"
-          description="Change how people can join the room."
-          after={
-            <JoinRulesSwitcher
-              icons={icons}
-              labels={labels}
-              rules={joinRules}
-              value={rule}
-              onChange={setRule}
-            />
-          }
-        />
-      </SequenceCard>
-    </Box>
+    <SequenceCard
+      className={SequenceCardStyle}
+      variant="SurfaceVariant"
+      direction="Column"
+      gap="400"
+    >
+      <SettingTile
+        title="Room Access"
+        description="Change how people can join the room."
+        after={
+          <JoinRulesSwitcher
+            icons={icons}
+            labels={labels}
+            rules={joinRules}
+            value={rule}
+            onChange={setRule}
+          />
+        }
+      />
+    </SequenceCard>
   );
 }
 
@@ -79,7 +77,11 @@ export function General({ requestClose }: GeneralProps) {
           <PageContent>
             <Box direction="Column" gap="700">
               <RoomProfile powerLevels={powerLevels} />
-              <RoomJoinRules />
+              <Box direction="Column" gap="100">
+                <Text size="L400">Options</Text>
+                <RoomJoinRules />
+                <RoomEncryption powerLevels={powerLevels} />
+              </Box>
             </Box>
           </PageContent>
         </Scroll>

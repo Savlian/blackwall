@@ -198,7 +198,7 @@ export function RoomProfileEdit({
               src={avatarUrl}
               alt={name}
               renderFallback={() => (
-                <RoomIcon size="50" joinRule={joinRule?.join_rule ?? JoinRule.Invite} filled />
+                <RoomIcon size="400" joinRule={joinRule?.join_rule ?? JoinRule.Invite} filled />
               )}
             />
           </Avatar>
@@ -338,7 +338,7 @@ export function RoomProfile({ powerLevels }: RoomProfileProps) {
                   src={avatarUrl}
                   alt={name}
                   renderFallback={() => (
-                    <RoomIcon size="50" joinRule={joinRule?.join_rule ?? JoinRule.Invite} filled />
+                    <RoomIcon size="400" joinRule={joinRule?.join_rule ?? JoinRule.Invite} filled />
                   )}
                 />
               </Avatar>
