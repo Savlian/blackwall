@@ -4,7 +4,7 @@ export enum AccountDataEvent {
   IgnoredUserList = 'm.ignored_user_list',
 
   CinnySpaces = 'in.cinny.spaces',
-  CinnyExploreServers = 'in.cinny.explore_servers',
+  CinnyExplore = 'in.cinny.explore',
 
   ElementRecentEmoji = 'io.element.recent_emoji',
 
