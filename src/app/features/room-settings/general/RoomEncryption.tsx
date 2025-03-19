@@ -60,6 +60,11 @@ export function RoomEncryption({ powerLevels }: RoomEncryptionProps) {
 
   const [prompt, setPrompt] = useState(false);
 
+  const handleEnable = () => {
+    enable();
+    setPrompt(false);
+  };
+
   return (
     <SequenceCard
       className={SequenceCardStyle}
@@ -130,7 +135,7 @@ export function RoomEncryption({ powerLevels }: RoomEncryptionProps) {
                     <Text priority="400">
                       Are you sure? Once enabled, encryption cannot be disabled!
                     </Text>
-                    <Button type="submit" variant="Primary" onClick={() => enable()}>
+                    <Button type="submit" variant="Primary" onClick={handleEnable}>
                       <Text size="B400">Enable E2E Encryption</Text>
                     </Button>
                   </Box>
