@@ -7,6 +7,7 @@ import { useRoom } from '../../../hooks/useRoom';
 import { RoomEncryption } from './RoomEncryption';
 import { RoomHistoryVisibility } from './RoomHistoryVisibility';
 import { RoomJoinRules } from './RoomJoinRules';
+import { RoomLocalAddresses, RoomPublishedAddresses } from './RoomAddress';
 
 type GeneralProps = {
   requestClose: () => void;
@@ -41,6 +42,11 @@ export function General({ requestClose }: GeneralProps) {
                 <RoomJoinRules powerLevels={powerLevels} />
                 <RoomHistoryVisibility powerLevels={powerLevels} />
                 <RoomEncryption powerLevels={powerLevels} />
+              </Box>
+              <Box direction="Column" gap="100">
+                <Text size="L400">Addresses</Text>
+                <RoomPublishedAddresses powerLevels={powerLevels} />
+                <RoomLocalAddresses powerLevels={powerLevels} />
               </Box>
             </Box>
           </PageContent>
