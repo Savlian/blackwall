@@ -54,46 +54,29 @@ const DEFAULT_TAGS: PowerLevelTags = {
   9001: {
     name: 'Goku',
     color: '#ff6a00',
-    icon: {
-      key: '🔥',
-    },
   },
   102: {
     name: 'Goku Reborn',
     color: '#ff6a7f',
-    icon: {
-      key: '💥',
-    },
   },
   101: {
     name: 'Founder',
     color: '#0000ff',
-    icon: {
-      key: '🌻',
-    },
   },
   100: {
     name: 'Admin',
     color: '#0088ff',
-    icon: {
-      key: '💯',
-    },
   },
   50: {
     name: 'Moderator',
     color: '#1fd81f',
-    icon: {
-      key: '🛠️',
-    },
   },
   0: {
     name: 'Member',
   },
   [-1]: {
     name: 'Muted',
-    icon: {
-      key: '🚫',
-    },
+    color: '#888888',
   },
 };
 
