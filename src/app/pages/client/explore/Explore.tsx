@@ -240,19 +240,19 @@ export function Explore() {
     () =>
       selectedServer !== undefined &&
       selectedServer !== userServer &&
-      featuredServers.indexOf(selectedServer) === -1 &&
-      exploreServers.indexOf(selectedServer) === -1,
+      featuredServers.includes(selectedServer) &&
+      exploreServers.includes(selectedServer),
     [exploreServers, featuredServers, selectedServer, userServer]
   );
 
   const addServerCallback = useCallback(
     async (server: string) => {
-      if (server !== userServer && featuredServers.indexOf(server) === -1) {
+      if (server !== userServer && selectedServer && !featuredServers.includes(selectedServer)) {
         await addServer(server);
       }
       navigate(getExploreServerPath(server));
     },
-    [addServer, navigate, userServer, featuredServers]
+    [addServer, navigate, userServer, featuredServers, selectedServer]
   );
 
   const removeServerCallback = useCallback(
