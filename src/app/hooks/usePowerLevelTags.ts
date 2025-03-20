@@ -1,9 +1,11 @@
 import { MatrixClient, Room, RoomMember } from 'matrix-js-sdk';
 import { useCallback, useMemo } from 'react';
+import chroma from 'chroma-js';
 import { IPowerLevels } from './usePowerLevels';
 import { useStateEvent } from './useStateEvent';
 import { StateEvent } from '../../types/matrix/room';
 import { IImageInfo } from '../../types/matrix/common';
+import { ThemeKind } from './useTheme';
 
 export type PowerLevelTagIcon = {
   key?: string;
@@ -52,28 +54,46 @@ const DEFAULT_TAGS: PowerLevelTags = {
   9001: {
     name: 'Goku',
     color: '#ff6a00',
+    icon: {
+      key: '🔥',
+    },
   },
   102: {
     name: 'Goku Reborn',
     color: '#ff6a7f',
+    icon: {
+      key: '💥',
+    },
   },
   101: {
     name: 'Founder',
     color: '#0000ff',
+    icon: {
+      key: '🌻',
+    },
   },
   100: {
     name: 'Admin',
-    color: '#a000e4',
+    color: '#0088ff',
+    icon: {
+      key: '💯',
+    },
   },
   50: {
     name: 'Moderator',
     color: '#1fd81f',
+    icon: {
+      key: '🛠️',
+    },
   },
   0: {
     name: 'Member',
   },
   [-1]: {
     name: 'Muted',
+    icon: {
+      key: '🚫',
+    },
   },
 };
 
@@ -152,3 +172,33 @@ export const getTagIconSrc = (
   icon?.key?.startsWith('mxc://')
     ? mx.mxcUrlToHttp(icon.key, 96, 96, 'scale', undefined, undefined, useAuthentication) ?? '🌻'
     : icon?.key;
+
+export const useAccessibleTagColors = (
+  themeKind: ThemeKind,
+  powerLevelTags: PowerLevelTags
+): Map<string, string> => {
+  const accessibleColors: Map<string, string> = useMemo(() => {
+    const colors: Map<string, string> = new Map();
+
+    getPowers(powerLevelTags).forEach((power) => {
+      const tag = powerLevelTags[power];
+      const { color } = tag;
+      if (!color || !chroma.valid(color)) return;
+
+      let lightness = chroma(color).lab()[0];
+      if (themeKind === ThemeKind.Dark && lightness < 60) {
+        lightness = 60;
+      }
+      if (themeKind === ThemeKind.Light && lightness > 50) {
+        lightness = 50;
+      }
+
+      const accessibleColor = chroma(color).set('lab.l', lightness).hex();
+      colors.set(color, accessibleColor);
+    });
+
+    return colors;
+  }, [powerLevelTags, themeKind]);
+
+  return accessibleColors;
+};
