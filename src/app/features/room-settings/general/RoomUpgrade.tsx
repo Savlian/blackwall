@@ -190,7 +190,9 @@ export function RoomUpgrade({ powerLevels, requestClose }: RoomUpgradeProps) {
                     </IconButton>
                   </Header>
                   <Box style={{ padding: config.space.S400 }} direction="Column" gap="400">
-                    <Text priority="400">Are you sure you want to upgrade this room?</Text>
+                    <Text priority="400" style={{ color: color.Critical.Main }}>
+                      <b>This action is irreversible!</b>
+                    </Text>
                     <Box direction="Column" gap="100">
                       <Text size="L400">Version</Text>
                       <Input
@@ -200,7 +202,7 @@ export function RoomUpgrade({ powerLevels, requestClose }: RoomUpgradeProps) {
                         required
                       />
                     </Box>
-                    <Button type="submit" variant="Primary">
+                    <Button type="submit" variant="Secondary">
                       <Text size="B400">Upgrade Room</Text>
                     </Button>
                   </Box>
