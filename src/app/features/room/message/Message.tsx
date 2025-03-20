@@ -45,7 +45,6 @@ import {
   Time,
   Username,
 } from '../../../components/message';
-import colorMXID from '../../../../util/colorMXID';
 import {
   canEditEvent,
   getEventEdits,
@@ -76,6 +75,8 @@ import { getViaServers } from '../../../plugins/via-servers';
 import { useMediaAuthentication } from '../../../hooks/useMediaAuthentication';
 import { useRoomPinnedEvents } from '../../../hooks/useRoomPinnedEvents';
 import { StateEvent } from '../../../../types/matrix/room';
+import { getTagIconSrc, PowerLevelTag } from '../../../hooks/usePowerLevelTags';
+import { PowerIcon } from '../../../components/power';
 
 export type ReactionHandler = (keyOrMxc: string, shortcode: string) => void;
 
@@ -672,6 +673,8 @@ export type MessageProps = {
   reply?: ReactNode;
   reactions?: ReactNode;
   hideReadReceipts?: boolean;
+  powerLevelTag?: PowerLevelTag;
+  accessibleTagColors?: Map<string, string>;
 };
 export const Message = as<'div', MessageProps>(
   (
@@ -697,6 +700,8 @@ export const Message = as<'div', MessageProps>(
       reply,
       reactions,
       hideReadReceipts,
+      powerLevelTag,
+      accessibleTagColors,
       children,
       ...props
     },
@@ -715,6 +720,13 @@ export const Message = as<'div', MessageProps>(
       getMemberDisplayName(room, senderId) ?? getMxIdLocalPart(senderId) ?? senderId;
     const senderAvatarMxc = getMemberAvatarMxc(room, senderId);
 
+    const tagColor = powerLevelTag?.color
+      ? accessibleTagColors?.get(powerLevelTag.color)
+      : undefined;
+    const tagIconSrc = powerLevelTag?.icon
+      ? getTagIconSrc(mx, useAuthentication, powerLevelTag.icon)
+      : undefined;
+
     const headerJSX = !collapse && (
       <Box
         gap="300"
@@ -723,17 +735,24 @@ export const Message = as<'div', MessageProps>(
         alignItems="Baseline"
         grow="Yes"
       >
-        <Username
-          as="button"
-          style={{ color: colorMXID(senderId) }}
-          data-user-id={senderId}
-          onContextMenu={onUserClick}
-          onClick={onUsernameClick}
-        >
-          <Text as="span" size={messageLayout === MessageLayout.Bubble ? 'T300' : 'T400'} truncate>
-            <b>{senderDisplayName}</b>
-          </Text>
-        </Username>
+        <Box alignItems="Center" gap="200">
+          <Username
+            as="button"
+            style={{ color: tagColor }}
+            data-user-id={senderId}
+            onContextMenu={onUserClick}
+            onClick={onUsernameClick}
+          >
+            <Text
+              as="span"
+              size={messageLayout === MessageLayout.Bubble ? 'T300' : 'T400'}
+              truncate
+            >
+              <b>{senderDisplayName}</b>
+            </Text>
+          </Username>
+          {tagIconSrc && <PowerIcon size="100" iconSrc={tagIconSrc} />}
+        </Box>
         <Box shrink="No" gap="100">
           {messageLayout === MessageLayout.Modern && hover && (
             <>
