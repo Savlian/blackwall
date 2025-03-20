@@ -79,7 +79,7 @@ export const Reply = as<'div', ReplyProps>(
         )}
         <ReplyLayout
           as="button"
-          userColor={sender ? colorMXID(sender) : undefined}
+          userColor={false ? colorMXID(sender) : undefined}
           username={
             sender && (
               <Text size="T300" truncate>
