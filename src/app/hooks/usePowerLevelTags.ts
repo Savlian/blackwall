@@ -73,7 +73,7 @@ const DEFAULT_TAGS: PowerLevelTags = {
   },
   0: {
     name: 'Member',
-    color: '#00fffe',
+    color: '#91cfdf',
   },
   [-1]: {
     name: 'Muted',
