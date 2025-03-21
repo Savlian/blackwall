@@ -44,6 +44,7 @@ import {
   ModernLayout,
   Time,
   Username,
+  UsernameBold,
 } from '../../../components/message';
 import {
   canEditEvent,
@@ -748,7 +749,7 @@ export const Message = as<'div', MessageProps>(
               size={messageLayout === MessageLayout.Bubble ? 'T300' : 'T400'}
               truncate
             >
-              <b>{senderDisplayName}</b>
+              <UsernameBold>{senderDisplayName}</UsernameBold>
             </Text>
           </Username>
           {tagIconSrc && <PowerIcon size="100" iconSrc={tagIconSrc} />}
