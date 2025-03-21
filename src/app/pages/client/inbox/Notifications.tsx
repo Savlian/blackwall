@@ -84,7 +84,7 @@ import { ScreenSize, useScreenSizeContext } from '../../../hooks/useScreenSize';
 import { BackRouteHandler } from '../../../components/BackRouteHandler';
 import { useMediaAuthentication } from '../../../hooks/useMediaAuthentication';
 import { allRoomsAtom } from '../../../state/room-list/roomList';
-import { powerLevelAPI, usePowerLevels } from '../../../hooks/usePowerLevels';
+import { usePowerLevels, usePowerLevelsAPI } from '../../../hooks/usePowerLevels';
 import {
   getTagIconSrc,
   useAccessibleTagColors,
@@ -216,6 +216,7 @@ function RoomNotificationsGroupComp({
   const unread = useRoomUnread(room.roomId, roomToUnreadAtom);
 
   const powerLevels = usePowerLevels(room);
+  const { getPowerLevel } = usePowerLevelsAPI(powerLevels);
   const [powerLevelTags, getPowerLevelTag] = usePowerLevelTags(room, powerLevels);
   const theme = useTheme();
   const accessibleTagColors = useAccessibleTagColors(theme.kind, powerLevelTags);
@@ -438,7 +439,7 @@ function RoomNotificationsGroupComp({
           const threadRootId =
             relation?.rel_type === RelationType.Thread ? relation.event_id : undefined;
 
-          const senderPowerLevel = powerLevelAPI.getPowerLevel(powerLevels, event.sender);
+          const senderPowerLevel = getPowerLevel(event.sender);
           const powerLevelTag = getPowerLevelTag(senderPowerLevel);
           const tagColor = powerLevelTag?.color
             ? accessibleTagColors?.get(powerLevelTag.color)
@@ -508,6 +509,9 @@ function RoomNotificationsGroupComp({
                     replyEventId={replyEventId}
                     threadRootId={threadRootId}
                     onClick={handleOpenClick}
+                    getPowerLevel={getPowerLevel}
+                    getPowerLevelTag={getPowerLevelTag}
+                    accessibleTagColors={accessibleTagColors}
                   />
                 )}
                 {renderMatrixEvent(event.type, false, event, displayName, getContent)}
