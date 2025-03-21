@@ -53,8 +53,8 @@ import {
   Reply,
   Time,
   Username,
+  UsernameBold,
 } from '../../../components/message';
-import colorMXID from '../../../../util/colorMXID';
 import {
   factoryRenderLinkifyWithMention,
   getReactCustomHtmlParser,
@@ -84,6 +84,14 @@ import { ScreenSize, useScreenSizeContext } from '../../../hooks/useScreenSize';
 import { BackRouteHandler } from '../../../components/BackRouteHandler';
 import { useMediaAuthentication } from '../../../hooks/useMediaAuthentication';
 import { allRoomsAtom } from '../../../state/room-list/roomList';
+import { powerLevelAPI, usePowerLevels } from '../../../hooks/usePowerLevels';
+import {
+  getTagIconSrc,
+  useAccessibleTagColors,
+  usePowerLevelTags,
+} from '../../../hooks/usePowerLevelTags';
+import { useTheme } from '../../../hooks/useTheme';
+import { PowerIcon } from '../../../components/power';
 
 type RoomNotificationsGroup = {
   roomId: string;
@@ -206,6 +214,12 @@ function RoomNotificationsGroupComp({
   const mx = useMatrixClient();
   const useAuthentication = useMediaAuthentication();
   const unread = useRoomUnread(room.roomId, roomToUnreadAtom);
+
+  const powerLevels = usePowerLevels(room);
+  const [powerLevelTags, getPowerLevelTag] = usePowerLevelTags(room, powerLevels);
+  const theme = useTheme();
+  const accessibleTagColors = useAccessibleTagColors(theme.kind, powerLevelTags);
+
   const mentionClickHandler = useMentionClickHandler(room.roomId);
   const spoilerClickHandler = useSpoilerClickHandler();
 
@@ -424,6 +438,15 @@ function RoomNotificationsGroupComp({
           const threadRootId =
             relation?.rel_type === RelationType.Thread ? relation.event_id : undefined;
 
+          const senderPowerLevel = powerLevelAPI.getPowerLevel(powerLevels, event.sender);
+          const powerLevelTag = getPowerLevelTag(senderPowerLevel);
+          const tagColor = powerLevelTag?.color
+            ? accessibleTagColors?.get(powerLevelTag.color)
+            : undefined;
+          const tagIconSrc = powerLevelTag?.icon
+            ? getTagIconSrc(mx, useAuthentication, powerLevelTag.icon)
+            : undefined;
+
           return (
             <SequenceCard
               key={notification.event.event_id}
@@ -458,11 +481,14 @@ function RoomNotificationsGroupComp({
               >
                 <Box gap="300" justifyContent="SpaceBetween" alignItems="Center" grow="Yes">
                   <Box gap="200" alignItems="Baseline">
-                    <Username style={{ color: colorMXID(event.sender) }}>
-                      <Text as="span" truncate>
-                        <b>{displayName}</b>
-                      </Text>
-                    </Username>
+                    <Box alignItems="Center" gap="200">
+                      <Username style={{ color: tagColor }}>
+                        <Text as="span" truncate>
+                          <UsernameBold>{displayName}</UsernameBold>
+                        </Text>
+                      </Username>
+                      {tagIconSrc && <PowerIcon size="100" iconSrc={tagIconSrc} />}
+                    </Box>
                     <Time ts={event.origin_server_ts} />
                   </Box>
                   <Box shrink="No" gap="200" alignItems="Center">
