@@ -1037,6 +1037,9 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
                   replyEventId={replyEventId}
                   threadRootId={threadRootId}
                   onClick={handleOpenReply}
+                  getPowerLevel={getPowerLevel}
+                  getPowerLevelTag={getPowerLevelTag}
+                  accessibleTagColors={accessibleTagColors}
                 />
               )
             }
@@ -1113,6 +1116,9 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
                   replyEventId={replyEventId}
                   threadRootId={threadRootId}
                   onClick={handleOpenReply}
+                  getPowerLevel={getPowerLevel}
+                  getPowerLevelTag={getPowerLevelTag}
+                  accessibleTagColors={accessibleTagColors}
                 />
               )
             }

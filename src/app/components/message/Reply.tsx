@@ -2,7 +2,6 @@ import { Box, Icon, Icons, Text, as, color, toRem } from 'folds';
 import { EventTimelineSet, Room } from 'matrix-js-sdk';
 import React, { MouseEventHandler, ReactNode, useCallback, useMemo } from 'react';
 import classNames from 'classnames';
-import colorMXID from '../../../util/colorMXID';
 import { getMemberDisplayName, trimReplyFromBody } from '../../utils/room';
 import { getMxIdLocalPart } from '../../utils/matrix';
 import { LinePlaceholder } from './placeholder';
@@ -11,6 +10,7 @@ import * as css from './Reply.css';
 import { MessageBadEncryptedContent, MessageDeletedContent, MessageFailedContent } from './content';
 import { scaleSystemEmoji } from '../../plugins/react-custom-html-parser';
 import { useRoomEvent } from '../../hooks/useRoomEvent';
+import { GetPowerLevelTag } from '../../hooks/usePowerLevelTags';
 
 type ReplyLayoutProps = {
   userColor?: string;
@@ -49,10 +49,26 @@ type ReplyProps = {
   replyEventId: string;
   threadRootId?: string | undefined;
   onClick?: MouseEventHandler | undefined;
+  getPowerLevel?: (userId: string) => number;
+  getPowerLevelTag?: GetPowerLevelTag;
+  accessibleTagColors?: Map<string, string>;
 };
 
 export const Reply = as<'div', ReplyProps>(
-  ({ room, timelineSet, replyEventId, threadRootId, onClick, ...props }, ref) => {
+  (
+    {
+      room,
+      timelineSet,
+      replyEventId,
+      threadRootId,
+      onClick,
+      getPowerLevel,
+      getPowerLevelTag,
+      accessibleTagColors,
+      ...props
+    },
+    ref
+  ) => {
     const placeholderWidth = useMemo(() => randomNumberBetween(40, 400), []);
     const getFromLocalTimeline = useCallback(
       () => timelineSet?.findEventById(replyEventId),
@@ -62,6 +78,9 @@ export const Reply = as<'div', ReplyProps>(
 
     const { body } = replyEvent?.getContent() ?? {};
     const sender = replyEvent?.getSender();
+    const senderPL = sender && getPowerLevel?.(sender);
+    const powerTag = typeof senderPL === 'number' ? getPowerLevelTag?.(senderPL) : undefined;
+    const tagColor = powerTag?.color ? accessibleTagColors?.get(powerTag.color) : undefined;
 
     const fallbackBody = replyEvent?.isRedacted() ? (
       <MessageDeletedContent />
@@ -79,7 +98,7 @@ export const Reply = as<'div', ReplyProps>(
         )}
         <ReplyLayout
           as="button"
-          userColor={false ? colorMXID(sender) : undefined}
+          userColor={tagColor}
           username={
             sender && (
               <Text size="T300" truncate>
