@@ -78,6 +78,7 @@ import { useRoomPinnedEvents } from '../../../hooks/useRoomPinnedEvents';
 import { StateEvent } from '../../../../types/matrix/room';
 import { getTagIconSrc, PowerLevelTag } from '../../../hooks/usePowerLevelTags';
 import { PowerIcon } from '../../../components/power';
+import colorMXID from '../../../../util/colorMXID';
 
 export type ReactionHandler = (keyOrMxc: string, shortcode: string) => void;
 
@@ -676,6 +677,7 @@ export type MessageProps = {
   hideReadReceipts?: boolean;
   powerLevelTag?: PowerLevelTag;
   accessibleTagColors?: Map<string, string>;
+  legacyUsernameColor?: boolean;
 };
 export const Message = as<'div', MessageProps>(
   (
@@ -703,6 +705,7 @@ export const Message = as<'div', MessageProps>(
       hideReadReceipts,
       powerLevelTag,
       accessibleTagColors,
+      legacyUsernameColor,
       children,
       ...props
     },
@@ -728,6 +731,8 @@ export const Message = as<'div', MessageProps>(
       ? getTagIconSrc(mx, useAuthentication, powerLevelTag.icon)
       : undefined;
 
+    const usernameColor = legacyUsernameColor ? colorMXID(senderId) : tagColor;
+
     const headerJSX = !collapse && (
       <Box
         gap="300"
@@ -739,7 +744,7 @@ export const Message = as<'div', MessageProps>(
         <Box alignItems="Center" gap="200">
           <Username
             as="button"
-            style={{ color: tagColor }}
+            style={{ color: usernameColor }}
             data-user-id={senderId}
             onContextMenu={onUserClick}
             onClick={onUsernameClick}

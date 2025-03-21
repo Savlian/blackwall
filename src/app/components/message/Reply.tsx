@@ -11,6 +11,7 @@ import { MessageBadEncryptedContent, MessageDeletedContent, MessageFailedContent
 import { scaleSystemEmoji } from '../../plugins/react-custom-html-parser';
 import { useRoomEvent } from '../../hooks/useRoomEvent';
 import { GetPowerLevelTag } from '../../hooks/usePowerLevelTags';
+import colorMXID from '../../../util/colorMXID';
 
 type ReplyLayoutProps = {
   userColor?: string;
@@ -52,6 +53,7 @@ type ReplyProps = {
   getPowerLevel?: (userId: string) => number;
   getPowerLevelTag?: GetPowerLevelTag;
   accessibleTagColors?: Map<string, string>;
+  legacyUsernameColor?: boolean;
 };
 
 export const Reply = as<'div', ReplyProps>(
@@ -65,6 +67,7 @@ export const Reply = as<'div', ReplyProps>(
       getPowerLevel,
       getPowerLevelTag,
       accessibleTagColors,
+      legacyUsernameColor,
       ...props
     },
     ref
@@ -82,6 +85,8 @@ export const Reply = as<'div', ReplyProps>(
     const powerTag = typeof senderPL === 'number' ? getPowerLevelTag?.(senderPL) : undefined;
     const tagColor = powerTag?.color ? accessibleTagColors?.get(powerTag.color) : undefined;
 
+    const usernameColor = legacyUsernameColor ? colorMXID(sender ?? replyEventId) : tagColor;
+
     const fallbackBody = replyEvent?.isRedacted() ? (
       <MessageDeletedContent />
     ) : (
@@ -98,7 +103,7 @@ export const Reply = as<'div', ReplyProps>(
         )}
         <ReplyLayout
           as="button"
-          userColor={tagColor}
+          userColor={usernameColor}
           username={
             sender && (
               <Text size="T300" truncate>

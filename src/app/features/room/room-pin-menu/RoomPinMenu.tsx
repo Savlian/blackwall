@@ -79,6 +79,7 @@ import {
 } from '../../../hooks/usePowerLevelTags';
 import { useTheme } from '../../../hooks/useTheme';
 import { PowerIcon } from '../../../components/power';
+import colorMXID from '../../../../util/colorMXID';
 
 type PinnedMessageProps = {
   room: Room;
@@ -91,6 +92,7 @@ function PinnedMessage({ room, eventId, renderContent, onOpen, canPinEvent }: Pi
   const pinnedEvent = useRoomEvent(room, eventId);
   const useAuthentication = useMediaAuthentication();
   const mx = useMatrixClient();
+  const [legacyUsernameColor] = useSetting(settingsAtom, 'legacyUsernameColor');
 
   const powerLevels = usePowerLevelsContext();
   const { getPowerLevel } = usePowerLevelsAPI(powerLevels);
@@ -169,6 +171,8 @@ function PinnedMessage({ room, eventId, renderContent, onOpen, canPinEvent }: Pi
     ? getTagIconSrc(mx, useAuthentication, powerLevelTag.icon)
     : undefined;
 
+  const usernameColor = legacyUsernameColor ? colorMXID(sender) : tagColor;
+
   return (
     <ModernLayout
       before={
@@ -192,7 +196,7 @@ function PinnedMessage({ room, eventId, renderContent, onOpen, canPinEvent }: Pi
       <Box gap="300" justifyContent="SpaceBetween" alignItems="Center" grow="Yes">
         <Box gap="200" alignItems="Baseline">
           <Box alignItems="Center" gap="200">
-            <Username style={{ color: tagColor }}>
+            <Username style={{ color: usernameColor }}>
               <Text as="span" truncate>
                 <UsernameBold>{displayName}</UsernameBold>
               </Text>
@@ -212,6 +216,7 @@ function PinnedMessage({ room, eventId, renderContent, onOpen, canPinEvent }: Pi
           getPowerLevel={getPowerLevel}
           getPowerLevelTag={getPowerLevelTag}
           accessibleTagColors={accessibleTagColors}
+          legacyUsernameColor={legacyUsernameColor}
         />
       )}
       {renderContent(pinnedEvent.getType(), false, pinnedEvent, displayName, getContent)}

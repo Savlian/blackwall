@@ -92,6 +92,7 @@ import {
 } from '../../../hooks/usePowerLevelTags';
 import { useTheme } from '../../../hooks/useTheme';
 import { PowerIcon } from '../../../components/power';
+import colorMXID from '../../../../util/colorMXID';
 
 type RoomNotificationsGroup = {
   roomId: string;
@@ -202,6 +203,7 @@ type RoomNotificationsGroupProps = {
   urlPreview?: boolean;
   hideActivity: boolean;
   onOpen: (roomId: string, eventId: string) => void;
+  legacyUsernameColor?: boolean;
 };
 function RoomNotificationsGroupComp({
   room,
@@ -210,6 +212,7 @@ function RoomNotificationsGroupComp({
   urlPreview,
   hideActivity,
   onOpen,
+  legacyUsernameColor,
 }: RoomNotificationsGroupProps) {
   const mx = useMatrixClient();
   const useAuthentication = useMediaAuthentication();
@@ -448,6 +451,8 @@ function RoomNotificationsGroupComp({
             ? getTagIconSrc(mx, useAuthentication, powerLevelTag.icon)
             : undefined;
 
+          const usernameColor = legacyUsernameColor ? colorMXID(event.sender) : tagColor;
+
           return (
             <SequenceCard
               key={notification.event.event_id}
@@ -483,7 +488,7 @@ function RoomNotificationsGroupComp({
                 <Box gap="300" justifyContent="SpaceBetween" alignItems="Center" grow="Yes">
                   <Box gap="200" alignItems="Baseline">
                     <Box alignItems="Center" gap="200">
-                      <Username style={{ color: tagColor }}>
+                      <Username style={{ color: usernameColor }}>
                         <Text as="span" truncate>
                           <UsernameBold>{displayName}</UsernameBold>
                         </Text>
@@ -512,6 +517,7 @@ function RoomNotificationsGroupComp({
                     getPowerLevel={getPowerLevel}
                     getPowerLevelTag={getPowerLevelTag}
                     accessibleTagColors={accessibleTagColors}
+                    legacyUsernameColor={legacyUsernameColor}
                   />
                 )}
                 {renderMatrixEvent(event.type, false, event, displayName, getContent)}
@@ -541,6 +547,7 @@ export function Notifications() {
   const [hideActivity] = useSetting(settingsAtom, 'hideActivity');
   const [mediaAutoLoad] = useSetting(settingsAtom, 'mediaAutoLoad');
   const [urlPreview] = useSetting(settingsAtom, 'urlPreview');
+  const [legacyUsernameColor] = useSetting(settingsAtom, 'legacyUsernameColor');
   const screenSize = useScreenSizeContext();
 
   const { navigateRoom } = useRoomNavigate();
@@ -701,6 +708,7 @@ export function Notifications() {
                           urlPreview={urlPreview}
                           hideActivity={hideActivity}
                           onOpen={navigateRoom}
+                          legacyUsernameColor={legacyUsernameColor}
                         />
                       </VirtualTile>
                     );

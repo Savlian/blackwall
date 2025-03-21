@@ -110,6 +110,7 @@ import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
 import { useImagePackRooms } from '../../hooks/useImagePackRooms';
 import { GetPowerLevelTag } from '../../hooks/usePowerLevelTags';
 import { powerLevelAPI, usePowerLevelsContext } from '../../hooks/usePowerLevels';
+import colorMXID from '../../../util/colorMXID';
 
 interface RoomInputProps {
   editor: Editor;
@@ -126,6 +127,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
     const [enterForNewline] = useSetting(settingsAtom, 'enterForNewline');
     const [isMarkdown] = useSetting(settingsAtom, 'isMarkdown');
     const [hideActivity] = useSetting(settingsAtom, 'hideActivity');
+    const [legacyUsernameColor] = useSetting(settingsAtom, 'legacyUsernameColor');
     const commands = useCommands(mx, room);
     const emojiBtnRef = useRef<HTMLButtonElement>(null);
     const roomToParents = useAtomValue(roomToParentsAtom);
@@ -139,6 +141,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
     const replyPowerColor = replyPowerTag.color
       ? accessibleTagColors.get(replyPowerTag.color)
       : undefined;
+    const replyUsernameColor = legacyUsernameColor ? colorMXID(replyUserID ?? '') : replyPowerColor;
 
     const [uploadBoard, setUploadBoard] = useState(true);
     const [selectedFiles, setSelectedFiles] = useAtom(roomIdToUploadItemsAtomFamily(roomId));
@@ -540,7 +543,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
                   <Box direction="Column">
                     {replyDraft.relation?.rel_type === RelationType.Thread && <ThreadIndicator />}
                     <ReplyLayout
-                      userColor={replyPowerColor}
+                      userColor={replyUsernameColor}
                       username={
                         <Text size="T300" truncate>
                           <b>

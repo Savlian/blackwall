@@ -47,6 +47,7 @@ import {
 } from '../../hooks/usePowerLevelTags';
 import { useTheme } from '../../hooks/useTheme';
 import { PowerIcon } from '../../components/power';
+import colorMXID from '../../../util/colorMXID';
 
 type SearchResultGroupProps = {
   room: Room;
@@ -55,6 +56,7 @@ type SearchResultGroupProps = {
   mediaAutoLoad?: boolean;
   urlPreview?: boolean;
   onOpen: (roomId: string, eventId: string) => void;
+  legacyUsernameColor?: boolean;
 };
 export function SearchResultGroup({
   room,
@@ -63,6 +65,7 @@ export function SearchResultGroup({
   mediaAutoLoad,
   urlPreview,
   onOpen,
+  legacyUsernameColor,
 }: SearchResultGroupProps) {
   const mx = useMatrixClient();
   const useAuthentication = useMediaAuthentication();
@@ -228,6 +231,8 @@ export function SearchResultGroup({
             ? getTagIconSrc(mx, useAuthentication, powerLevelTag.icon)
             : undefined;
 
+          const usernameColor = legacyUsernameColor ? colorMXID(event.sender) : tagColor;
+
           return (
             <SequenceCard
               key={event.event_id}
@@ -263,7 +268,7 @@ export function SearchResultGroup({
                 <Box gap="300" justifyContent="SpaceBetween" alignItems="Center" grow="Yes">
                   <Box gap="200" alignItems="Baseline">
                     <Box alignItems="Center" gap="200">
-                      <Username style={{ color: tagColor }}>
+                      <Username style={{ color: usernameColor }}>
                         <Text as="span" truncate>
                           <UsernameBold>{displayName}</UsernameBold>
                         </Text>
@@ -292,6 +297,7 @@ export function SearchResultGroup({
                     getPowerLevel={getPowerLevel}
                     getPowerLevelTag={getPowerLevelTag}
                     accessibleTagColors={accessibleTagColors}
+                    legacyUsernameColor={legacyUsernameColor}
                   />
                 )}
                 {renderMatrixEvent(event.type, false, event, displayName, getContent)}
