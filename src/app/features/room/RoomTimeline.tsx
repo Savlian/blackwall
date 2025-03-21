@@ -118,8 +118,7 @@ import { useRoomNavigate } from '../../hooks/useRoomNavigate';
 import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
 import { useIgnoredUsers } from '../../hooks/useIgnoredUsers';
 import { useImagePackRooms } from '../../hooks/useImagePackRooms';
-import { useAccessibleTagColors, usePowerLevelTags } from '../../hooks/usePowerLevelTags';
-import { useTheme } from '../../hooks/useTheme';
+import { GetPowerLevelTag } from '../../hooks/usePowerLevelTags';
 
 const TimelineFloat = as<'div', css.TimelineFloatVariants>(
   ({ position, className, ...props }, ref) => (
@@ -222,6 +221,8 @@ type RoomTimelineProps = {
   eventId?: string;
   roomInputRef: RefObject<HTMLElement>;
   editor: Editor;
+  getPowerLevelTag: GetPowerLevelTag;
+  accessibleTagColors: Map<string, string>;
 };
 
 const PAGINATION_LIMIT = 80;
@@ -424,7 +425,14 @@ const getRoomUnreadInfo = (room: Room, scrollTo = false) => {
   };
 };
 
-export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimelineProps) {
+export function RoomTimeline({
+  room,
+  eventId,
+  roomInputRef,
+  editor,
+  getPowerLevelTag,
+  accessibleTagColors,
+}: RoomTimelineProps) {
   const mx = useMatrixClient();
   const useAuthentication = useMediaAuthentication();
   const [hideActivity] = useSetting(settingsAtom, 'hideActivity');
@@ -445,9 +453,6 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
   const powerLevels = usePowerLevelsContext();
   const { canDoAction, canSendEvent, canSendStateEvent, getPowerLevel } =
     usePowerLevelsAPI(powerLevels);
-  const [powerLevelTags, getPowerLevelTag] = usePowerLevelTags(room, powerLevels);
-  const theme = useTheme();
-  const accessibleTagColors = useAccessibleTagColors(theme.kind, powerLevelTags);
 
   const myPowerLevel = getPowerLevel(mx.getUserId() ?? '');
   const canRedact = canDoAction('redact', myPowerLevel);

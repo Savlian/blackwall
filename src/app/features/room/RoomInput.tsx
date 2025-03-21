@@ -99,7 +99,6 @@ import {
   getImageMsgContent,
   getVideoMsgContent,
 } from './msgContent';
-import colorMXID from '../../../util/colorMXID';
 import { getMemberDisplayName, getMentionContent, trimReplyFromBody } from '../../utils/room';
 import { CommandAutocomplete } from './CommandAutocomplete';
 import { Command, SHRUG, TABLEFLIP, UNFLIP, useCommands } from '../../hooks/useCommands';
@@ -109,15 +108,19 @@ import { ReplyLayout, ThreadIndicator } from '../../components/message';
 import { roomToParentsAtom } from '../../state/room/roomToParents';
 import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
 import { useImagePackRooms } from '../../hooks/useImagePackRooms';
+import { GetPowerLevelTag } from '../../hooks/usePowerLevelTags';
+import { powerLevelAPI, usePowerLevelsContext } from '../../hooks/usePowerLevels';
 
 interface RoomInputProps {
   editor: Editor;
   fileDropContainerRef: RefObject<HTMLElement>;
   roomId: string;
   room: Room;
+  getPowerLevelTag: GetPowerLevelTag;
+  accessibleTagColors: Map<string, string>;
 }
 export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
-  ({ editor, fileDropContainerRef, roomId, room }, ref) => {
+  ({ editor, fileDropContainerRef, roomId, room, getPowerLevelTag, accessibleTagColors }, ref) => {
     const mx = useMatrixClient();
     const useAuthentication = useMediaAuthentication();
     const [enterForNewline] = useSetting(settingsAtom, 'enterForNewline');
@@ -126,9 +129,17 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
     const commands = useCommands(mx, room);
     const emojiBtnRef = useRef<HTMLButtonElement>(null);
     const roomToParents = useAtomValue(roomToParentsAtom);
+    const powerLevels = usePowerLevelsContext();
 
     const [msgDraft, setMsgDraft] = useAtom(roomIdToMsgDraftAtomFamily(roomId));
     const [replyDraft, setReplyDraft] = useAtom(roomIdToReplyDraftAtomFamily(roomId));
+    const replyUserID = replyDraft?.userId;
+
+    const replyPowerTag = getPowerLevelTag(powerLevelAPI.getPowerLevel(powerLevels, replyUserID));
+    const replyPowerColor = replyPowerTag.color
+      ? accessibleTagColors.get(replyPowerTag.color)
+      : undefined;
+
     const [uploadBoard, setUploadBoard] = useState(true);
     const [selectedFiles, setSelectedFiles] = useAtom(roomIdToUploadItemsAtomFamily(roomId));
     const uploadFamilyObserverAtom = createUploadFamilyObserverAtom(
@@ -348,7 +359,10 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
 
     const handleKeyDown: KeyboardEventHandler = useCallback(
       (evt) => {
-        if ((isKeyHotkey('mod+enter', evt) || (!enterForNewline && isKeyHotkey('enter', evt))) && !evt.nativeEvent.isComposing) {
+        if (
+          (isKeyHotkey('mod+enter', evt) || (!enterForNewline && isKeyHotkey('enter', evt))) &&
+          !evt.nativeEvent.isComposing
+        ) {
           evt.preventDefault();
           submit();
         }
@@ -526,7 +540,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
                   <Box direction="Column">
                     {replyDraft.relation?.rel_type === RelationType.Thread && <ThreadIndicator />}
                     <ReplyLayout
-                      userColor={colorMXID(replyDraft.userId)}
+                      userColor={replyPowerColor}
                       username={
                         <Text size="T300" truncate>
                           <b>
