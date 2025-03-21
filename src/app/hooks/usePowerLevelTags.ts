@@ -1,11 +1,11 @@
 import { MatrixClient, Room, RoomMember } from 'matrix-js-sdk';
 import { useCallback, useMemo } from 'react';
-import chroma from 'chroma-js';
 import { IPowerLevels } from './usePowerLevels';
 import { useStateEvent } from './useStateEvent';
 import { StateEvent } from '../../types/matrix/room';
 import { IImageInfo } from '../../types/matrix/common';
 import { ThemeKind } from './useTheme';
+import { accessibleColor } from '../plugins/color';
 
 export type PowerLevelTagIcon = {
   key?: string;
@@ -166,18 +166,9 @@ export const useAccessibleTagColors = (
     getPowers(powerLevelTags).forEach((power) => {
       const tag = powerLevelTags[power];
       const { color } = tag;
-      if (!color || !chroma.valid(color)) return;
+      if (!color) return;
 
-      let lightness = chroma(color).lab()[0];
-      if (themeKind === ThemeKind.Dark && lightness < 60) {
-        lightness = 60;
-      }
-      if (themeKind === ThemeKind.Light && lightness > 50) {
-        lightness = 50;
-      }
-
-      const accessibleColor = chroma(color).set('lab.l', lightness).hex();
-      colors.set(color, accessibleColor);
+      colors.set(color, accessibleColor(themeKind, color));
     });
 
     return colors;
