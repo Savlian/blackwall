@@ -10,12 +10,11 @@ export const PowerColorBadge = style({
   width: toRem(16),
   height: toRem(16),
   borderRadius: config.radii.Pill,
-  border: `${config.borderWidth.B300} solid ${color.Surface.ContainerLine}`,
+  border: `${config.borderWidth.B300} solid ${color.Secondary.ContainerLine}`,
   position: 'relative',
 });
 
 export const PowerColorBadgeNone = style({
-  borderColor: color.Secondary.Main,
   selectors: {
     '&::before': {
       content: '',
