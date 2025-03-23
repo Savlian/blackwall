@@ -102,7 +102,7 @@ export function getIdServer(userId) {
 
 export async function hasDevices(mx, userId) {
   try {
-    const usersDeviceMap = await mx.getUserDeviceInfo([userId, mx.getUserId()]);
+    const usersDeviceMap = await mx.getUserDeviceInfo([userId, mx.getUserId()], true);
     return Object.values(usersDeviceMap)
       .every((deviceIdToDevices) => deviceIdToDevices.size > 0);
   } catch (e) {
