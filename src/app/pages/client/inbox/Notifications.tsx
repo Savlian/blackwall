@@ -93,6 +93,7 @@ import {
 import { useTheme } from '../../../hooks/useTheme';
 import { PowerIcon } from '../../../components/power';
 import colorMXID from '../../../../util/colorMXID';
+import { mDirectAtom } from '../../../state/mDirectList';
 
 type RoomNotificationsGroup = {
   roomId: string;
@@ -549,6 +550,7 @@ export function Notifications() {
   const [urlPreview] = useSetting(settingsAtom, 'urlPreview');
   const [legacyUsernameColor] = useSetting(settingsAtom, 'legacyUsernameColor');
   const screenSize = useScreenSizeContext();
+  const mDirects = useAtomValue(mDirectAtom);
 
   const { navigateRoom } = useRoomNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -708,7 +710,9 @@ export function Notifications() {
                           urlPreview={urlPreview}
                           hideActivity={hideActivity}
                           onOpen={navigateRoom}
-                          legacyUsernameColor={legacyUsernameColor}
+                          legacyUsernameColor={
+                            legacyUsernameColor || mDirects.has(groupRoom.roomId)
+                          }
                         />
                       </VirtualTile>
                     );

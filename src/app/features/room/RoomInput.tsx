@@ -111,6 +111,7 @@ import { useImagePackRooms } from '../../hooks/useImagePackRooms';
 import { GetPowerLevelTag } from '../../hooks/usePowerLevelTags';
 import { powerLevelAPI, usePowerLevelsContext } from '../../hooks/usePowerLevels';
 import colorMXID from '../../../util/colorMXID';
+import { useIsDirectRoom } from '../../hooks/useRoom';
 
 interface RoomInputProps {
   editor: Editor;
@@ -128,6 +129,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
     const [isMarkdown] = useSetting(settingsAtom, 'isMarkdown');
     const [hideActivity] = useSetting(settingsAtom, 'hideActivity');
     const [legacyUsernameColor] = useSetting(settingsAtom, 'legacyUsernameColor');
+    const direct = useIsDirectRoom();
     const commands = useCommands(mx, room);
     const emojiBtnRef = useRef<HTMLButtonElement>(null);
     const roomToParents = useAtomValue(roomToParentsAtom);
@@ -141,7 +143,8 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
     const replyPowerColor = replyPowerTag.color
       ? accessibleTagColors.get(replyPowerTag.color)
       : undefined;
-    const replyUsernameColor = legacyUsernameColor ? colorMXID(replyUserID ?? '') : replyPowerColor;
+    const replyUsernameColor =
+      legacyUsernameColor || direct ? colorMXID(replyUserID ?? '') : replyPowerColor;
 
     const [uploadBoard, setUploadBoard] = useState(true);
     const [selectedFiles, setSelectedFiles] = useAtom(roomIdToUploadItemsAtomFamily(roomId));

@@ -299,7 +299,7 @@ export function MessageSearch({
                     mediaAutoLoad={mediaAutoLoad}
                     urlPreview={urlPreview}
                     onOpen={navigateRoom}
-                    legacyUsernameColor={legacyUsernameColor}
+                    legacyUsernameColor={legacyUsernameColor || mDirects.has(groupRoom.roomId)}
                   />
                 </VirtualTile>
               );

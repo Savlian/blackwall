@@ -119,6 +119,7 @@ import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
 import { useIgnoredUsers } from '../../hooks/useIgnoredUsers';
 import { useImagePackRooms } from '../../hooks/useImagePackRooms';
 import { GetPowerLevelTag } from '../../hooks/usePowerLevelTags';
+import { useIsDirectRoom } from '../../hooks/useRoom';
 
 const TimelineFloat = as<'div', css.TimelineFloatVariants>(
   ({ position, className, ...props }, ref) => (
@@ -439,6 +440,7 @@ export function RoomTimeline({
   const [messageLayout] = useSetting(settingsAtom, 'messageLayout');
   const [messageSpacing] = useSetting(settingsAtom, 'messageSpacing');
   const [legacyUsernameColor] = useSetting(settingsAtom, 'legacyUsernameColor');
+  const direct = useIsDirectRoom();
   const [hideMembershipEvents] = useSetting(settingsAtom, 'hideMembershipEvents');
   const [hideNickAvatarEvents] = useSetting(settingsAtom, 'hideNickAvatarEvents');
   const [mediaAutoLoad] = useSetting(settingsAtom, 'mediaAutoLoad');
@@ -1046,7 +1048,7 @@ export function RoomTimeline({
                   getPowerLevel={getPowerLevel}
                   getPowerLevelTag={getPowerLevelTag}
                   accessibleTagColors={accessibleTagColors}
-                  legacyUsernameColor={legacyUsernameColor}
+                  legacyUsernameColor={legacyUsernameColor || direct}
                 />
               )
             }
@@ -1065,7 +1067,7 @@ export function RoomTimeline({
             hideReadReceipts={hideActivity}
             powerLevelTag={getPowerLevelTag(senderPowerLevel)}
             accessibleTagColors={accessibleTagColors}
-            legacyUsernameColor={legacyUsernameColor}
+            legacyUsernameColor={legacyUsernameColor || direct}
           >
             {mEvent.isRedacted() ? (
               <RedactedContent reason={mEvent.getUnsigned().redacted_because?.content.reason} />
@@ -1127,7 +1129,7 @@ export function RoomTimeline({
                   getPowerLevel={getPowerLevel}
                   getPowerLevelTag={getPowerLevelTag}
                   accessibleTagColors={accessibleTagColors}
-                  legacyUsernameColor={legacyUsernameColor}
+                  legacyUsernameColor={legacyUsernameColor || direct}
                 />
               )
             }
@@ -1146,7 +1148,7 @@ export function RoomTimeline({
             hideReadReceipts={hideActivity}
             powerLevelTag={getPowerLevelTag(senderPowerLevel)}
             accessibleTagColors={accessibleTagColors}
-            legacyUsernameColor={legacyUsernameColor}
+            legacyUsernameColor={legacyUsernameColor || direct}
           >
             <EncryptedContent mEvent={mEvent}>
               {() => {
@@ -1247,7 +1249,7 @@ export function RoomTimeline({
             hideReadReceipts={hideActivity}
             powerLevelTag={getPowerLevelTag(senderPowerLevel)}
             accessibleTagColors={accessibleTagColors}
-            legacyUsernameColor={legacyUsernameColor}
+            legacyUsernameColor={legacyUsernameColor || direct}
           >
             {mEvent.isRedacted() ? (
               <RedactedContent reason={mEvent.getUnsigned().redacted_because?.content.reason} />

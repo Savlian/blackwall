@@ -80,6 +80,7 @@ import {
 import { useTheme } from '../../../hooks/useTheme';
 import { PowerIcon } from '../../../components/power';
 import colorMXID from '../../../../util/colorMXID';
+import { useIsDirectRoom } from '../../../hooks/useRoom';
 
 type PinnedMessageProps = {
   room: Room;
@@ -92,6 +93,7 @@ function PinnedMessage({ room, eventId, renderContent, onOpen, canPinEvent }: Pi
   const pinnedEvent = useRoomEvent(room, eventId);
   const useAuthentication = useMediaAuthentication();
   const mx = useMatrixClient();
+  const direct = useIsDirectRoom();
   const [legacyUsernameColor] = useSetting(settingsAtom, 'legacyUsernameColor');
 
   const powerLevels = usePowerLevelsContext();
@@ -171,7 +173,7 @@ function PinnedMessage({ room, eventId, renderContent, onOpen, canPinEvent }: Pi
     ? getTagIconSrc(mx, useAuthentication, powerLevelTag.icon)
     : undefined;
 
-  const usernameColor = legacyUsernameColor ? colorMXID(sender) : tagColor;
+  const usernameColor = legacyUsernameColor || direct ? colorMXID(sender) : tagColor;
 
   return (
     <ModernLayout
