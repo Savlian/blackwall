@@ -11,12 +11,12 @@ import { useRoomAvatar, useRoomJoinRule, useRoomName } from '../../hooks/useRoom
 import { mDirectAtom } from '../../state/mDirectList';
 import { RoomAvatar, RoomIcon } from '../../components/room-avatar';
 import { General } from './general';
-import { Members } from './members';
-import { EmojisStickers } from './emojis-stickers';
+import { Members } from '../common-settings/members';
+import { EmojisStickers } from '../common-settings/emojis-stickers';
 import { Permissions } from './permissions';
 import { RoomSettingsPage } from '../../state/roomSettings';
 import { useRoom } from '../../hooks/useRoom';
-import { DeveloperTools } from './developer-tools';
+import { DeveloperTools } from '../common-settings/developer-tools';
 
 type RoomSettingsMenuItem = {
   page: RoomSettingsPage;

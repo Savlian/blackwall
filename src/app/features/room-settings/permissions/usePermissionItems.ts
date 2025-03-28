@@ -1,17 +1,6 @@
 import { useMemo } from 'react';
-import { PermissionLocation } from '../../../hooks/usePowerLevels';
 import { MessageEvent, StateEvent } from '../../../../types/matrix/room';
-
-export type PermissionItem = {
-  location: PermissionLocation;
-  name: string;
-  description?: string;
-};
-
-export type PermissionGroup = {
-  name: string;
-  items: PermissionItem[];
-};
+import { PermissionGroup } from '../../common-settings/permissions';
 
 export const usePermissionGroups = (): PermissionGroup[] => {
   const groups: PermissionGroup[] = useMemo(() => {

@@ -60,6 +60,7 @@ import { ReceiveSelfDeviceVerification } from '../components/DeviceVerification'
 import { AutoRestoreBackupOnVerification } from '../components/BackupRestore';
 import { RoomSettingsRenderer } from '../features/room-settings';
 import { ClientRoomsNotificationPreferences } from './client/ClientRoomsNotificationPreferences';
+import { SpaceSettingsRenderer } from '../features/space-settings';
 
 export const createRouter = (clientConfig: ClientConfig, screenSize: ScreenSize) => {
   const { hashRouter } = clientConfig;
@@ -109,7 +110,7 @@ export const createRouter = (clientConfig: ClientConfig, screenSize: ScreenSize)
           return null;
         }}
         element={
-          <>
+          <AuthRouteThemeManager>
             <ClientRoot>
               <ClientInitStorageAtom>
                 <ClientRoomsNotificationPreferences>
@@ -125,6 +126,7 @@ export const createRouter = (clientConfig: ClientConfig, screenSize: ScreenSize)
                         <Outlet />
                       </ClientLayout>
                       <RoomSettingsRenderer />
+                      <SpaceSettingsRenderer />
                       <ReceiveSelfDeviceVerification />
                       <AutoRestoreBackupOnVerification />
                     </ClientNonUIFeatures>
@@ -132,8 +134,7 @@ export const createRouter = (clientConfig: ClientConfig, screenSize: ScreenSize)
                 </ClientRoomsNotificationPreferences>
               </ClientInitStorageAtom>
             </ClientRoot>
-            <AuthRouteThemeManager />
-          </>
+          </AuthRouteThemeManager>
         }
       >
         <Route

@@ -1,15 +1,18 @@
 import React from 'react';
 import { Box, Icon, IconButton, Icons, Scroll, Text } from 'folds';
 import { Page, PageContent, PageHeader } from '../../../components/page';
-import { RoomProfile } from './RoomProfile';
 import { usePowerLevels } from '../../../hooks/usePowerLevels';
 import { useRoom } from '../../../hooks/useRoom';
-import { RoomEncryption } from './RoomEncryption';
-import { RoomHistoryVisibility } from './RoomHistoryVisibility';
-import { RoomJoinRules } from './RoomJoinRules';
-import { RoomLocalAddresses, RoomPublishedAddresses } from './RoomAddress';
-import { RoomPublish } from './RoomPublish';
-import { RoomUpgrade } from './RoomUpgrade';
+import {
+  RoomProfile,
+  RoomEncryption,
+  RoomHistoryVisibility,
+  RoomJoinRules,
+  RoomLocalAddresses,
+  RoomPublishedAddresses,
+  RoomPublish,
+  RoomUpgrade,
+} from '../../common-settings/general';
 
 type GeneralProps = {
   requestClose: () => void;
