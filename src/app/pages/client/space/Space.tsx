@@ -45,7 +45,6 @@ import {
 import { useSpace } from '../../../hooks/useSpace';
 import { VirtualTile } from '../../../components/virtualizer';
 import { RoomNavCategoryButton, RoomNavItem } from '../../../features/room-nav';
-import { muteChangesAtom } from '../../../state/room-list/mutedRoomList';
 import { makeNavCategoryId } from '../../../state/closedNavCategories';
 import { roomToUnreadAtom } from '../../../state/room/roomToUnread';
 import { useCategoryHandler } from '../../../hooks/useCategoryHandler';
@@ -55,7 +54,7 @@ import { useSpaceJoinedHierarchy } from '../../../hooks/useSpaceHierarchy';
 import { allRoomsAtom } from '../../../state/room-list/roomList';
 import { PageNav, PageNavContent, PageNavHeader } from '../../../components/page';
 import { usePowerLevels, usePowerLevelsAPI } from '../../../hooks/usePowerLevels';
-import { openInviteUser, openSpaceSettings } from '../../../../client/action/navigation';
+import { openInviteUser } from '../../../../client/action/navigation';
 import { useRecursiveChildScopeFactory, useSpaceChildren } from '../../../state/hooks/roomList';
 import { roomToParentsAtom } from '../../../state/room/roomToParents';
 import { markAsRead } from '../../../../client/action/notifications';
@@ -71,6 +70,11 @@ import { getMatrixToRoom } from '../../../plugins/matrix-to';
 import { getViaServers } from '../../../plugins/via-servers';
 import { useSetting } from '../../../state/hooks/settings';
 import { settingsAtom } from '../../../state/settings';
+import {
+  getRoomNotificationMode,
+  useRoomsNotificationPreferencesContext,
+} from '../../../hooks/useRoomsNotificationPreferences';
+import { useOpenSpaceSettings } from '../../../state/hooks/spaceSettings';
 
 type SpaceMenuProps = {
   room: Room;
@@ -83,6 +87,7 @@ const SpaceMenu = forwardRef<HTMLDivElement, SpaceMenuProps>(({ room, requestClo
   const powerLevels = usePowerLevels(room);
   const { getPowerLevel, canDoAction } = usePowerLevelsAPI(powerLevels);
   const canInvite = canDoAction('invite', getPowerLevel(mx.getUserId() ?? ''));
+  const openSpaceSettings = useOpenSpaceSettings();
 
   const allChild = useSpaceChildren(
     allRoomsAtom,
@@ -269,8 +274,7 @@ export function Space() {
   const roomToUnread = useAtomValue(roomToUnreadAtom);
   const allRooms = useAtomValue(allRoomsAtom);
   const allJoinedRooms = useMemo(() => new Set(allRooms), [allRooms]);
-  const muteChanges = useAtomValue(muteChangesAtom);
-  const mutedRooms = muteChanges.added;
+  const notificationPreferences = useRoomsNotificationPreferencesContext();
 
   const selectedRoomId = useSelectedRoom();
   const lobbySelected = useSpaceLobbySelected(spaceIdOrAlias);
@@ -404,7 +408,7 @@ export function Space() {
                     showAvatar={mDirects.has(roomId)}
                     direct={mDirects.has(roomId)}
                     linkPath={getToLink(roomId)}
-                    muted={mutedRooms.includes(roomId)}
+                    notificationMode={getRoomNotificationMode(notificationPreferences, room.roomId)}
                   />
                 </VirtualTile>
               );

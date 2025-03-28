@@ -2,6 +2,7 @@ import React from 'react';
 import { MsgType } from 'matrix-js-sdk';
 import { HTMLReactParserOptions } from 'html-react-parser';
 import { Opts } from 'linkifyjs';
+import { config } from 'folds';
 import {
   AudioContent,
   DownloadFile,
@@ -73,6 +74,7 @@ export function RenderMessageContent({
     if (content.filename && content.filename !== content.body) {
       return (
         <MText
+          style={{ marginTop: config.space.S200 }}
           edited={edited}
           content={content}
           renderBody={(props) => (
