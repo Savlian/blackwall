@@ -527,18 +527,13 @@ export function PublicRooms() {
                 </BackRouteHandler>
               )}
             </Box>
-            <Box grow="Yes" justifyContent="Center" alignItems="Center" gap="200">
+            <Box grow="Yes" basis="Yes" justifyContent="Center" alignItems="Center" gap="200">
               {screenSize !== ScreenSize.Mobile && <Icon size="400" src={Icons.Category} />}
               <Text size="H3" truncate>
                 {server}
               </Text>
             </Box>
-            <Box
-              shrink="No"
-              grow={screenSize === ScreenSize.Mobile ? 'No' : 'Yes'}
-              basis={screenSize === ScreenSize.Mobile ? 'Yes' : 'No'}
-              justifyContent="End"
-            >
+            <Box shrink="No" grow="Yes" basis="No" justifyContent="End">
               <TooltipProvider
                 position="Bottom"
                 align="End"
@@ -588,7 +583,7 @@ export function PublicRooms() {
                             isRemoving ? (
                               <Spinner fill="Solid" variant="Secondary" size="200" />
                             ) : (
-                              <Icon size="100" src={Icons.Minus} />
+                              <Icon size="100" src={Icons.Delete} />
                             )
                           }
                           radii="300"

@@ -32,7 +32,7 @@ import {
 import { getExploreFeaturedPath, getExploreServerPath } from '../../pathUtils';
 import { useClientConfig } from '../../../hooks/useClientConfig';
 import {
-  useExploringFeaturedRooms,
+  useExploreFeaturedRooms,
   useExploreServer,
 } from '../../../hooks/router/useExploreSelected';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
@@ -42,6 +42,7 @@ import { useNavToActivePathMapper } from '../../../hooks/useNavToActivePathMappe
 import { PageNav, PageNavContent, PageNavHeader } from '../../../components/page';
 import { stopPropagation } from '../../../utils/keyboard';
 import { useExploreServers } from '../../../hooks/useExploreServers';
+import { useAlive } from '../../../hooks/useAlive';
 
 type AddExploreServerPromptProps = {
   onSubmit: (server: string) => Promise<void>;
@@ -57,6 +58,7 @@ export function AddExploreServerPrompt({
 }: AddExploreServerPromptProps) {
   const mx = useMatrixClient();
   const [dialog, setDialog] = useState(false);
+  const alive = useAlive();
   const serverInputRef = useRef<HTMLInputElement>(null);
 
   const getInputServer = (): string | undefined => {
@@ -73,8 +75,10 @@ export function AddExploreServerPrompt({
 
       await mx.publicRooms({ server, limit: 1 });
       await onSubmit(server);
-      setDialog(false);
-    }, [onSubmit, mx])
+      if (alive()) {
+        setDialog(false);
+      }
+    }, [alive, onSubmit, mx])
   );
 
   return (
@@ -235,7 +239,7 @@ export function Explore() {
   const [exploreServers, addServer, removeServer] = useExploreServers();
 
   const selectedServer = useExploreServer();
-  const exploringFeaturedRooms = useExploringFeaturedRooms();
+  const exploringFeaturedRooms = useExploreFeaturedRooms();
   const exploringUnlistedServer = useMemo(
     () =>
       selectedServer !== undefined &&
