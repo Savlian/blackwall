@@ -9,6 +9,7 @@ import {
   Header,
   Icon,
   IconButton,
+  IconSrc,
   Icons,
   Input,
   Overlay,
@@ -160,11 +161,13 @@ export function AddExploreServerPrompt({
 type ExploreServerNavItemProps = {
   server: string;
   selected: boolean;
+  icon: IconSrc;
   onRemove?: (() => Promise<void>) | null;
 };
 export function ExploreServerNavItem({
   server,
   selected,
+  icon,
   onRemove = null,
 }: ExploreServerNavItemProps) {
   const [hover, setHover] = useState(false);
@@ -192,7 +195,7 @@ export function ExploreServerNavItem({
         <NavItemContent>
           <Box as="span" grow="Yes" alignItems="Center" gap="200">
             <Avatar size="200" radii="400">
-              <Icon src={Icons.Category} size="100" filled={selected} />
+              <Icon src={icon} size="100" filled={selected} />
             </Avatar>
             <Box as="span" grow="Yes">
               <Text as="span" size="Inherit" truncate>
@@ -288,9 +291,6 @@ export function Explore() {
       <PageNavContent>
         <Box direction="Column" gap="300">
           <NavCategory>
-            {userServer && (
-              <ExploreServerNavItem server={userServer} selected={userServer === selectedServer} />
-            )}
             <AddExploreServerPrompt
               onSubmit={exploreUnlistedServerCallback}
               header={<Text size="H4">View Server</Text>}
@@ -330,11 +330,19 @@ export function Explore() {
                 </NavItemContent>
               </NavLink>
             </NavItem>
+            {userServer && (
+              <ExploreServerNavItem
+                server={userServer}
+                selected={userServer === selectedServer}
+                icon={Icons.Home}
+              />
+            )}
             {featuredServers.map((server) => (
               <ExploreServerNavItem
                 key={server}
                 server={server}
                 selected={server === selectedServer}
+                icon={Icons.Category}
               />
             ))}
           </NavCategory>
@@ -350,6 +358,7 @@ export function Explore() {
                 server={server}
                 selected={server === selectedServer}
                 onRemove={() => removeServerCallback(server)}
+                icon={Icons.Category}
               />
             ))}
             <AddExploreServerPrompt
