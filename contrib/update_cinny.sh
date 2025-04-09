@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# TODO: remove dependency on jq
+command -v "jq" &> /dev/null || { echo "update_cinny.sh: jq is not installed"; exit; }
 
 # this script will automatically download the latest release of cinny and unpack it for you
 # it will preserve your current configuration file, and optionally inject custom css
