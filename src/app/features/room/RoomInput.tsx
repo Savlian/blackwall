@@ -429,17 +429,26 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
       () =>
         getReactCustomHtmlParser(mx, room.roomId, {
           linkifyOpts,
-          useAuthentication: false,
+          useAuthentication: false
         }),
       [mx, room, linkifyOpts]
     );
 
+    // Preventing link from being clickable
+    let strFormattedBody;
+    const parser = new DOMParser();
+    if (replyDraft?.formattedBody) {
+      const domFormattedBody = parser.parseFromString(replyDraft.formattedBody, 'text/html');
+      const links = domFormattedBody.querySelectorAll('a');
+      links.forEach(link => link.removeAttribute('href'));
+      strFormattedBody = domFormattedBody.body.innerHTML;
+    }
+
     const replyDraftContent = replyDraft ? (
         <RenderBody
           body={replyDraft.body}
-          customBody={replyDraft.formattedBody}
+          customBody={strFormattedBody}
           htmlReactParserOptions={htmlReactParserOptions}
-          linkifyOpts={linkifyOpts}
         />
       ) : undefined;
 
