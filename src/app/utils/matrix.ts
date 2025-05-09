@@ -13,6 +13,7 @@ import {
   UploadProgress,
   UploadResponse,
 } from 'matrix-js-sdk';
+import to from 'await-to-js';
 import { IImageInfo, IThumbnailContent, IVideoInfo } from '../../types/matrix/common';
 import { AccountDataEvent } from '../../types/matrix/accountData';
 import { getStateEvent } from './room';
@@ -291,4 +292,36 @@ export const downloadEncryptedMedia = async (
   const decryptedContent = await decryptContent(await encryptedContent.arrayBuffer());
 
   return decryptedContent;
+};
+
+export const rateLimitedActions = async <T, R = void>(
+  data: T[],
+  callback: (item: T) => Promise<R>,
+  maxRetryCount?: number
+) => {
+  let retryCount = 0;
+  const performAction = async (dataItem: T) => {
+    const [err] = await to<R, MatrixError>(callback(dataItem));
+
+    if (err?.httpStatus === 429) {
+      if (retryCount === maxRetryCount) {
+        return;
+      }
+
+      const waitMS = err.getRetryAfterMs() ?? 200;
+      await new Promise((resolve) => {
+        setTimeout(resolve, waitMS);
+      });
+      retryCount += 1;
+
+      await performAction(dataItem);
+    }
+  };
+
+  for (let i = 0; i < data.length; i += 1) {
+    const dataItem = data[i];
+    retryCount = 0;
+    // eslint-disable-next-line no-await-in-loop
+    await performAction(dataItem);
+  }
 };

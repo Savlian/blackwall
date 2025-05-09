@@ -1,9 +1,10 @@
-import { MatrixClient, Room } from 'matrix-js-sdk';
+import { MatrixClient, Room, RoomMember } from 'matrix-js-sdk';
 import { useMemo } from 'react';
-import { getDMRoomFor, isRoomAlias, isRoomId, isUserId } from '../utils/matrix';
+import { getDMRoomFor, isRoomAlias, isRoomId, isUserId, rateLimitedActions } from '../utils/matrix';
 import { hasDevices } from '../../util/matrixUtil';
 import * as roomActions from '../../client/action/room';
 import { useRoomNavigate } from './useRoomNavigate';
+import { Membership } from '../../types/matrix/room';
 
 export const SHRUG = '¯\\_(ツ)_/¯';
 export const TABLEFLIP = '(╯°□°)╯︵ ┻━┻';
@@ -12,6 +13,7 @@ export const UNFLIP = '┬─┬ノ( º_ºノ)';
 export function parseUsersAndReason(payload: string): {
   users: string[];
   reason?: string;
+  servers?: string[];
 } {
   let reason: string | undefined;
   let ids: string = payload;
@@ -23,12 +25,33 @@ export function parseUsersAndReason(payload: string): {
     if (reason.trim() === '') reason = undefined;
   }
   const rawIds = ids.split(' ');
-  const users = rawIds.filter((id) => isUserId(id));
+  let servers: string[] | undefined;
+
+  const users: string[] = [];
+  rawIds.forEach((id) => {
+    if (isUserId(id)) {
+      users.push(id);
+      return;
+    }
+
+    servers = servers ?? [];
+    servers.push(id);
+  });
+
   return {
     users,
     reason,
+    servers,
   };
 }
+
+const getServerMembers = (room: Room, server: string): RoomMember[] => {
+  const members: RoomMember[] = room
+    .getMembers()
+    .filter((member) => member.userId.endsWith(`:${server}`));
+
+  return members;
+};
 
 export type CommandExe = (payload: string) => Promise<void>;
 
@@ -106,7 +129,7 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
               return;
             }
           }
-          const devices = await Promise.all(userIds.map(uid => hasDevices(mx, uid)));
+          const devices = await Promise.all(userIds.map((uid) => hasDevices(mx, uid)));
           const isEncrypt = devices.every((hasDevice) => hasDevice);
           const result = await roomActions.createDM(mx, userIds, isEncrypt);
           navigateRoom(result.room_id);
@@ -156,16 +179,36 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
         name: Command.Kick,
         description: 'Kick user from room. Example: /kick userId1 userId2 [-r reason]',
         exe: async (payload) => {
-          const { users, reason } = parseUsersAndReason(payload);
-          users.map((id) => mx.kick(room.roomId, id, reason));
+          const { users, reason, servers } = parseUsersAndReason(payload);
+          const serverMembers = servers?.flatMap((server) => getServerMembers(room, server));
+          const serverUsers = serverMembers
+            ?.filter((m) => m.membership !== Membership.Ban)
+            .map((m) => m.userId);
+
+          if (Array.isArray(serverUsers)) {
+            serverUsers.forEach((user) => {
+              if (!users.includes(user)) users.push(user);
+            });
+          }
+
+          rateLimitedActions(users, (id) => mx.kick(room.roomId, id, reason));
         },
       },
       [Command.Ban]: {
         name: Command.Ban,
         description: 'Ban user from room. Example: /ban userId1 userId2 [-r reason]',
         exe: async (payload) => {
-          const { users, reason } = parseUsersAndReason(payload);
-          users.map((id) => mx.ban(room.roomId, id, reason));
+          const { users, reason, servers } = parseUsersAndReason(payload);
+          const serverMembers = servers?.flatMap((server) => getServerMembers(room, server));
+          const serverUsers = serverMembers?.map((m) => m.userId);
+
+          if (Array.isArray(serverUsers)) {
+            serverUsers.forEach((user) => {
+              if (!users.includes(user)) users.push(user);
+            });
+          }
+
+          rateLimitedActions(users, (id) => mx.ban(room.roomId, id, reason));
         },
       },
       [Command.UnBan]: {
