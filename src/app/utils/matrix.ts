@@ -19,6 +19,10 @@ import { AccountDataEvent } from '../../types/matrix/accountData';
 import { getStateEvent } from './room';
 import { StateEvent } from '../../types/matrix/room';
 
+const DOMAIN_REGEX = /\b(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}\b/;
+
+export const isServerName = (serverName: string): boolean => DOMAIN_REGEX.test(serverName);
+
 export const matchMxId = (id: string): RegExpMatchArray | null => id.match(/^([@!$+#])(.+):(\S+)$/);
 
 export const validMxId = (id: string): boolean => !!matchMxId(id);

@@ -1,6 +1,13 @@
-import { MatrixClient, Room, RoomMember } from 'matrix-js-sdk';
+import { Direction, IContextResponse, MatrixClient, Method, Room, RoomMember } from 'matrix-js-sdk';
 import { useMemo } from 'react';
-import { getDMRoomFor, isRoomAlias, isRoomId, isUserId, rateLimitedActions } from '../utils/matrix';
+import {
+  getDMRoomFor,
+  isRoomAlias,
+  isRoomId,
+  isServerName,
+  isUserId,
+  rateLimitedActions,
+} from '../utils/matrix';
 import { hasDevices } from '../../util/matrixUtil';
 import * as roomActions from '../../client/action/room';
 import { useRoomNavigate } from './useRoomNavigate';
@@ -10,40 +17,66 @@ export const SHRUG = '¯\\_(ツ)_/¯';
 export const TABLEFLIP = '(╯°□°)╯︵ ┻━┻';
 export const UNFLIP = '┬─┬ノ( º_ºノ)';
 
-export function parseUsersAndReason(payload: string): {
-  users: string[];
-  reason?: string;
-  servers?: string[];
-} {
-  let reason: string | undefined;
-  let ids: string = payload;
+const FLAG_PAT = '\\s-(\\w+)\\b';
+const FLAG_REG = new RegExp(FLAG_PAT);
+const FLAG_REG_G = new RegExp(FLAG_PAT, 'g');
 
-  const reasonMatch = payload.match(/\s-r\s/);
-  if (reasonMatch) {
-    ids = payload.slice(0, reasonMatch.index);
-    reason = payload.slice((reasonMatch.index ?? 0) + reasonMatch[0].length);
-    if (reason.trim() === '') reason = undefined;
+export const splitPayloadContentAndFlags = (payload: string): [string, string | undefined] => {
+  const flagMatch = payload.match(FLAG_REG);
+
+  if (!flagMatch) {
+    return [payload, undefined];
   }
-  const rawIds = ids.split(' ');
-  let servers: string[] | undefined;
+  const content = payload.slice(0, flagMatch.index);
+  const flags = payload.slice(flagMatch.index);
 
+  return [content, flags];
+};
+
+export const parseFlags = (flags: string | undefined): Record<string, string> => {
+  const result: Record<string, string> = {};
+  if (!flags) return result;
+
+  const matches: { key: string; index: number; match: string }[] = [];
+
+  for (let match = FLAG_REG_G.exec(flags); match !== null; match = FLAG_REG_G.exec(flags)) {
+    matches.push({ key: match[1], index: match.index, match: match[0] });
+  }
+
+  for (let i = 0; i < matches.length; i += 1) {
+    const { key, match } = matches[i];
+    const start = matches[i].index + match.length;
+    const end = i + 1 < matches.length ? matches[i + 1].index : flags.length;
+    const value = flags.slice(start, end).trim();
+    result[key] = value;
+  }
+
+  return result;
+};
+
+export const parseUsers = (payload: string): string[] => {
   const users: string[] = [];
-  rawIds.forEach((id) => {
-    if (isUserId(id)) {
-      users.push(id);
-      return;
-    }
 
-    servers = servers ?? [];
-    servers.push(id);
+  payload.split(' ').forEach((item) => {
+    if (isUserId(item)) {
+      users.push(item);
+    }
   });
 
-  return {
-    users,
-    reason,
-    servers,
-  };
-}
+  return users;
+};
+
+export const parseServers = (payload: string): string[] => {
+  const servers: string[] = [];
+
+  payload.split(' ').forEach((item) => {
+    if (isServerName(item)) {
+      servers.push(item);
+    }
+  });
+
+  return servers;
+};
 
 const getServerMembers = (room: Room, server: string): RoomMember[] => {
   const members: RoomMember[] = room
@@ -51,6 +84,40 @@ const getServerMembers = (room: Room, server: string): RoomMember[] => {
     .filter((member) => member.userId.endsWith(`:${server}`));
 
   return members;
+};
+
+export const parseTimestampFlag = (input: string): number | undefined => {
+  const match = input.match(/^(\d+(?:\.\d+)?)([dhms])$/); // supports floats like 1.5d
+
+  if (!match) {
+    return undefined;
+  }
+
+  const value = parseFloat(match[1]); // supports decimal values
+  const unit = match[2];
+
+  const now = Date.now(); // in milliseconds
+  let delta = 0;
+
+  switch (unit) {
+    case 'd':
+      delta = value * 24 * 60 * 60 * 1000;
+      break;
+    case 'h':
+      delta = value * 60 * 60 * 1000;
+      break;
+    case 'm':
+      delta = value * 60 * 1000;
+      break;
+    case 's':
+      delta = value * 1000;
+      break;
+    default:
+      return undefined;
+  }
+
+  const timestamp = now - delta;
+  return timestamp;
 };
 
 export type CommandExe = (payload: string) => Promise<void>;
@@ -75,6 +142,7 @@ export enum Command {
   ConvertToRoom = 'converttoroom',
   TableFlip = 'tableflip',
   UnFlip = 'unflip',
+  Delete = 'delete',
 }
 
 export type CommandContent = {
@@ -163,7 +231,10 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
         name: Command.Invite,
         description: 'Invite user to room. Example: /invite userId1 userId2 [-r reason]',
         exe: async (payload) => {
-          const { users, reason } = parseUsersAndReason(payload);
+          const [content, flags] = splitPayloadContentAndFlags(payload);
+          const users = parseUsers(content);
+          const flagToContent = parseFlags(flags);
+          const reason = flagToContent.r;
           users.map((id) => mx.invite(room.roomId, id, reason));
         },
       },
@@ -171,7 +242,10 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
         name: Command.DisInvite,
         description: 'Disinvite user to room. Example: /disinvite userId1 userId2 [-r reason]',
         exe: async (payload) => {
-          const { users, reason } = parseUsersAndReason(payload);
+          const [content, flags] = splitPayloadContentAndFlags(payload);
+          const users = parseUsers(content);
+          const flagToContent = parseFlags(flags);
+          const reason = flagToContent.r;
           users.map((id) => mx.kick(room.roomId, id, reason));
         },
       },
@@ -179,7 +253,12 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
         name: Command.Kick,
         description: 'Kick user from room. Example: /kick userId1 userId2 [-r reason]',
         exe: async (payload) => {
-          const { users, reason, servers } = parseUsersAndReason(payload);
+          const [content, flags] = splitPayloadContentAndFlags(payload);
+          const users = parseUsers(content);
+          const servers = parseServers(content);
+          const flagToContent = parseFlags(flags);
+          const reason = flagToContent.r;
+
           const serverMembers = servers?.flatMap((server) => getServerMembers(room, server));
           const serverUsers = serverMembers
             ?.filter((m) => m.membership !== Membership.Ban)
@@ -198,7 +277,12 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
         name: Command.Ban,
         description: 'Ban user from room. Example: /ban userId1 userId2 [-r reason]',
         exe: async (payload) => {
-          const { users, reason, servers } = parseUsersAndReason(payload);
+          const [content, flags] = splitPayloadContentAndFlags(payload);
+          const users = parseUsers(content);
+          const servers = parseServers(content);
+          const flagToContent = parseFlags(flags);
+          const reason = flagToContent.r;
+
           const serverMembers = servers?.flatMap((server) => getServerMembers(room, server));
           const serverUsers = serverMembers?.map((m) => m.userId);
 
@@ -268,6 +352,81 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
         description: 'Convert direct message to room',
         exe: async () => {
           roomActions.convertToRoom(mx, room.roomId);
+        },
+      },
+      [Command.Delete]: {
+        name: Command.Delete,
+        description:
+          'Delete messages from users. Example: /delete userId1 servername -ts 1d/2h/5m/30s -r spam -t m.room.message',
+        exe: async (payload) => {
+          const [content, flags] = splitPayloadContentAndFlags(payload);
+          const users = parseUsers(content);
+          const servers = parseServers(content);
+          console.log(users);
+
+          const flagToContent = parseFlags(flags);
+          const reason = flagToContent.r;
+          const tsContent = flagToContent.ts;
+          const msgTypeContent = flagToContent.t;
+          const messageTypes = msgTypeContent.split(' ').filter((type) => type.trim() !== '');
+
+          const ts = parseTimestampFlag(tsContent);
+          if (!ts) return;
+
+          const serverMembers = servers?.flatMap((server) => getServerMembers(room, server));
+          const serverUsers = serverMembers?.map((m) => m.userId);
+
+          if (Array.isArray(serverUsers)) {
+            serverUsers.forEach((user) => {
+              if (!users.includes(user)) users.push(user);
+            });
+          }
+
+          console.log('==> getting timestamp event: ', ts);
+          const result = await mx.timestampToEvent(room.roomId, ts, Direction.Forward);
+          const startEventId = result.event_id;
+          console.log('timestamp eventId: ', startEventId);
+
+          const path = `/rooms/${encodeURIComponent(room.roomId)}/context/${encodeURIComponent(
+            startEventId
+          )}`;
+          const eventContext = await mx.http.authedRequest<IContextResponse>(Method.Get, path, {
+            limit: 0,
+          });
+
+          let token: string | undefined = eventContext.start;
+          console.log('start token: ', token);
+          while (token) {
+            console.log('===> getting messages');
+            // eslint-disable-next-line no-await-in-loop
+            const response = await mx.createMessagesRequest(
+              room.roomId,
+              token,
+              20,
+              Direction.Forward,
+              undefined
+            );
+            const { end, chunk } = response;
+            // remove until the latest event;
+            token = end;
+            console.log('messages: ', chunk, end);
+
+            const eventsToDelete = chunk.filter(
+              (roomEvent) =>
+                (messageTypes.length > 0 ? messageTypes.includes(roomEvent.type) : true) &&
+                users.includes(roomEvent.sender) &&
+                roomEvent.unsigned?.redacted_because === undefined
+            );
+            console.log(eventsToDelete);
+
+            const eventIds = eventsToDelete.map((roomEvent) => roomEvent.event_id);
+
+            // eslint-disable-next-line no-await-in-loop
+            await rateLimitedActions(eventIds, (eventId) => {
+              console.log('Deleting event: ', eventId);
+              return mx.redactEvent(room.roomId, eventId, undefined, { reason });
+            });
+          }
         },
       },
     }),
