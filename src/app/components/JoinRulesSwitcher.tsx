@@ -26,7 +26,7 @@ export const useRoomJoinRuleIcon = (): JoinRuleIcons =>
     () => ({
       [JoinRule.Invite]: Icons.HashLock,
       [JoinRule.Knock]: Icons.HashLock,
-      knock_restricted: Icons.HashLock,
+      knock_restricted: Icons.Hash,
       [JoinRule.Restricted]: Icons.Hash,
       [JoinRule.Public]: Icons.HashGlobe,
       [JoinRule.Private]: Icons.HashLock,
@@ -38,7 +38,7 @@ export const useSpaceJoinRuleIcon = (): JoinRuleIcons =>
     () => ({
       [JoinRule.Invite]: Icons.SpaceLock,
       [JoinRule.Knock]: Icons.SpaceLock,
-      knock_restricted: Icons.SpaceLock,
+      knock_restricted: Icons.Space,
       [JoinRule.Restricted]: Icons.Space,
       [JoinRule.Public]: Icons.SpaceGlobe,
       [JoinRule.Private]: Icons.SpaceLock,
@@ -52,7 +52,7 @@ export const useRoomJoinRuleLabel = (): JoinRuleLabels =>
     () => ({
       [JoinRule.Invite]: 'Invite Only',
       [JoinRule.Knock]: 'Knock & Invite',
-      knock_restricted: 'Knock or Space Members',
+      knock_restricted: 'Space Members or Knock',
       [JoinRule.Restricted]: 'Space Members',
       [JoinRule.Public]: 'Public',
       [JoinRule.Private]: 'Invite Only',
