@@ -357,7 +357,7 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
       [Command.Delete]: {
         name: Command.Delete,
         description:
-          'Delete messages from users. Example: /delete userId1 servername -ts 1d/2h/5m/30s -r spam -t m.room.message',
+          'Delete messages from users. Example: /delete userId1 servername -past 1d|2h|5m|30s [-t m.room.message] [-r spam]',
         exe: async (payload) => {
           const [content, flags] = splitPayloadContentAndFlags(payload);
           const users = parseUsers(content);
@@ -365,11 +365,11 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
 
           const flagToContent = parseFlags(flags);
           const reason = flagToContent.r;
-          const tsContent = flagToContent.ts;
+          const pastContent = flagToContent.past;
           const msgTypeContent = flagToContent.t;
           const messageTypes = msgTypeContent.split(' ').filter((type) => type.trim() !== '');
 
-          const ts = parseTimestampFlag(tsContent);
+          const ts = parseTimestampFlag(pastContent);
           if (!ts) return;
 
           const serverMembers = servers?.flatMap((server) => getServerMembers(room, server));
