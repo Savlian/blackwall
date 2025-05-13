@@ -275,7 +275,7 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
       },
       [Command.Ban]: {
         name: Command.Ban,
-        description: 'Ban user from room. Example: /ban userId1 userId2 [-r reason]',
+        description: 'Ban user from room. Example: /ban userId1 userId2 servername [-r reason]',
         exe: async (payload) => {
           const [content, flags] = splitPayloadContentAndFlags(payload);
           const users = parseUsers(content);
@@ -362,7 +362,6 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
           const [content, flags] = splitPayloadContentAndFlags(payload);
           const users = parseUsers(content);
           const servers = parseServers(content);
-          console.log(users);
 
           const flagToContent = parseFlags(flags);
           const reason = flagToContent.r;
@@ -382,10 +381,8 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
             });
           }
 
-          console.log('==> getting timestamp event: ', ts);
           const result = await mx.timestampToEvent(room.roomId, ts, Direction.Forward);
           const startEventId = result.event_id;
-          console.log('timestamp eventId: ', startEventId);
 
           const path = `/rooms/${encodeURIComponent(room.roomId)}/context/${encodeURIComponent(
             startEventId
@@ -395,9 +392,7 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
           });
 
           let token: string | undefined = eventContext.start;
-          console.log('start token: ', token);
           while (token) {
-            console.log('===> getting messages');
             // eslint-disable-next-line no-await-in-loop
             const response = await mx.createMessagesRequest(
               room.roomId,
@@ -409,7 +404,6 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
             const { end, chunk } = response;
             // remove until the latest event;
             token = end;
-            console.log('messages: ', chunk, end);
 
             const eventsToDelete = chunk.filter(
               (roomEvent) =>
@@ -417,15 +411,13 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
                 users.includes(roomEvent.sender) &&
                 roomEvent.unsigned?.redacted_because === undefined
             );
-            console.log(eventsToDelete);
 
             const eventIds = eventsToDelete.map((roomEvent) => roomEvent.event_id);
 
             // eslint-disable-next-line no-await-in-loop
-            await rateLimitedActions(eventIds, (eventId) => {
-              console.log('Deleting event: ', eventId);
-              return mx.redactEvent(room.roomId, eventId, undefined, { reason });
-            });
+            await rateLimitedActions(eventIds, (eventId) =>
+              mx.redactEvent(room.roomId, eventId, undefined, { reason })
+            );
           }
         },
       },
