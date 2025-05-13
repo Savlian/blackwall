@@ -1,4 +1,5 @@
 import { Direction, IContextResponse, MatrixClient, Method, Room, RoomMember } from 'matrix-js-sdk';
+import { RoomServerAclEventContent } from 'matrix-js-sdk/lib/types';
 import { useMemo } from 'react';
 import {
   getDMRoomFor,
@@ -11,13 +12,15 @@ import {
 import { hasDevices } from '../../util/matrixUtil';
 import * as roomActions from '../../client/action/room';
 import { useRoomNavigate } from './useRoomNavigate';
-import { Membership } from '../../types/matrix/room';
+import { Membership, StateEvent } from '../../types/matrix/room';
+import { getStateEvent } from '../utils/room';
+import { splitWithSpace } from '../utils/common';
 
 export const SHRUG = '¯\\_(ツ)_/¯';
 export const TABLEFLIP = '(╯°□°)╯︵ ┻━┻';
 export const UNFLIP = '┬─┬ノ( º_ºノ)';
 
-const FLAG_PAT = '\\s-(\\w+)\\b';
+const FLAG_PAT = '(?:^|\\s)-(\\w+)\\b';
 const FLAG_REG = new RegExp(FLAG_PAT);
 const FLAG_REG_G = new RegExp(FLAG_PAT, 'g');
 
@@ -33,7 +36,7 @@ export const splitPayloadContentAndFlags = (payload: string): [string, string | 
   return [content, flags];
 };
 
-export const parseFlags = (flags: string | undefined): Record<string, string> => {
+export const parseFlags = (flags: string | undefined): Record<string, string | undefined> => {
   const result: Record<string, string> = {};
   if (!flags) return result;
 
@@ -57,7 +60,7 @@ export const parseFlags = (flags: string | undefined): Record<string, string> =>
 export const parseUsers = (payload: string): string[] => {
   const users: string[] = [];
 
-  payload.split(' ').forEach((item) => {
+  splitWithSpace(payload).forEach((item) => {
     if (isUserId(item)) {
       users.push(item);
     }
@@ -69,7 +72,7 @@ export const parseUsers = (payload: string): string[] => {
 export const parseServers = (payload: string): string[] => {
   const servers: string[] = [];
 
-  payload.split(' ').forEach((item) => {
+  splitWithSpace(payload).forEach((item) => {
     if (isServerName(item)) {
       servers.push(item);
     }
@@ -143,6 +146,7 @@ export enum Command {
   TableFlip = 'tableflip',
   UnFlip = 'unflip',
   Delete = 'delete',
+  Acl = 'acl',
 }
 
 export type CommandContent = {
@@ -187,7 +191,7 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
         name: Command.StartDm,
         description: 'Start direct message with user. Example: /startdm userId1',
         exe: async (payload) => {
-          const rawIds = payload.split(' ');
+          const rawIds = splitWithSpace(payload);
           const userIds = rawIds.filter((id) => isUserId(id) && id !== mx.getUserId());
           if (userIds.length === 0) return;
           if (userIds.length === 1) {
@@ -207,7 +211,7 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
         name: Command.Join,
         description: 'Join room with address. Example: /join address1 address2',
         exe: async (payload) => {
-          const rawIds = payload.split(' ');
+          const rawIds = splitWithSpace(payload);
           const roomIds = rawIds.filter(
             (idOrAlias) => isRoomId(idOrAlias) || isRoomAlias(idOrAlias)
           );
@@ -222,7 +226,7 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
             mx.leave(room.roomId);
             return;
           }
-          const rawIds = payload.split(' ');
+          const rawIds = splitWithSpace(payload);
           const roomIds = rawIds.filter((id) => isRoomId(id));
           roomIds.map((id) => mx.leave(id));
         },
@@ -299,7 +303,7 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
         name: Command.UnBan,
         description: 'Unban user from room. Example: /unban userId1 userId2',
         exe: async (payload) => {
-          const rawIds = payload.split(' ');
+          const rawIds = splitWithSpace(payload);
           const users = rawIds.filter((id) => isUserId(id));
           users.map((id) => mx.unban(room.roomId, id));
         },
@@ -308,7 +312,7 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
         name: Command.Ignore,
         description: 'Ignore user. Example: /ignore userId1 userId2',
         exe: async (payload) => {
-          const rawIds = payload.split(' ');
+          const rawIds = splitWithSpace(payload);
           const userIds = rawIds.filter((id) => isUserId(id));
           if (userIds.length > 0) roomActions.ignore(mx, userIds);
         },
@@ -317,7 +321,7 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
         name: Command.UnIgnore,
         description: 'Unignore user. Example: /unignore userId1 userId2',
         exe: async (payload) => {
-          const rawIds = payload.split(' ');
+          const rawIds = splitWithSpace(payload);
           const userIds = rawIds.filter((id) => isUserId(id));
           if (userIds.length > 0) roomActions.unignore(mx, userIds);
         },
@@ -365,9 +369,9 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
 
           const flagToContent = parseFlags(flags);
           const reason = flagToContent.r;
-          const pastContent = flagToContent.past;
+          const pastContent = flagToContent.past ?? '';
           const msgTypeContent = flagToContent.t;
-          const messageTypes = msgTypeContent.split(' ').filter((type) => type.trim() !== '');
+          const messageTypes: string[] = msgTypeContent ? splitWithSpace(msgTypeContent) : [];
 
           const ts = parseTimestampFlag(pastContent);
           if (!ts) return;
@@ -419,6 +423,57 @@ export const useCommands = (mx: MatrixClient, room: Room): CommandRecord => {
               mx.redactEvent(room.roomId, eventId, undefined, { reason })
             );
           }
+        },
+      },
+      [Command.Acl]: {
+        name: Command.Acl,
+        description:
+          'Manage server access control list. Example /acl [-a servername1] [-d servername2] [-ra servername1] [-rd servername2]',
+        exe: async (payload) => {
+          const [, flags] = splitPayloadContentAndFlags(payload);
+
+          const flagToContent = parseFlags(flags);
+          const allowFlag = flagToContent.a;
+          const denyFlag = flagToContent.d;
+          const removeAllowFlag = flagToContent.ra;
+          const removeDenyFlag = flagToContent.rd;
+
+          const allowList = allowFlag ? splitWithSpace(allowFlag) : [];
+          const denyList = denyFlag ? splitWithSpace(denyFlag) : [];
+          const removeAllowList = removeAllowFlag ? splitWithSpace(removeAllowFlag) : [];
+          const removeDenyList = removeDenyFlag ? splitWithSpace(removeDenyFlag) : [];
+
+          const serverAcl = getStateEvent(
+            room,
+            StateEvent.RoomServerAcl
+          )?.getContent<RoomServerAclEventContent>();
+
+          const aclContent: RoomServerAclEventContent = {
+            allow: serverAcl?.allow ? [...serverAcl.allow] : [],
+            allow_ip_literals: serverAcl?.allow_ip_literals,
+            deny: serverAcl?.deny ? [...serverAcl.deny] : [],
+          };
+
+          allowList.forEach((servername) => {
+            if (!Array.isArray(aclContent.allow) || aclContent.allow.includes(servername)) return;
+            aclContent.allow.push(servername);
+          });
+          denyList.forEach((servername) => {
+            if (!Array.isArray(aclContent.deny) || aclContent.deny.includes(servername)) return;
+            aclContent.deny.push(servername);
+          });
+
+          aclContent.allow = aclContent.allow?.filter(
+            (servername) => !removeAllowList.includes(servername)
+          );
+          aclContent.deny = aclContent.deny?.filter(
+            (servername) => !removeDenyList.includes(servername)
+          );
+
+          aclContent.allow?.sort();
+          aclContent.deny?.sort();
+
+          await mx.sendStateEvent(room.roomId, StateEvent.RoomServerAcl as any, aclContent);
         },
       },
     }),
