@@ -51,14 +51,14 @@ export function RoomJoinRules({ powerLevels }: RoomJoinRulesProps) {
 
   const joinRules: Array<ExtendedJoinRules> = useMemo(() => {
     const r: ExtendedJoinRules[] = [JoinRule.Invite];
-    if (allowKnockRestricted) {
-      r.push('knock_restricted');
-    }
     if (allowKnock) {
       r.push(JoinRule.Knock);
     }
     if (allowRestricted && space) {
       r.push(JoinRule.Restricted);
+    }
+    if (allowKnockRestricted && space) {
+      r.push('knock_restricted');
     }
     r.push(JoinRule.Public);
 
