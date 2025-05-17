@@ -46,6 +46,10 @@ export default defineConfig({
   server: {
     port: 8080,
     host: true,
+    fs: {
+      // Allow serving files from one level up to the project root
+      allow: ['..'],
+    },
   },
   plugins: [
     topLevelAwait({
