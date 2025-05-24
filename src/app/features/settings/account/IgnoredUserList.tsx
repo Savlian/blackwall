@@ -7,16 +7,17 @@ import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { AsyncStatus, useAsyncCallback } from '../../../hooks/useAsyncCallback';
 import { isUserId } from '../../../utils/matrix';
 import { useIgnoredUsers } from '../../../hooks/useIgnoredUsers';
+import { useAlive } from '../../../hooks/useAlive';
 
 function IgnoreUserInput({ userList }: { userList: string[] }) {
   const mx = useMatrixClient();
   const [userId, setUserId] = useState<string>('');
+  const alive = useAlive();
 
   const [ignoreState, ignore] = useAsyncCallback(
     useCallback(
       async (uId: string) => {
-        mx.setIgnoredUsers([...userList, uId]);
-        setUserId('');
+        await mx.setIgnoredUsers([...userList, uId]);
       },
       [mx, userList]
     )
@@ -43,7 +44,11 @@ function IgnoreUserInput({ userList }: { userList: string[] }) {
 
     if (!isUserId(uId)) return;
 
-    ignore(uId);
+    ignore(uId).then(() => {
+      if (alive()) {
+        setUserId('');
+      }
+    });
   };
 
   return (
