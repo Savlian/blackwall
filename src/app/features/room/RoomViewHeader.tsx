@@ -20,6 +20,7 @@ import {
   PopOut,
   RectCords,
   Badge,
+  Spinner,
 } from 'folds';
 import { useNavigate } from 'react-router-dom';
 import { JoinRule, Room } from 'matrix-js-sdk';
@@ -44,7 +45,7 @@ import { useRoomUnread } from '../../state/hooks/unread';
 import { usePowerLevelsAPI, usePowerLevelsContext } from '../../hooks/usePowerLevels';
 import { markAsRead } from '../../../client/action/notifications';
 import { roomToUnreadAtom } from '../../state/room/roomToUnread';
-import { openInviteUser, toggleRoomSettings } from '../../../client/action/navigation';
+import { openInviteUser } from '../../../client/action/navigation';
 import { copyToClipboard } from '../../utils/dom';
 import { LeaveRoomPrompt } from '../../components/leave-room-prompt';
 import { useRoomAvatar, useRoomName, useRoomTopic } from '../../hooks/useRoomMeta';
@@ -57,6 +58,13 @@ import { BackRouteHandler } from '../../components/BackRouteHandler';
 import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
 import { useRoomPinnedEvents } from '../../hooks/useRoomPinnedEvents';
 import { RoomPinMenu } from './room-pin-menu';
+import { useOpenRoomSettings } from '../../state/hooks/roomSettings';
+import { RoomNotificationModeSwitcher } from '../../components/RoomNotificationSwitcher';
+import {
+  getRoomNotificationMode,
+  getRoomNotificationModeIcon,
+  useRoomsNotificationPreferencesContext,
+} from '../../hooks/useRoomsNotificationPreferences';
 
 type RoomMenuProps = {
   room: Room;
@@ -69,6 +77,8 @@ const RoomMenu = forwardRef<HTMLDivElement, RoomMenuProps>(({ room, requestClose
   const powerLevels = usePowerLevelsContext();
   const { getPowerLevel, canDoAction } = usePowerLevelsAPI(powerLevels);
   const canInvite = canDoAction('invite', getPowerLevel(mx.getUserId() ?? ''));
+  const notificationPreferences = useRoomsNotificationPreferencesContext();
+  const notificationMode = getRoomNotificationMode(notificationPreferences, room.roomId);
 
   const handleMarkAsRead = () => {
     markAsRead(mx, room.roomId, hideActivity);
@@ -87,8 +97,10 @@ const RoomMenu = forwardRef<HTMLDivElement, RoomMenuProps>(({ room, requestClose
     requestClose();
   };
 
-  const handleRoomSettings = () => {
-    toggleRoomSettings(room.roomId);
+  const openSettings = useOpenRoomSettings();
+  const parentSpace = useSpaceOptionally();
+  const handleOpenSettings = () => {
+    openSettings(room.roomId, parentSpace?.roomId);
     requestClose();
   };
 
@@ -106,6 +118,27 @@ const RoomMenu = forwardRef<HTMLDivElement, RoomMenuProps>(({ room, requestClose
             Mark as Read
           </Text>
         </MenuItem>
+        <RoomNotificationModeSwitcher roomId={room.roomId} value={notificationMode}>
+          {(handleOpen, opened, changing) => (
+            <MenuItem
+              size="300"
+              after={
+                changing ? (
+                  <Spinner size="100" variant="Secondary" />
+                ) : (
+                  <Icon size="100" src={getRoomNotificationModeIcon(notificationMode)} />
+                )
+              }
+              radii="300"
+              aria-pressed={opened}
+              onClick={handleOpen}
+            >
+              <Text style={{ flexGrow: 1 }} as="span" size="T300" truncate>
+                Notifications
+              </Text>
+            </MenuItem>
+          )}
+        </RoomNotificationModeSwitcher>
       </Box>
       <Line variant="Surface" size="300" />
       <Box direction="Column" gap="100" style={{ padding: config.space.S100 }}>
@@ -133,7 +166,7 @@ const RoomMenu = forwardRef<HTMLDivElement, RoomMenuProps>(({ room, requestClose
           </Text>
         </MenuItem>
         <MenuItem
-          onClick={handleRoomSettings}
+          onClick={handleOpenSettings}
           size="300"
           after={<Icon size="100" src={Icons.Setting} />}
           radii="300"

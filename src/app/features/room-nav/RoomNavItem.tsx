@@ -15,6 +15,7 @@ import {
   Line,
   RectCords,
   Badge,
+  Spinner,
 } from 'folds';
 import { useFocusWithin, useHover } from 'react-aria';
 import FocusTrap from 'focus-trap-react';
@@ -29,7 +30,7 @@ import { roomToUnreadAtom } from '../../state/room/roomToUnread';
 import { usePowerLevels, usePowerLevelsAPI } from '../../hooks/usePowerLevels';
 import { copyToClipboard } from '../../utils/dom';
 import { markAsRead } from '../../../client/action/notifications';
-import { openInviteUser, toggleRoomSettings } from '../../../client/action/navigation';
+import { openInviteUser } from '../../../client/action/navigation';
 import { UseStateProvider } from '../../components/UseStateProvider';
 import { LeaveRoomPrompt } from '../../components/leave-room-prompt';
 import { useRoomTypingMember } from '../../hooks/useRoomTypingMembers';
@@ -41,19 +42,29 @@ import { getViaServers } from '../../plugins/via-servers';
 import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
 import { useSetting } from '../../state/hooks/settings';
 import { settingsAtom } from '../../state/settings';
+import { useOpenRoomSettings } from '../../state/hooks/roomSettings';
+import { useSpaceOptionally } from '../../hooks/useSpace';
+import {
+  getRoomNotificationModeIcon,
+  RoomNotificationMode,
+} from '../../hooks/useRoomsNotificationPreferences';
+import { RoomNotificationModeSwitcher } from '../../components/RoomNotificationSwitcher';
 
 type RoomNavItemMenuProps = {
   room: Room;
   requestClose: () => void;
+  notificationMode?: RoomNotificationMode;
 };
 const RoomNavItemMenu = forwardRef<HTMLDivElement, RoomNavItemMenuProps>(
-  ({ room, requestClose }, ref) => {
+  ({ room, requestClose, notificationMode }, ref) => {
     const mx = useMatrixClient();
     const [hideActivity] = useSetting(settingsAtom, 'hideActivity');
     const unread = useRoomUnread(room.roomId, roomToUnreadAtom);
     const powerLevels = usePowerLevels(room);
     const { getPowerLevel, canDoAction } = usePowerLevelsAPI(powerLevels);
     const canInvite = canDoAction('invite', getPowerLevel(mx.getUserId() ?? ''));
+    const openRoomSettings = useOpenRoomSettings();
+    const space = useSpaceOptionally();
 
     const handleMarkAsRead = () => {
       markAsRead(mx, room.roomId, hideActivity);
@@ -73,7 +84,7 @@ const RoomNavItemMenu = forwardRef<HTMLDivElement, RoomNavItemMenuProps>(
     };
 
     const handleRoomSettings = () => {
-      toggleRoomSettings(room.roomId);
+      openRoomSettings(room.roomId, space?.roomId);
       requestClose();
     };
 
@@ -91,6 +102,27 @@ const RoomNavItemMenu = forwardRef<HTMLDivElement, RoomNavItemMenuProps>(
               Mark as Read
             </Text>
           </MenuItem>
+          <RoomNotificationModeSwitcher roomId={room.roomId} value={notificationMode}>
+            {(handleOpen, opened, changing) => (
+              <MenuItem
+                size="300"
+                after={
+                  changing ? (
+                    <Spinner size="100" variant="Secondary" />
+                  ) : (
+                    <Icon size="100" src={getRoomNotificationModeIcon(notificationMode)} />
+                  )
+                }
+                radii="300"
+                aria-pressed={opened}
+                onClick={handleOpen}
+              >
+                <Text style={{ flexGrow: 1 }} as="span" size="T300" truncate>
+                  Notifications
+                </Text>
+              </MenuItem>
+            )}
+          </RoomNotificationModeSwitcher>
         </Box>
         <Line variant="Surface" size="300" />
         <Box direction="Column" gap="100" style={{ padding: config.space.S100 }}>
@@ -166,7 +198,7 @@ type RoomNavItemProps = {
   room: Room;
   selected: boolean;
   linkPath: string;
-  muted?: boolean;
+  notificationMode?: RoomNotificationMode;
   showAvatar?: boolean;
   direct?: boolean;
 };
@@ -175,7 +207,7 @@ export function RoomNavItem({
   selected,
   showAvatar,
   direct,
-  muted,
+  notificationMode,
   linkPath,
 }: RoomNavItemProps) {
   const mx = useMatrixClient();
@@ -259,7 +291,9 @@ export function RoomNavItem({
                 <UnreadBadge highlight={unread.highlight > 0} count={unread.total} />
               </UnreadBadgeCenter>
             )}
-            {muted && !optionsVisible && <Icon size="50" src={Icons.BellMute} />}
+            {!optionsVisible && notificationMode !== RoomNotificationMode.Unset && (
+              <Icon size="50" src={getRoomNotificationModeIcon(notificationMode)} />
+            )}
           </Box>
         </NavItemContent>
       </NavLink>
@@ -283,7 +317,11 @@ export function RoomNavItem({
                   escapeDeactivates: stopPropagation,
                 }}
               >
-                <RoomNavItemMenu room={room} requestClose={() => setMenuAnchor(undefined)} />
+                <RoomNavItemMenu
+                  room={room}
+                  requestClose={() => setMenuAnchor(undefined)}
+                  notificationMode={notificationMode}
+                />
               </FocusTrap>
             }
           >

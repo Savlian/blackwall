@@ -13,13 +13,17 @@ import {
   UploadProgress,
   UploadResponse,
 } from 'matrix-js-sdk';
+import to from 'await-to-js';
 import { IImageInfo, IThumbnailContent, IVideoInfo } from '../../types/matrix/common';
 import { AccountDataEvent } from '../../types/matrix/accountData';
 import { getStateEvent } from './room';
 import { StateEvent } from '../../types/matrix/room';
 
-export const matchMxId = (id: string): RegExpMatchArray | null =>
-  id.match(/^([@!$+#])(\S+):(\S+)$/);
+const DOMAIN_REGEX = /\b(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}\b/;
+
+export const isServerName = (serverName: string): boolean => DOMAIN_REGEX.test(serverName);
+
+export const matchMxId = (id: string): RegExpMatchArray | null => id.match(/^([@!$+#])(.+):(\S+)$/);
 
 export const validMxId = (id: string): boolean => !!matchMxId(id);
 
@@ -292,4 +296,47 @@ export const downloadEncryptedMedia = async (
   const decryptedContent = await decryptContent(await encryptedContent.arrayBuffer());
 
   return decryptedContent;
+};
+
+export const rateLimitedActions = async <T, R = void>(
+  data: T[],
+  callback: (item: T) => Promise<R>,
+  maxRetryCount?: number
+) => {
+  let retryCount = 0;
+
+  let actionInterval = 0;
+
+  const sleepForMs = (ms: number) =>
+    new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+
+  const performAction = async (dataItem: T) => {
+    const [err] = await to<R, MatrixError>(callback(dataItem));
+
+    if (err?.httpStatus === 429) {
+      if (retryCount === maxRetryCount) {
+        return;
+      }
+
+      const waitMS = err.getRetryAfterMs() ?? 3000;
+      actionInterval = waitMS + 500;
+      await sleepForMs(waitMS);
+      retryCount += 1;
+
+      await performAction(dataItem);
+    }
+  };
+
+  for (let i = 0; i < data.length; i += 1) {
+    const dataItem = data[i];
+    retryCount = 0;
+    // eslint-disable-next-line no-await-in-loop
+    await performAction(dataItem);
+    if (actionInterval > 0) {
+      // eslint-disable-next-line no-await-in-loop
+      await sleepForMs(actionInterval);
+    }
+  }
 };

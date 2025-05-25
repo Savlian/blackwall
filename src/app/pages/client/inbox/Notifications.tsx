@@ -26,6 +26,7 @@ import {
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { HTMLReactParserOptions } from 'html-react-parser';
 import { Opts as LinkifyOpts } from 'linkifyjs';
+import { useAtomValue } from 'jotai';
 import { Page, PageContent, PageContentCenter, PageHeader } from '../../../components/page';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { getMxIdLocalPart, mxcUrlToHttp } from '../../../utils/matrix';
@@ -52,8 +53,8 @@ import {
   Reply,
   Time,
   Username,
+  UsernameBold,
 } from '../../../components/message';
-import colorMXID from '../../../../util/colorMXID';
 import {
   factoryRenderLinkifyWithMention,
   getReactCustomHtmlParser,
@@ -82,6 +83,17 @@ import { useSpoilerClickHandler } from '../../../hooks/useSpoilerClickHandler';
 import { ScreenSize, useScreenSizeContext } from '../../../hooks/useScreenSize';
 import { BackRouteHandler } from '../../../components/BackRouteHandler';
 import { useMediaAuthentication } from '../../../hooks/useMediaAuthentication';
+import { allRoomsAtom } from '../../../state/room-list/roomList';
+import { usePowerLevels, usePowerLevelsAPI } from '../../../hooks/usePowerLevels';
+import {
+  getTagIconSrc,
+  useAccessibleTagColors,
+  usePowerLevelTags,
+} from '../../../hooks/usePowerLevelTags';
+import { useTheme } from '../../../hooks/useTheme';
+import { PowerIcon } from '../../../components/power';
+import colorMXID from '../../../../util/colorMXID';
+import { mDirectAtom } from '../../../state/mDirectList';
 
 type RoomNotificationsGroup = {
   roomId: string;
@@ -94,9 +106,14 @@ type NotificationTimeline = {
 type LoadTimeline = (from?: string) => Promise<void>;
 type SilentReloadTimeline = () => Promise<void>;
 
-const groupNotifications = (notifications: INotification[]): RoomNotificationsGroup[] => {
+const groupNotifications = (
+  notifications: INotification[],
+  allowRooms: Set<string>
+): RoomNotificationsGroup[] => {
   const groups: RoomNotificationsGroup[] = [];
   notifications.forEach((notification) => {
+    if (!allowRooms.has(notification.room_id)) return;
+
     const groupIndex = groups.length - 1;
     const lastAddedGroup: RoomNotificationsGroup | undefined = groups[groupIndex];
     if (lastAddedGroup && notification.room_id === lastAddedGroup.roomId) {
@@ -116,6 +133,9 @@ const useNotificationTimeline = (
   onlyHighlight?: boolean
 ): [NotificationTimeline, LoadTimeline, SilentReloadTimeline] => {
   const mx = useMatrixClient();
+  const allRooms = useAtomValue(allRoomsAtom);
+  const allJoinedRooms = useMemo(() => new Set(allRooms), [allRooms]);
+
   const [notificationTimeline, setNotificationTimeline] = useState<NotificationTimeline>({
     groups: [],
   });
@@ -142,7 +162,7 @@ const useNotificationTimeline = (
         paginationLimit,
         onlyHighlight ? 'highlight' : undefined
       );
-      const groups = groupNotifications(data.notifications);
+      const groups = groupNotifications(data.notifications, allJoinedRooms);
 
       setNotificationTimeline((currentTimeline) => {
         if (currentTimeline.nextToken === from) {
@@ -154,7 +174,7 @@ const useNotificationTimeline = (
         return currentTimeline;
       });
     },
-    [paginationLimit, onlyHighlight, fetchNotifications]
+    [paginationLimit, onlyHighlight, fetchNotifications, allJoinedRooms]
   );
 
   /**
@@ -167,12 +187,12 @@ const useNotificationTimeline = (
       paginationLimit,
       onlyHighlight ? 'highlight' : undefined
     );
-    const groups = groupNotifications(data.notifications);
+    const groups = groupNotifications(data.notifications, allJoinedRooms);
     setNotificationTimeline({
       nextToken: data.next_token,
       groups,
     });
-  }, [paginationLimit, onlyHighlight, fetchNotifications]);
+  }, [paginationLimit, onlyHighlight, fetchNotifications, allJoinedRooms]);
 
   return [notificationTimeline, loadTimeline, silentReloadTimeline];
 };
@@ -184,6 +204,7 @@ type RoomNotificationsGroupProps = {
   urlPreview?: boolean;
   hideActivity: boolean;
   onOpen: (roomId: string, eventId: string) => void;
+  legacyUsernameColor?: boolean;
 };
 function RoomNotificationsGroupComp({
   room,
@@ -192,10 +213,18 @@ function RoomNotificationsGroupComp({
   urlPreview,
   hideActivity,
   onOpen,
+  legacyUsernameColor,
 }: RoomNotificationsGroupProps) {
   const mx = useMatrixClient();
   const useAuthentication = useMediaAuthentication();
   const unread = useRoomUnread(room.roomId, roomToUnreadAtom);
+
+  const powerLevels = usePowerLevels(room);
+  const { getPowerLevel } = usePowerLevelsAPI(powerLevels);
+  const [powerLevelTags, getPowerLevelTag] = usePowerLevelTags(room, powerLevels);
+  const theme = useTheme();
+  const accessibleTagColors = useAccessibleTagColors(theme.kind, powerLevelTags);
+
   const mentionClickHandler = useMentionClickHandler(room.roomId);
   const spoilerClickHandler = useSpoilerClickHandler();
 
@@ -414,6 +443,17 @@ function RoomNotificationsGroupComp({
           const threadRootId =
             relation?.rel_type === RelationType.Thread ? relation.event_id : undefined;
 
+          const senderPowerLevel = getPowerLevel(event.sender);
+          const powerLevelTag = getPowerLevelTag(senderPowerLevel);
+          const tagColor = powerLevelTag?.color
+            ? accessibleTagColors?.get(powerLevelTag.color)
+            : undefined;
+          const tagIconSrc = powerLevelTag?.icon
+            ? getTagIconSrc(mx, useAuthentication, powerLevelTag.icon)
+            : undefined;
+
+          const usernameColor = legacyUsernameColor ? colorMXID(event.sender) : tagColor;
+
           return (
             <SequenceCard
               key={notification.event.event_id}
@@ -448,11 +488,14 @@ function RoomNotificationsGroupComp({
               >
                 <Box gap="300" justifyContent="SpaceBetween" alignItems="Center" grow="Yes">
                   <Box gap="200" alignItems="Baseline">
-                    <Username style={{ color: colorMXID(event.sender) }}>
-                      <Text as="span" truncate>
-                        <b>{displayName}</b>
-                      </Text>
-                    </Username>
+                    <Box alignItems="Center" gap="200">
+                      <Username style={{ color: usernameColor }}>
+                        <Text as="span" truncate>
+                          <UsernameBold>{displayName}</UsernameBold>
+                        </Text>
+                      </Username>
+                      {tagIconSrc && <PowerIcon size="100" iconSrc={tagIconSrc} />}
+                    </Box>
                     <Time ts={event.origin_server_ts} />
                   </Box>
                   <Box shrink="No" gap="200" alignItems="Center">
@@ -472,6 +515,10 @@ function RoomNotificationsGroupComp({
                     replyEventId={replyEventId}
                     threadRootId={threadRootId}
                     onClick={handleOpenClick}
+                    getPowerLevel={getPowerLevel}
+                    getPowerLevelTag={getPowerLevelTag}
+                    accessibleTagColors={accessibleTagColors}
+                    legacyUsernameColor={legacyUsernameColor}
                   />
                 )}
                 {renderMatrixEvent(event.type, false, event, displayName, getContent)}
@@ -501,7 +548,9 @@ export function Notifications() {
   const [hideActivity] = useSetting(settingsAtom, 'hideActivity');
   const [mediaAutoLoad] = useSetting(settingsAtom, 'mediaAutoLoad');
   const [urlPreview] = useSetting(settingsAtom, 'urlPreview');
+  const [legacyUsernameColor] = useSetting(settingsAtom, 'legacyUsernameColor');
   const screenSize = useScreenSizeContext();
+  const mDirects = useAtomValue(mDirectAtom);
 
   const { navigateRoom } = useRoomNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -661,6 +710,9 @@ export function Notifications() {
                           urlPreview={urlPreview}
                           hideActivity={hideActivity}
                           onOpen={navigateRoom}
+                          legacyUsernameColor={
+                            legacyUsernameColor || mDirects.has(groupRoom.roomId)
+                          }
                         />
                       </VirtualTile>
                     );
