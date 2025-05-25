@@ -1,5 +1,5 @@
 import React, { MouseEventHandler, useCallback, useMemo, useRef, useState } from 'react';
-import { Box, Icon, IconButton, Icons, Line, Scroll, config } from 'folds';
+import { Box, Chip, Icon, IconButton, Icons, Line, Scroll, Spinner, Text, config } from 'folds';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useAtom, useAtomValue } from 'jotai';
 import { useNavigate } from 'react-router-dom';
@@ -36,7 +36,7 @@ import { makeLobbyCategoryId } from '../../state/closedLobbyCategories';
 import { useCategoryHandler } from '../../hooks/useCategoryHandler';
 import { useMatrixClient } from '../../hooks/useMatrixClient';
 import { allRoomsAtom } from '../../state/room-list/roomList';
-import { getCanonicalAliasOrRoomId } from '../../utils/matrix';
+import { getCanonicalAliasOrRoomId, rateLimitedActions } from '../../utils/matrix';
 import { getSpaceRoomPath } from '../../pages/pathUtils';
 import { StateEvent } from '../../../types/matrix/room';
 import { CanDropCallback, useDnDMonitor } from './DnD';
@@ -53,6 +53,8 @@ import { roomToParentsAtom } from '../../state/room/roomToParents';
 import { AccountDataEvent } from '../../../types/matrix/accountData';
 import { useRoomMembers } from '../../hooks/useRoomMembers';
 import { SpaceHierarchy } from './SpaceHierarchy';
+import { useGetRoom } from '../../hooks/useGetRoom';
+import { AsyncStatus, useAsyncCallback } from '../../hooks/useAsyncCallback';
 
 const useCanDropLobbyItem = (
   space: Room,
@@ -179,15 +181,7 @@ export function Lobby() {
     useCallback((w, height) => setHeroSectionHeight(height), [])
   );
 
-  const getRoom = useCallback(
-    (rId: string) => {
-      if (allJoinedRooms.has(rId)) {
-        return mx.getRoom(rId) ?? undefined;
-      }
-      return undefined;
-    },
-    [mx, allJoinedRooms]
-  );
+  const getRoom = useGetRoom(allJoinedRooms);
 
   const canEditSpaceChild = useCallback(
     (powerLevels: IPowerLevels) =>
@@ -244,125 +238,148 @@ export function Lobby() {
     canEditSpaceChild
   );
 
-  const reorderSpace = useCallback(
-    (item: HierarchyItemSpace, containerItem: HierarchyItem) => {
-      if (!item.parentId) return;
+  const [reorderSpaceState, reorderSpace] = useAsyncCallback(
+    useCallback(
+      async (item: HierarchyItemSpace, containerItem: HierarchyItem) => {
+        if (!item.parentId) return;
 
-      const itemSpaces: HierarchyItemSpace[] = hierarchy
-        .map((i) => i.space)
-        .filter((i) => i.roomId !== item.roomId);
+        const itemSpaces: HierarchyItemSpace[] = hierarchy
+          .map((i) => i.space)
+          .filter((i) => i.roomId !== item.roomId);
 
-      const beforeIndex = itemSpaces.findIndex((i) => i.roomId === containerItem.roomId);
-      const insertIndex = beforeIndex + 1;
+        const beforeIndex = itemSpaces.findIndex((i) => i.roomId === containerItem.roomId);
+        const insertIndex = beforeIndex + 1;
 
-      itemSpaces.splice(insertIndex, 0, {
-        ...item,
-        content: { ...item.content, order: undefined },
-      });
+        itemSpaces.splice(insertIndex, 0, {
+          ...item,
+          content: { ...item.content, order: undefined },
+        });
 
-      const currentOrders = itemSpaces.map((i) => {
-        if (typeof i.content.order === 'string' && lex.has(i.content.order)) {
-          return i.content.order;
-        }
-        return undefined;
-      });
+        const currentOrders = itemSpaces.map((i) => {
+          if (typeof i.content.order === 'string' && lex.has(i.content.order)) {
+            return i.content.order;
+          }
+          return undefined;
+        });
 
-      const newOrders = orderKeys(lex, currentOrders);
+        const newOrders = orderKeys(lex, currentOrders);
 
-      newOrders?.forEach((orderKey, index) => {
-        const itm = itemSpaces[index];
-        if (!itm || !itm.parentId) return;
-        const parentPL = roomsPowerLevels.get(itm.parentId);
-        const canEdit = parentPL && canEditSpaceChild(parentPL);
-        if (canEdit && orderKey !== currentOrders[index]) {
-          mx.sendStateEvent(
-            itm.parentId,
-            StateEvent.SpaceChild as any,
-            { ...itm.content, order: orderKey },
-            itm.roomId
-          );
-        }
-      });
-    },
-    [mx, hierarchy, lex, roomsPowerLevels, canEditSpaceChild]
-  );
+        const reorders = newOrders
+          ?.map((orderKey, index) => ({
+            item: itemSpaces[index],
+            orderKey,
+          }))
+          .filter((reorder, index) => {
+            if (!reorder.item.parentId) return false;
+            const parentPL = roomsPowerLevels.get(reorder.item.parentId);
+            const canEdit = parentPL && canEditSpaceChild(parentPL);
+            return canEdit && reorder.orderKey !== currentOrders[index];
+          });
 
-  const reorderRoom = useCallback(
-    (item: HierarchyItem, containerItem: HierarchyItem): void => {
-      const itemRoom = mx.getRoom(item.roomId);
-      if (!item.parentId) {
-        return;
-      }
-      const containerParentId: string =
-        'space' in containerItem ? containerItem.roomId : containerItem.parentId;
-      const itemContent = item.content;
-
-      // remove from current space
-      if (item.parentId !== containerParentId) {
-        mx.sendStateEvent(item.parentId, StateEvent.SpaceChild as any, {}, item.roomId);
-      }
-
-      if (
-        itemRoom &&
-        itemRoom.getJoinRule() === JoinRule.Restricted &&
-        item.parentId !== containerParentId
-      ) {
-        // change join rule allow parameter when dragging
-        // restricted room from one space to another
-        const joinRuleContent = getStateEvent(
-          itemRoom,
-          StateEvent.RoomJoinRules
-        )?.getContent<RoomJoinRulesEventContent>();
-
-        if (joinRuleContent) {
-          const allow =
-            joinRuleContent.allow?.filter((allowRule) => allowRule.room_id !== item.parentId) ?? [];
-          allow.push({ type: RestrictedAllowType.RoomMembership, room_id: containerParentId });
-          mx.sendStateEvent(itemRoom.roomId, StateEvent.RoomJoinRules as any, {
-            ...joinRuleContent,
-            allow,
+        if (reorders) {
+          await rateLimitedActions(reorders, async (reorder) => {
+            if (!reorder.item.parentId) return;
+            await mx.sendStateEvent(
+              reorder.item.parentId,
+              StateEvent.SpaceChild as any,
+              { ...reorder.item.content, order: reorder.orderKey },
+              reorder.item.roomId
+            );
           });
         }
-      }
-
-      const itemSpaces = Array.from(
-        hierarchy?.find((i) => i.space.roomId === containerParentId)?.rooms ?? []
-      );
-
-      const beforeItem: HierarchyItem | undefined =
-        'space' in containerItem ? undefined : containerItem;
-      const beforeIndex = itemSpaces.findIndex((i) => i.roomId === beforeItem?.roomId);
-      const insertIndex = beforeIndex + 1;
-
-      itemSpaces.splice(insertIndex, 0, {
-        ...item,
-        parentId: containerParentId,
-        content: { ...itemContent, order: undefined },
-      });
-
-      const currentOrders = itemSpaces.map((i) => {
-        if (typeof i.content.order === 'string' && lex.has(i.content.order)) {
-          return i.content.order;
-        }
-        return undefined;
-      });
-
-      const newOrders = orderKeys(lex, currentOrders);
-
-      newOrders?.forEach((orderKey, index) => {
-        const itm = itemSpaces[index];
-        if (itm && orderKey !== currentOrders[index]) {
-          mx.sendStateEvent(
-            containerParentId,
-            StateEvent.SpaceChild as any,
-            { ...itm.content, order: orderKey },
-            itm.roomId
-          );
-        }
-      });
-    },
-    [mx, hierarchy, lex]
+      },
+      [mx, hierarchy, lex, roomsPowerLevels, canEditSpaceChild]
+    )
   );
+  const reorderingSpace = reorderSpaceState.status === AsyncStatus.Loading;
+
+  const [reorderRoomState, reorderRoom] = useAsyncCallback(
+    useCallback(
+      async (item: HierarchyItem, containerItem: HierarchyItem) => {
+        const itemRoom = mx.getRoom(item.roomId);
+        if (!item.parentId) {
+          return;
+        }
+        const containerParentId: string =
+          'space' in containerItem ? containerItem.roomId : containerItem.parentId;
+        const itemContent = item.content;
+
+        // remove from current space
+        if (item.parentId !== containerParentId) {
+          mx.sendStateEvent(item.parentId, StateEvent.SpaceChild as any, {}, item.roomId);
+        }
+
+        if (
+          itemRoom &&
+          itemRoom.getJoinRule() === JoinRule.Restricted &&
+          item.parentId !== containerParentId
+        ) {
+          // change join rule allow parameter when dragging
+          // restricted room from one space to another
+          const joinRuleContent = getStateEvent(
+            itemRoom,
+            StateEvent.RoomJoinRules
+          )?.getContent<RoomJoinRulesEventContent>();
+
+          if (joinRuleContent) {
+            const allow =
+              joinRuleContent.allow?.filter((allowRule) => allowRule.room_id !== item.parentId) ??
+              [];
+            allow.push({ type: RestrictedAllowType.RoomMembership, room_id: containerParentId });
+            mx.sendStateEvent(itemRoom.roomId, StateEvent.RoomJoinRules as any, {
+              ...joinRuleContent,
+              allow,
+            });
+          }
+        }
+
+        const itemSpaces = Array.from(
+          hierarchy?.find((i) => i.space.roomId === containerParentId)?.rooms ?? []
+        );
+
+        const beforeItem: HierarchyItem | undefined =
+          'space' in containerItem ? undefined : containerItem;
+        const beforeIndex = itemSpaces.findIndex((i) => i.roomId === beforeItem?.roomId);
+        const insertIndex = beforeIndex + 1;
+
+        itemSpaces.splice(insertIndex, 0, {
+          ...item,
+          parentId: containerParentId,
+          content: { ...itemContent, order: undefined },
+        });
+
+        const currentOrders = itemSpaces.map((i) => {
+          if (typeof i.content.order === 'string' && lex.has(i.content.order)) {
+            return i.content.order;
+          }
+          return undefined;
+        });
+
+        const newOrders = orderKeys(lex, currentOrders);
+
+        const reorders = newOrders
+          ?.map((orderKey, index) => ({
+            item: itemSpaces[index],
+            orderKey,
+          }))
+          .filter((reorder, index) => reorder.item && reorder.orderKey !== currentOrders[index]);
+
+        if (reorders) {
+          await rateLimitedActions(reorders, async (reorder) => {
+            await mx.sendStateEvent(
+              containerParentId,
+              StateEvent.SpaceChild as any,
+              { ...reorder.item.content, order: reorder.orderKey },
+              reorder.item.roomId
+            );
+          });
+        }
+      },
+      [mx, hierarchy, lex]
+    )
+  );
+  const reorderingRoom = reorderRoomState.status === AsyncStatus.Loading;
+  const reordering = reorderingRoom || reorderingSpace;
 
   useDnDMonitor(
     scrollRef,
@@ -488,6 +505,7 @@ export function Lobby() {
                             draggingItem={draggingItem}
                             onDragging={setDraggingItem}
                             canDrop={canDrop}
+                            disabledReorder={reordering}
                             nextSpaceId={nextSpaceId}
                             getRoom={getRoom}
                             pinned={sidebarSpaces.has(item.space.roomId)}
@@ -499,6 +517,28 @@ export function Lobby() {
                       );
                     })}
                   </div>
+                  {reordering && (
+                    <Box
+                      style={{
+                        position: 'absolute',
+                        bottom: config.space.S400,
+                        left: 0,
+                        right: 0,
+                        zIndex: 2,
+                        pointerEvents: 'none',
+                      }}
+                      justifyContent="Center"
+                    >
+                      <Chip
+                        variant="Secondary"
+                        outlined
+                        radii="Pill"
+                        before={<Spinner variant="Secondary" fill="Soft" size="100" />}
+                      >
+                        <Text size="L400">Reordering</Text>
+                      </Chip>
+                    </Box>
+                  )}
                 </PageContentCenter>
               </PageContent>
             </Scroll>
