@@ -678,6 +678,7 @@ export type MessageProps = {
   powerLevelTag?: PowerLevelTag;
   accessibleTagColors?: Map<string, string>;
   legacyUsernameColor?: boolean;
+  hour24Clock: boolean;
 };
 export const Message = as<'div', MessageProps>(
   (
@@ -706,6 +707,7 @@ export const Message = as<'div', MessageProps>(
       powerLevelTag,
       accessibleTagColors,
       legacyUsernameColor,
+      hour24Clock,
       children,
       ...props
     },
@@ -770,7 +772,11 @@ export const Message = as<'div', MessageProps>(
               </Text>
             </>
           )}
-          <Time ts={mEvent.getTs()} compact={messageLayout === MessageLayout.Compact} />
+          <Time
+            ts={mEvent.getTs()}
+            compact={messageLayout === MessageLayout.Compact}
+            hour24Clock={hour24Clock}
+          />
         </Box>
       </Box>
     );

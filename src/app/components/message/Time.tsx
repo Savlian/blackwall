@@ -8,16 +8,18 @@ export type TimeProps = {
 };
 
 export const Time = as<'span', TimeProps & ComponentProps<typeof Text>>(
-  ({ compact, ts, ...props }, ref) => {
+  ({ compact, hour24Clock, ts, ...props }, ref) => {
+    const formattedTime = timeHourMinute(ts, hour24Clock);
+
     let time = '';
     if (compact) {
-      time = timeHourMinute(ts);
+      time = formattedTime;
     } else if (today(ts)) {
-      time = timeHourMinute(ts);
+      time = formattedTime;
     } else if (yesterday(ts)) {
-      time = `Yesterday ${timeHourMinute(ts)}`;
+      time = `Yesterday ${formattedTime}`;
     } else {
-      time = `${timeDayMonYear(ts)} ${timeHourMinute(ts)}`;
+      time = `${timeDayMonYear(ts)} ${formattedTime}`;
     }
 
     return (

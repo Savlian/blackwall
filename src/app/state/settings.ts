@@ -35,6 +35,8 @@ export interface Settings {
   showNotifications: boolean;
   isNotificationSounds: boolean;
 
+  hour24Clock: boolean;
+
   developerTools: boolean;
 }
 
@@ -64,6 +66,8 @@ const defaultSettings: Settings = {
 
   showNotifications: true,
   isNotificationSounds: true,
+
+  hour24Clock: false,
 
   developerTools: false,
 };

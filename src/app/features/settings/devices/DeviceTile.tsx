@@ -27,6 +27,8 @@ import { SequenceCard } from '../../../components/sequence-card';
 import { SequenceCardStyle } from '../styles.css';
 import { LogoutDialog } from '../../../components/LogoutDialog';
 import { stopPropagation } from '../../../utils/keyboard';
+import { useSetting } from '../../../state/hooks/settings';
+import { settingsAtom } from '../../../state/settings';
 
 export function DeviceTilePlaceholder() {
   return (
@@ -41,6 +43,8 @@ export function DeviceTilePlaceholder() {
 }
 
 function DeviceActiveTime({ ts }: { ts: number }) {
+  const [hour24Clock] = useSetting(settingsAtom, 'hour24Clock');
+
   return (
     <Text className={BreakWord} size="T200">
       <Text size="Inherit" as="span" priority="300">
@@ -49,7 +53,7 @@ function DeviceActiveTime({ ts }: { ts: number }) {
       <>
         {today(ts) && 'Today'}
         {yesterday(ts) && 'Yesterday'}
-        {!today(ts) && !yesterday(ts) && timeDayMonYear(ts)} {timeHourMinute(ts)}
+        {!today(ts) && !yesterday(ts) && timeDayMonYear(ts)} {timeHourMinute(ts, hour24Clock)}
       </>
     </Text>
   );

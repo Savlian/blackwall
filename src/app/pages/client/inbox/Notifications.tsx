@@ -205,6 +205,7 @@ type RoomNotificationsGroupProps = {
   hideActivity: boolean;
   onOpen: (roomId: string, eventId: string) => void;
   legacyUsernameColor?: boolean;
+  hour24Clock: boolean;
 };
 function RoomNotificationsGroupComp({
   room,
@@ -214,6 +215,7 @@ function RoomNotificationsGroupComp({
   hideActivity,
   onOpen,
   legacyUsernameColor,
+  hour24Clock,
 }: RoomNotificationsGroupProps) {
   const mx = useMatrixClient();
   const useAuthentication = useMediaAuthentication();
@@ -496,7 +498,7 @@ function RoomNotificationsGroupComp({
                       </Username>
                       {tagIconSrc && <PowerIcon size="100" iconSrc={tagIconSrc} />}
                     </Box>
-                    <Time ts={event.origin_server_ts} />
+                    <Time ts={event.origin_server_ts} hour24Clock={hour24Clock} />
                   </Box>
                   <Box shrink="No" gap="200" alignItems="Center">
                     <Chip
@@ -549,6 +551,7 @@ export function Notifications() {
   const [mediaAutoLoad] = useSetting(settingsAtom, 'mediaAutoLoad');
   const [urlPreview] = useSetting(settingsAtom, 'urlPreview');
   const [legacyUsernameColor] = useSetting(settingsAtom, 'legacyUsernameColor');
+  const [hour24Clock] = useSetting(settingsAtom, 'hour24Clock');
   const screenSize = useScreenSizeContext();
   const mDirects = useAtomValue(mDirectAtom);
 
@@ -713,6 +716,7 @@ export function Notifications() {
                           legacyUsernameColor={
                             legacyUsernameColor || mDirects.has(groupRoom.roomId)
                           }
+                          hour24Clock={hour24Clock}
                         />
                       </VirtualTile>
                     );

@@ -57,6 +57,8 @@ export function MessageSearch({
   const [urlPreview] = useSetting(settingsAtom, 'urlPreview');
   const [legacyUsernameColor] = useSetting(settingsAtom, 'legacyUsernameColor');
 
+  const [hour24Clock] = useSetting(settingsAtom, 'hour24Clock');
+
   const searchInputRef = useRef<HTMLInputElement>(null);
   const scrollTopAnchorRef = useRef<HTMLDivElement>(null);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -289,6 +291,7 @@ export function MessageSearch({
                     urlPreview={urlPreview}
                     onOpen={navigateRoom}
                     legacyUsernameColor={legacyUsernameColor || mDirects.has(groupRoom.roomId)}
+                    hour24Clock={hour24Clock}
                   />
                 </VirtualTile>
               );
