@@ -5,6 +5,7 @@ import { timeDayMonYear, timeHourMinute, today, yesterday } from '../../utils/ti
 export type TimeProps = {
   compact?: boolean;
   ts: number;
+  hour24Clock: boolean;
 };
 
 export const Time = as<'span', TimeProps & ComponentProps<typeof Text>>(
