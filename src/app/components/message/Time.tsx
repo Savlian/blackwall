@@ -6,10 +6,11 @@ export type TimeProps = {
   compact?: boolean;
   ts: number;
   hour24Clock: boolean;
+  dateFormatString: string;
 };
 
 export const Time = as<'span', TimeProps & ComponentProps<typeof Text>>(
-  ({ compact, hour24Clock, ts, ...props }, ref) => {
+  ({ compact, hour24Clock, dateFormatString, ts, ...props }, ref) => {
     const formattedTime = timeHourMinute(ts, hour24Clock);
 
     let time = '';
@@ -20,7 +21,7 @@ export const Time = as<'span', TimeProps & ComponentProps<typeof Text>>(
     } else if (yesterday(ts)) {
       time = `Yesterday ${formattedTime}`;
     } else {
-      time = `${timeDayMonYear(ts)} ${formattedTime}`;
+      time = `${timeDayMonYear(ts, dateFormatString)} ${formattedTime}`;
     }
 
     return (

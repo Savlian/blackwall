@@ -28,7 +28,7 @@ import FocusTrap from 'focus-trap-react';
 import { Page, PageContent, PageHeader } from '../../../components/page';
 import { SequenceCard } from '../../../components/sequence-card';
 import { useSetting } from '../../../state/hooks/settings';
-import { MessageLayout, MessageSpacing, settingsAtom } from '../../../state/settings';
+import { DateFormat, MessageLayout, MessageSpacing, settingsAtom } from '../../../state/settings';
 import { SettingTile } from '../../../components/setting-tile';
 import { KeySymbol } from '../../../utils/key-symbol';
 import { isMacOS } from '../../../utils/user-agent';
@@ -44,6 +44,7 @@ import {
 import { stopPropagation } from '../../../utils/keyboard';
 import { useMessageLayoutItems } from '../../../hooks/useMessageLayout';
 import { useMessageSpacingItems } from '../../../hooks/useMessageSpacing';
+import { useDateFormatItems } from '../../../hooks/useDateFormat';
 import { SequenceCardStyle } from '../styles.css';
 
 type ThemeSelectorProps = {
@@ -513,6 +514,76 @@ function SelectMessageSpacing() {
   );
 }
 
+function SelectDateFormat() {
+  // ADD TEXT INPUT AND RELATED LOGIC-- ADD LIVE PREVIEW
+  const [menuCords, setMenuCords] = useState<RectCords>();
+  const [dateFormatString, setDateFormatString] = useSetting(settingsAtom, 'dateFormatString');
+  const dateFormatItems = useDateFormatItems();
+
+  const handleMenu: MouseEventHandler<HTMLButtonElement> = (evt) => {
+    setMenuCords(evt.currentTarget.getBoundingClientRect());
+  };
+
+  const handleSelect = (format: DateFormat) => {
+    setDateFormatString(format);
+    setMenuCords(undefined);
+  };
+
+  return (
+    <>
+      <Button
+        size="300"
+        variant="Secondary"
+        outlined
+        fill="Soft"
+        radii="300"
+        after={<Icon size="300" src={Icons.ChevronBottom} />}
+        onClick={handleMenu}
+      >
+        <Text size="T300">
+          {dateFormatItems.find((i) => i.format === dateFormatString)?.name ?? dateFormatString}
+        </Text>
+      </Button>
+      <PopOut
+        anchor={menuCords}
+        offset={5}
+        position="Bottom"
+        align="End"
+        content={
+          <FocusTrap
+            focusTrapOptions={{
+              initialFocus: false,
+              onDeactivate: () => setMenuCords(undefined),
+              clickOutsideDeactivates: true,
+              isKeyForward: (evt: KeyboardEvent) =>
+                evt.key === 'ArrowDown' || evt.key === 'ArrowRight',
+              isKeyBackward: (evt: KeyboardEvent) =>
+                evt.key === 'ArrowUp' || evt.key === 'ArrowLeft',
+              escapeDeactivates: stopPropagation,
+            }}
+          >
+            <Menu>
+              <Box direction="Column" gap="100" style={{ padding: config.space.S100 }}>
+                {dateFormatItems.map((item) => (
+                  <MenuItem
+                    key={item.format}
+                    size="300"
+                    variant={dateFormatString === item.format ? 'Primary' : 'Surface'}
+                    radii="300"
+                    onClick={() => handleSelect(item.format)}
+                  >
+                    <Text size="T300">{item.name}</Text>
+                  </MenuItem>
+                ))}
+              </Box>
+            </Menu>
+          </FocusTrap>
+        }
+      />
+    </>
+  );
+}
+
 function Messages() {
   const [legacyUsernameColor, setLegacyUsernameColor] = useSetting(
     settingsAtom,
@@ -614,6 +685,9 @@ function Messages() {
           title="24-Hour Time Format"
           after={<Switch variant="Primary" value={hour24Clock} onChange={setHour24Clock} />}
         />
+      </SequenceCard>
+      <SequenceCard className={SequenceCardStyle} variant="SurfaceVariant" direction="Column">
+        <SettingTile title="Date Format" after={<SelectDateFormat />} />
       </SequenceCard>
     </Box>
   );

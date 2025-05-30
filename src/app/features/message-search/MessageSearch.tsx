@@ -58,6 +58,7 @@ export function MessageSearch({
   const [legacyUsernameColor] = useSetting(settingsAtom, 'legacyUsernameColor');
 
   const [hour24Clock] = useSetting(settingsAtom, 'hour24Clock');
+  const [dateFormatString] = useSetting(settingsAtom, 'dateFormatString');
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const scrollTopAnchorRef = useRef<HTMLDivElement>(null);
@@ -292,6 +293,7 @@ export function MessageSearch({
                     onOpen={navigateRoom}
                     legacyUsernameColor={legacyUsernameColor || mDirects.has(groupRoom.roomId)}
                     hour24Clock={hour24Clock}
+                    dateFormatString={dateFormatString}
                   />
                 </VirtualTile>
               );

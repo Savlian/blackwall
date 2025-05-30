@@ -1,6 +1,7 @@
 import { atom } from 'jotai';
 
 const STORAGE_KEY = 'settings';
+export type DateFormat = 'D MMM YYYY' | 'DD/MM/YYYY' | 'YYYY/MM/DD' | '';
 export type MessageSpacing = '0' | '100' | '200' | '300' | '400' | '500';
 export enum MessageLayout {
   Modern = 0,
@@ -36,6 +37,7 @@ export interface Settings {
   isNotificationSounds: boolean;
 
   hour24Clock: boolean;
+  dateFormatString: string;
 
   developerTools: boolean;
 }
@@ -68,6 +70,7 @@ const defaultSettings: Settings = {
   isNotificationSounds: true,
 
   hour24Clock: false,
+  dateFormatString: 'D MMM YYYY',
 
   developerTools: false,
 };

@@ -58,6 +58,7 @@ type SearchResultGroupProps = {
   onOpen: (roomId: string, eventId: string) => void;
   legacyUsernameColor?: boolean;
   hour24Clock: boolean;
+  dateFormatString: string;
 };
 export function SearchResultGroup({
   room,
@@ -68,6 +69,7 @@ export function SearchResultGroup({
   onOpen,
   legacyUsernameColor,
   hour24Clock,
+  dateFormatString,
 }: SearchResultGroupProps) {
   const mx = useMatrixClient();
   const useAuthentication = useMediaAuthentication();
@@ -277,7 +279,11 @@ export function SearchResultGroup({
                       </Username>
                       {tagIconSrc && <PowerIcon size="100" iconSrc={tagIconSrc} />}
                     </Box>
-                    <Time ts={event.origin_server_ts} hour24Clock={hour24Clock} />
+                    <Time
+                      ts={event.origin_server_ts}
+                      hour24Clock={hour24Clock}
+                      dateFormatString={dateFormatString}
+                    />
                   </Box>
                   <Box shrink="No" gap="200" alignItems="Center">
                     <Chip

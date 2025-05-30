@@ -679,6 +679,7 @@ export type MessageProps = {
   accessibleTagColors?: Map<string, string>;
   legacyUsernameColor?: boolean;
   hour24Clock: boolean;
+  dateFormatString: string;
 };
 export const Message = as<'div', MessageProps>(
   (
@@ -708,6 +709,7 @@ export const Message = as<'div', MessageProps>(
       accessibleTagColors,
       legacyUsernameColor,
       hour24Clock,
+      dateFormatString,
       children,
       ...props
     },
@@ -776,6 +778,7 @@ export const Message = as<'div', MessageProps>(
             ts={mEvent.getTs()}
             compact={messageLayout === MessageLayout.Compact}
             hour24Clock={hour24Clock}
+            dateFormatString={dateFormatString}
           />
         </Box>
       </Box>

@@ -138,10 +138,18 @@ type InviteCardProps = {
   invite: InviteData;
   compact?: boolean;
   hour24Clock: boolean;
+  dateFormatString: string;
   onNavigate: NavigateHandler;
   hideAvatar: boolean;
 };
-function InviteCard({ invite, compact, hour24Clock, onNavigate, hideAvatar }: InviteCardProps) {
+function InviteCard({
+  invite,
+  compact,
+  hour24Clock,
+  dateFormatString,
+  onNavigate,
+  hideAvatar,
+}: InviteCardProps) {
   const mx = useMatrixClient();
   const userId = mx.getSafeUserId();
 
@@ -298,7 +306,13 @@ function InviteCard({ invite, compact, hour24Clock, onNavigate, hideAvatar }: In
         </Box>
         {invite.inviteTs && (
           <Box shrink="No">
-            <Time size="T200" ts={invite.inviteTs} hour24Clock={hour24Clock} priority="300" />
+            <Time
+              size="T200"
+              ts={invite.inviteTs}
+              hour24Clock={hour24Clock}
+              dateFormatString={dateFormatString}
+              priority="300"
+            />
           </Box>
         )}
       </Box>
@@ -388,8 +402,15 @@ type KnownInvitesProps = {
   handleNavigate: NavigateHandler;
   compact: boolean;
   hour24Clock: boolean;
+  dateFormatString: string;
 };
-function KnownInvites({ invites, handleNavigate, compact, hour24Clock }: KnownInvitesProps) {
+function KnownInvites({
+  invites,
+  handleNavigate,
+  compact,
+  hour24Clock,
+  dateFormatString,
+}: KnownInvitesProps) {
   return (
     <Box direction="Column" gap="200">
       <Text size="H4">Primary</Text>
@@ -401,6 +422,7 @@ function KnownInvites({ invites, handleNavigate, compact, hour24Clock }: KnownIn
               invite={invite}
               compact={compact}
               hour24Clock={hour24Clock}
+              dateFormatString={dateFormatString}
               onNavigate={handleNavigate}
               hideAvatar={false}
             />
@@ -426,8 +448,15 @@ type UnknownInvitesProps = {
   handleNavigate: NavigateHandler;
   compact: boolean;
   hour24Clock: boolean;
+  dateFormatString: string;
 };
-function UnknownInvites({ invites, handleNavigate, compact, hour24Clock }: UnknownInvitesProps) {
+function UnknownInvites({
+  invites,
+  handleNavigate,
+  compact,
+  hour24Clock,
+  dateFormatString,
+}: UnknownInvitesProps) {
   const mx = useMatrixClient();
 
   const [declineAllStatus, declineAll] = useAsyncCallback(
@@ -466,6 +495,7 @@ function UnknownInvites({ invites, handleNavigate, compact, hour24Clock }: Unkno
               invite={invite}
               compact={compact}
               hour24Clock={hour24Clock}
+              dateFormatString={dateFormatString}
               onNavigate={handleNavigate}
               hideAvatar
             />
@@ -491,8 +521,15 @@ type SpamInvitesProps = {
   handleNavigate: NavigateHandler;
   compact: boolean;
   hour24Clock: boolean;
+  dateFormatString: string;
 };
-function SpamInvites({ invites, handleNavigate, compact, hour24Clock }: SpamInvitesProps) {
+function SpamInvites({
+  invites,
+  handleNavigate,
+  compact,
+  hour24Clock,
+  dateFormatString,
+}: SpamInvitesProps) {
   const mx = useMatrixClient();
   const [showInvites, setShowInvites] = useState(false);
 
@@ -617,6 +654,7 @@ function SpamInvites({ invites, handleNavigate, compact, hour24Clock }: SpamInvi
                 invite={invite}
                 compact={compact}
                 hour24Clock={hour24Clock}
+                dateFormatString={dateFormatString}
                 onNavigate={handleNavigate}
                 hideAvatar
               />
@@ -681,6 +719,7 @@ export function Invites() {
   const screenSize = useScreenSizeContext();
 
   const [hour24Clock] = useSetting(settingsAtom, 'hour24Clock');
+  const [dateFormatString] = useSetting(settingsAtom, 'dateFormatString');
 
   const handleNavigate = (roomId: string, space: boolean) => {
     if (space) {
@@ -735,6 +774,7 @@ export function Invites() {
                     invites={knownInvites}
                     compact={compact}
                     hour24Clock={hour24Clock}
+                    dateFormatString={dateFormatString}
                     handleNavigate={handleNavigate}
                   />
                 )}
@@ -744,6 +784,7 @@ export function Invites() {
                     invites={unknownInvites}
                     compact={compact}
                     hour24Clock={hour24Clock}
+                    dateFormatString={dateFormatString}
                     handleNavigate={handleNavigate}
                   />
                 )}
@@ -753,6 +794,7 @@ export function Invites() {
                     invites={spamInvites}
                     compact={compact}
                     hour24Clock={hour24Clock}
+                    dateFormatString={dateFormatString}
                     handleNavigate={handleNavigate}
                   />
                 )}

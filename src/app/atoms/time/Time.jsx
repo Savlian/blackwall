@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import dateFormat from 'dateformat';
 import { isInSameDay } from '../../../util/common';
 
-function Time({ timestamp, fullTime, hour24Clock }) {
+function Time({ timestamp, fullTime, hour24Clock, dateFormatString }) {
   const date = new Date(timestamp);
 
   const formattedFullTime = dateFormat(
@@ -21,7 +21,7 @@ function Time({ timestamp, fullTime, hour24Clock }) {
 
     const timeFormat = hour24Clock ? 'HH:MM' : 'hh:MM TT';
 
-    formattedDate = dateFormat(date, isToday || isYesterday ? timeFormat : 'dd/mm/yyyy');
+    formattedDate = dateFormat(date, isToday || isYesterday ? timeFormat : dateFormatString);
     if (isYesterday) {
       formattedDate = `Yesterday, ${formattedDate}`;
     }
@@ -42,6 +42,7 @@ Time.propTypes = {
   timestamp: PropTypes.number.isRequired,
   fullTime: PropTypes.bool,
   hour24Clock: PropTypes.bool.isRequired,
+  dateFormatString: PropTypes.string.isRequired,
 };
 
 export default Time;

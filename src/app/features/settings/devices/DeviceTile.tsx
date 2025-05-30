@@ -44,6 +44,7 @@ export function DeviceTilePlaceholder() {
 
 function DeviceActiveTime({ ts }: { ts: number }) {
   const [hour24Clock] = useSetting(settingsAtom, 'hour24Clock');
+  const [dateFormatString] = useSetting(settingsAtom, 'dateFormatString');
 
   return (
     <Text className={BreakWord} size="T200">
@@ -53,7 +54,8 @@ function DeviceActiveTime({ ts }: { ts: number }) {
       <>
         {today(ts) && 'Today'}
         {yesterday(ts) && 'Yesterday'}
-        {!today(ts) && !yesterday(ts) && timeDayMonYear(ts)} {timeHourMinute(ts, hour24Clock)}
+        {!today(ts) && !yesterday(ts) && timeDayMonYear(ts, dateFormatString)}{' '}
+        {timeHourMinute(ts, hour24Clock)}
       </>
     </Text>
   );
