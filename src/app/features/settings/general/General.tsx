@@ -302,7 +302,6 @@ function PageZoomInput() {
 function Appearance() {
   const [systemTheme, setSystemTheme] = useSetting(settingsAtom, 'useSystemTheme');
   const [twitterEmoji, setTwitterEmoji] = useSetting(settingsAtom, 'twitterEmoji');
-  const [hour24Clock, setHour24Clock] = useSetting(settingsAtom, 'hour24Clock');
 
   return (
     <Box direction="Column" gap="100">
@@ -339,12 +338,95 @@ function Appearance() {
       <SequenceCard className={SequenceCardStyle} variant="SurfaceVariant" direction="Column">
         <SettingTile title="Page Zoom" after={<PageZoomInput />} />
       </SequenceCard>
+    </Box>
+  );
+}
 
+function SelectDateFormat() {
+  // ADD TEXT INPUT AND RELATED LOGIC-- ADD LIVE PREVIEW: e.g. [formatted current date]
+  const [menuCords, setMenuCords] = useState<RectCords>();
+  const [dateFormatString, setDateFormatString] = useSetting(settingsAtom, 'dateFormatString');
+  const dateFormatItems = useDateFormatItems();
+
+  const handleMenu: MouseEventHandler<HTMLButtonElement> = (evt) => {
+    setMenuCords(evt.currentTarget.getBoundingClientRect());
+  };
+
+  const handleSelect = (format: DateFormat) => {
+    setDateFormatString(format);
+    setMenuCords(undefined);
+  };
+
+  return (
+    <>
+      <Button
+        size="300"
+        variant="Secondary"
+        outlined
+        fill="Soft"
+        radii="300"
+        after={<Icon size="300" src={Icons.ChevronBottom} />}
+        onClick={handleMenu}
+      >
+        <Text size="T300">
+          {dateFormatItems.find((i) => i.format === dateFormatString)?.name ?? dateFormatString}
+        </Text>
+      </Button>
+      <PopOut
+        anchor={menuCords}
+        offset={5}
+        position="Bottom"
+        align="End"
+        content={
+          <FocusTrap
+            focusTrapOptions={{
+              initialFocus: false,
+              onDeactivate: () => setMenuCords(undefined),
+              clickOutsideDeactivates: true,
+              isKeyForward: (evt: KeyboardEvent) =>
+                evt.key === 'ArrowDown' || evt.key === 'ArrowRight',
+              isKeyBackward: (evt: KeyboardEvent) =>
+                evt.key === 'ArrowUp' || evt.key === 'ArrowLeft',
+              escapeDeactivates: stopPropagation,
+            }}
+          >
+            <Menu>
+              <Box direction="Column" gap="100" style={{ padding: config.space.S100 }}>
+                {dateFormatItems.map((item) => (
+                  <MenuItem
+                    key={item.format}
+                    size="300"
+                    variant={dateFormatString === item.format ? 'Primary' : 'Surface'}
+                    radii="300"
+                    onClick={() => handleSelect(item.format)}
+                  >
+                    <Text size="T300">{item.name}</Text>
+                  </MenuItem>
+                ))}
+              </Box>
+            </Menu>
+          </FocusTrap>
+        }
+      />
+    </>
+  );
+}
+
+function DateAndTime() {
+  const [hour24Clock, setHour24Clock] = useSetting(settingsAtom, 'hour24Clock');
+
+  return (
+    <Box direction="Column" gap="100">
+      <Text size="L400">Date & Time</Text>
       <SequenceCard className={SequenceCardStyle} variant="SurfaceVariant" direction="Column">
         <SettingTile
           title="24-Hour Time Format"
           after={<Switch variant="Primary" value={hour24Clock} onChange={setHour24Clock} />}
         />
+      </SequenceCard>
+
+      <SequenceCard className={SequenceCardStyle} variant="SurfaceVariant" direction="Column">
+        <SettingTile title="Date Format" after={<SelectDateFormat />} />
       </SequenceCard>
     </Box>
   );
@@ -522,76 +604,6 @@ function SelectMessageSpacing() {
   );
 }
 
-function SelectDateFormat() {
-  // ADD TEXT INPUT AND RELATED LOGIC-- ADD LIVE PREVIEW
-  const [menuCords, setMenuCords] = useState<RectCords>();
-  const [dateFormatString, setDateFormatString] = useSetting(settingsAtom, 'dateFormatString');
-  const dateFormatItems = useDateFormatItems();
-
-  const handleMenu: MouseEventHandler<HTMLButtonElement> = (evt) => {
-    setMenuCords(evt.currentTarget.getBoundingClientRect());
-  };
-
-  const handleSelect = (format: DateFormat) => {
-    setDateFormatString(format);
-    setMenuCords(undefined);
-  };
-
-  return (
-    <>
-      <Button
-        size="300"
-        variant="Secondary"
-        outlined
-        fill="Soft"
-        radii="300"
-        after={<Icon size="300" src={Icons.ChevronBottom} />}
-        onClick={handleMenu}
-      >
-        <Text size="T300">
-          {dateFormatItems.find((i) => i.format === dateFormatString)?.name ?? dateFormatString}
-        </Text>
-      </Button>
-      <PopOut
-        anchor={menuCords}
-        offset={5}
-        position="Bottom"
-        align="End"
-        content={
-          <FocusTrap
-            focusTrapOptions={{
-              initialFocus: false,
-              onDeactivate: () => setMenuCords(undefined),
-              clickOutsideDeactivates: true,
-              isKeyForward: (evt: KeyboardEvent) =>
-                evt.key === 'ArrowDown' || evt.key === 'ArrowRight',
-              isKeyBackward: (evt: KeyboardEvent) =>
-                evt.key === 'ArrowUp' || evt.key === 'ArrowLeft',
-              escapeDeactivates: stopPropagation,
-            }}
-          >
-            <Menu>
-              <Box direction="Column" gap="100" style={{ padding: config.space.S100 }}>
-                {dateFormatItems.map((item) => (
-                  <MenuItem
-                    key={item.format}
-                    size="300"
-                    variant={dateFormatString === item.format ? 'Primary' : 'Surface'}
-                    radii="300"
-                    onClick={() => handleSelect(item.format)}
-                  >
-                    <Text size="T300">{item.name}</Text>
-                  </MenuItem>
-                ))}
-              </Box>
-            </Menu>
-          </FocusTrap>
-        }
-      />
-    </>
-  );
-}
-
 function Messages() {
   const [legacyUsernameColor, setLegacyUsernameColor] = useSetting(
     settingsAtom,
@@ -716,6 +728,7 @@ export function General({ requestClose }: GeneralProps) {
           <PageContent>
             <Box direction="Column" gap="700">
               <Appearance />
+              <DateAndTime />
               <Editor />
               <Messages />
             </Box>
