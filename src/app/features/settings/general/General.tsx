@@ -1,9 +1,12 @@
 import React, {
   ChangeEventHandler,
+  FormEventHandler,
   KeyboardEventHandler,
   MouseEventHandler,
+  useEffect,
   useState,
 } from 'react';
+import dayjs from 'dayjs';
 import {
   as,
   Box,
@@ -342,10 +345,105 @@ function Appearance() {
   );
 }
 
-function SelectDateFormat() {
-  // ADD TEXT INPUT AND RELATED LOGIC-- ADD LIVE PREVIEW: e.g. [formatted current date]
+type CustomDateFormatProps = {
+  dateFormatString: string;
+  setDateFormatString: (format: string) => void;
+};
+
+function CustomDateFormat({ dateFormatString, setDateFormatString }: CustomDateFormatProps) {
+  const [dateFormatCustom, setDateFormatCustom] = useState(dateFormatString);
+
+  useEffect(() => {
+    setDateFormatCustom(dateFormatString);
+  }, [dateFormatString]);
+
+  const handleChange: ChangeEventHandler<HTMLInputElement> = (evt) => {
+    const name = evt.currentTarget.value;
+    setDateFormatCustom(name);
+  };
+
+  const handleReset = () => {
+    setDateFormatCustom(dateFormatString);
+  };
+
+  const handleSubmit: FormEventHandler<HTMLFormElement> = (evt) => {
+    evt.preventDefault();
+
+    const target = evt.target as HTMLFormElement | undefined;
+    const customDateFormatInput = target?.customDateFormatInput as HTMLInputElement | undefined;
+    const format = customDateFormatInput?.value;
+    if (!format) return;
+
+    setDateFormatString(format);
+  };
+
+  const hasChanges = dateFormatCustom !== dateFormatString;
+  return (
+    <SettingTile
+      description={
+        <Text size="T200">
+          View formatting syntax on{' '}
+          <a
+            href="https://day.js.org/docs/en/display/format"
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            Day.js
+          </a>
+          .
+        </Text>
+      }
+    >
+      <Box as="form" onSubmit={handleSubmit} gap="200">
+        <Box grow="Yes" direction="Column">
+          <Input
+            required
+            name="customDateFormatInput"
+            value={dateFormatCustom}
+            onChange={handleChange}
+            maxLength={16}
+            autoComplete="off"
+            variant="Secondary"
+            radii="300"
+            style={{ paddingRight: config.space.S200 }}
+            after={
+              hasChanges && (
+                <IconButton
+                  type="reset"
+                  onClick={handleReset}
+                  size="300"
+                  radii="300"
+                  variant="Secondary"
+                >
+                  <Icon src={Icons.Cross} size="100" />
+                </IconButton>
+              )
+            }
+          />
+        </Box>
+        <Button
+          size="400"
+          variant={hasChanges ? 'Success' : 'Secondary'}
+          fill={hasChanges ? 'Solid' : 'Soft'}
+          outlined
+          radii="300"
+          disabled={!hasChanges}
+          type="submit"
+        >
+          <Text size="B400">Save</Text>
+        </Button>
+      </Box>
+    </SettingTile>
+  );
+}
+
+type PresetDateFormatProps = {
+  dateFormatPreset: string;
+  handlePresetChange: (format: string) => void;
+};
+
+function PresetDateFormat({ dateFormatPreset, handlePresetChange }: PresetDateFormatProps) {
   const [menuCords, setMenuCords] = useState<RectCords>();
-  const [dateFormatString, setDateFormatString] = useSetting(settingsAtom, 'dateFormatString');
   const dateFormatItems = useDateFormatItems();
 
   const handleMenu: MouseEventHandler<HTMLButtonElement> = (evt) => {
@@ -353,7 +451,7 @@ function SelectDateFormat() {
   };
 
   const handleSelect = (format: DateFormat) => {
-    setDateFormatString(format);
+    handlePresetChange(format);
     setMenuCords(undefined);
   };
 
@@ -369,7 +467,7 @@ function SelectDateFormat() {
         onClick={handleMenu}
       >
         <Text size="T300">
-          {dateFormatItems.find((i) => i.format === dateFormatString)?.name ?? dateFormatString}
+          {dateFormatItems.find((i) => i.format === dateFormatPreset)?.name ?? dateFormatPreset}
         </Text>
       </Button>
       <PopOut
@@ -396,7 +494,7 @@ function SelectDateFormat() {
                   <MenuItem
                     key={item.format}
                     size="300"
-                    variant={dateFormatString === item.format ? 'Primary' : 'Surface'}
+                    variant={dateFormatPreset === item.format ? 'Primary' : 'Surface'}
                     radii="300"
                     onClick={() => handleSelect(item.format)}
                   >
@@ -408,6 +506,39 @@ function SelectDateFormat() {
           </FocusTrap>
         }
       />
+    </>
+  );
+}
+
+function SelectDateFormat() {
+  const [dateFormatString, setDateFormatString] = useSetting(settingsAtom, 'dateFormatString');
+  const [dateFormatPreset, setDateFormatPreset] = useState(dateFormatString);
+
+  const handlePresetChange = (format: string) => {
+    setDateFormatPreset(format);
+    if (format !== '') {
+      setDateFormatString(format);
+    }
+  };
+
+  return (
+    <>
+      <SettingTile
+        title="Date Format"
+        description={dayjs().format(dateFormatString)}
+        after={
+          <PresetDateFormat
+            dateFormatPreset={dateFormatPreset}
+            handlePresetChange={handlePresetChange}
+          />
+        }
+      />
+      {dateFormatPreset === '' && (
+        <CustomDateFormat
+          dateFormatString={dateFormatString}
+          setDateFormatString={setDateFormatString}
+        />
+      )}
     </>
   );
 }
@@ -426,7 +557,7 @@ function DateAndTime() {
       </SequenceCard>
 
       <SequenceCard className={SequenceCardStyle} variant="SurfaceVariant" direction="Column">
-        <SettingTile title="Date Format" after={<SelectDateFormat />} />
+        <SelectDateFormat />
       </SequenceCard>
     </Box>
   );

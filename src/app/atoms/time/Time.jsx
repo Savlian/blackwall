@@ -21,7 +21,10 @@ function Time({ timestamp, fullTime, hour24Clock, dateFormatString }) {
 
     const timeFormat = hour24Clock ? 'HH:MM' : 'hh:MM TT';
 
-    formattedDate = dateFormat(date, isToday || isYesterday ? timeFormat : dateFormatString);
+    formattedDate = dateFormat(
+      date,
+      isToday || isYesterday ? timeFormat : dateFormatString.toLowerCase()
+    );
     if (isYesterday) {
       formattedDate = `Yesterday, ${formattedDate}`;
     }

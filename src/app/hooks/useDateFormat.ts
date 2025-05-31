@@ -18,6 +18,10 @@ export const useDateFormatItems = (): DateFormatItem[] =>
         name: 'DD/MM/YYYY',
       },
       {
+        format: 'MM/DD/YYYY',
+        name: 'MM/DD/YYYY',
+      },
+      {
         format: 'YYYY/MM/DD',
         name: 'YYYY/MM/DD',
       },
