@@ -358,8 +358,8 @@ function CustomDateFormat({ dateFormatString, setDateFormatString }: CustomDateF
   }, [dateFormatString]);
 
   const handleChange: ChangeEventHandler<HTMLInputElement> = (evt) => {
-    const name = evt.currentTarget.value;
-    setDateFormatCustom(name);
+    const format = evt.currentTarget.value;
+    setDateFormatCustom(format);
   };
 
   const handleReset = () => {
