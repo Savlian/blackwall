@@ -103,10 +103,10 @@ export function RoomView({ room, eventId }: { room: Room; eventId?: string }) {
   );
 
   useEffect(() => {
-    if (screenSize === ScreenSize.Desktop) {
+    if (screenSize === ScreenSize.Desktop && canMessage) {
       ReactEditor.focus(editor);
     }
-  }, [editor, screenSize]);
+  }, [editor, screenSize, canMessage]);
 
   return (
     <Page ref={roomViewRef}>
