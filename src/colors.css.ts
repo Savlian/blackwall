@@ -236,3 +236,55 @@ export const butterTheme = createTheme(color, {
     OnContainer: '#F2EED3',
   },
 });
+export const blackTheme = createTheme(color, {
+  ...darkThemeData,
+  Background: {
+    Container: 'black',
+    ContainerHover: 'none',
+    ContainerActive: 'gray',
+    ContainerLine: 'white',
+    OnContainer: 'white',
+  },
+  Surface: {
+    Container: 'noen',
+    ContainerHover: 'none',
+    ContainerActive: 'none',
+    ContainerLine: 'none',
+    OnContainer: 'none',
+  },
+
+  SurfaceVariant: {
+    Container: 'none',
+    ContainerHover: 'none',
+    ContainerActive: 'none',
+    ContainerLine: 'none',
+    OnContainer: 'none',
+  },
+
+  Primary: {
+    Main: 'white',
+    MainHover: 'gray',
+    MainActive: 'white',
+    MainLine: 'white',
+    OnMain: 'black',
+    Container: 'black',
+    ContainerHover: 'gray',
+    ContainerActive: 'white',
+    ContainerLine: 'white',
+    OnContainer: 'white',
+ },
+
+  Secondary: {
+    Main: 'none',
+    MainHover: 'none',
+    MainActive: 'none',
+    MainLine: 'none',
+    OnMain: 'none',
+    Container: '#none',
+    ContainerHover: 'none',
+    ContainerActive: 'none',
+    ContainerLine: 'none',
+    OnContainer: 'none',
+  },
+});
+
