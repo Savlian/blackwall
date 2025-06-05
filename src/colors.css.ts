@@ -250,7 +250,7 @@ export const blackTheme = createTheme(color, {
     ContainerHover: 'none',
     ContainerActive: 'none',
     ContainerLine: 'none',
-    OnContainer: 'none',
+    OnContainer: 'white',
   },
 
   SurfaceVariant: {
@@ -258,7 +258,7 @@ export const blackTheme = createTheme(color, {
     ContainerHover: 'none',
     ContainerActive: 'none',
     ContainerLine: 'none',
-    OnContainer: 'none',
+    OnContainer: 'white',
   },
 
   Primary: {
@@ -266,8 +266,8 @@ export const blackTheme = createTheme(color, {
     MainHover: 'gray',
     MainActive: 'white',
     MainLine: 'white',
-    OnMain: 'black',
-    Container: 'black',
+    OnMain: 'gray',
+    Container: 'none',
     ContainerHover: 'gray',
     ContainerActive: 'white',
     ContainerLine: 'white',
@@ -284,7 +284,7 @@ export const blackTheme = createTheme(color, {
     ContainerHover: 'none',
     ContainerActive: 'none',
     ContainerLine: 'none',
-    OnContainer: 'none',
+    OnContainer: 'white',
   },
 });
 
