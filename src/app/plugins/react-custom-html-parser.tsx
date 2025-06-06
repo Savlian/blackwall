@@ -1,5 +1,11 @@
 /* eslint-disable jsx-a11y/alt-text */
-import React, { ComponentPropsWithoutRef, ReactEventHandler, Suspense, lazy } from 'react';
+import React, {
+  ComponentPropsWithoutRef,
+  ReactEventHandler,
+  Suspense,
+  lazy,
+  useState,
+} from 'react';
 import {
   Element,
   Text as DOMText,
@@ -9,10 +15,11 @@ import {
 } from 'html-react-parser';
 import { MatrixClient } from 'matrix-js-sdk';
 import classNames from 'classnames';
-import { Scroll, Text } from 'folds';
+import { Icon, IconButton, Icons, Scroll, Text } from 'folds';
 import { IntermediateRepresentation, Opts as LinkifyOpts, OptFn } from 'linkifyjs';
 import Linkify from 'linkify-react';
 import { ErrorBoundary } from 'react-error-boundary';
+import { ChildNode } from 'domhandler';
 import * as css from '../styles/CustomHtml.css';
 import {
   getMxIdLocalPart,
@@ -31,7 +38,7 @@ import {
   testMatrixTo,
 } from './matrix-to';
 import { onEnterOrSpace } from '../utils/keyboard';
-import { tryDecodeURIComponent } from '../utils/dom';
+import { copyToClipboard, tryDecodeURIComponent } from '../utils/dom';
 
 const ReactPrism = lazy(() => import('./react-prism/ReactPrism'));
 
@@ -195,6 +202,50 @@ export const highlightText = (
     );
   });
 
+export function CodeBlock(children: ChildNode[], opts: HTMLReactParserOptions) {
+  const [copied, setCopied] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+
+  //HANDLECOPY FUNCTION HERE?
+  const handleCopyClick = () => {
+    //const codeText = extractTextFromChildren(children); // IDK HOW THIS SHOULD BE DONE
+    //copyToClipboard(codeText);
+
+    setCopied(true);
+  };
+
+  return (
+    // Probably need a better copy icon
+    <>
+      <div className={css.CodeBlockControls}>
+        <IconButton
+          variant="Secondary"
+          size="300"
+          radii="300"
+          onClick={() => {
+            handleCopyClick();
+          }}
+        >
+          <Icon src={copied ? Icons.Check : Icons.File} size="50" />
+        </IconButton>
+        <IconButton
+          variant="Secondary" // Collapse - how to show icon even when not hovering if collapsed?
+          size="300" //This should be somewhat persistent - how?
+          radii="300"
+          onClick={() => {
+            setCollapsed(!collapsed);
+          }}
+        >
+          <Icon src={collapsed ? Icons.ChevronRight : Icons.ChevronBottom} size="50" />
+        </IconButton>
+      </div>
+      <Scroll direction="Horizontal" variant="Secondary" size="300" visibility="Hover" hideTrack>
+        <div className={css.CodeBlockInternal({ collapsed })}>{domToReact(children, opts)}</div>
+      </Scroll>
+    </>
+  );
+}
+
 export const getReactCustomHtmlParser = (
   mx: MatrixClient,
   roomId: string | undefined,
@@ -270,16 +321,9 @@ export const getReactCustomHtmlParser = (
 
         if (name === 'pre') {
           return (
-            <Text {...props} as="pre" className={css.CodeBlock}>
-              <Scroll
-                direction="Horizontal"
-                variant="Secondary"
-                size="300"
-                visibility="Hover"
-                hideTrack
-              >
-                <div className={css.CodeBlockInternal}>{domToReact(children, opts)}</div>
-              </Scroll>
+            //SHOULD ALL OF THIS BE IN A renderCodeBlock function? not text, but one layr down
+            <Text {...props} as="pre" className={css.CodeBlock} style={{ position: 'relative' }}>
+              {CodeBlock(children, opts)}
             </Text>
           );
         }

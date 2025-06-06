@@ -87,8 +87,33 @@ export const CodeBlock = style([
     fontStyle: 'normal',
   },
 ]);
-export const CodeBlockInternal = style({
-  padding: `${config.space.S200} ${config.space.S200} 0`,
+export const CodeBlockInternal = recipe({
+  base: [
+    DefaultReset,
+    {
+      padding: `${config.space.S200} ${config.space.S200} 0`,
+      minWidth: config.size.ModalDrawerWidth,
+    },
+  ],
+  variants: {
+    collapsed: {
+      true: {
+        maxHeight: config.space.S700, // should controls (collapse) be visible when collapsed? - yes, what's the best way to do this?
+        overflow: 'hidden', // collapse should also only be visible if the doc has more than 1 line
+      },
+    },
+  },
+});
+export const CodeBlockControls = style({
+  position: 'absolute',
+  top: config.space.S200,
+  right: config.space.S200,
+  display: 'none',
+  selectors: {
+    [`${CodeBlock}:hover &`]: {
+      display: 'inline',
+    },
+  },
 });
 
 export const List = style([
