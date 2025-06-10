@@ -11,10 +11,13 @@ import { roomToParentsAtom } from '../../../state/room/roomToParents';
 import { allRoomsAtom } from '../../../state/room-list/roomList';
 import { useSearchParamsViaServers } from '../../../hooks/router/useSearchParamsViaServers';
 import { mDirectAtom } from '../../../state/mDirectList';
+import { settingsAtom } from '../../../state/settings';
+import { useSetting } from '../../../state/hooks/settings';
 
 export function SpaceRouteRoomProvider({ children }: { children: ReactNode }) {
   const mx = useMatrixClient();
   const space = useSpace();
+  const [developerTools] = useSetting(settingsAtom, 'developerTools');
   const [roomToParents, setRoomToParents] = useAtom(roomToParentsAtom);
   const mDirects = useAtomValue(mDirectAtom);
   const allRooms = useAtomValue(allRoomsAtom);
@@ -35,7 +38,7 @@ export function SpaceRouteRoomProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  if (room.isSpaceRoom() && room.roomId === space.roomId) {
+  if (developerTools && room.isSpaceRoom() && room.roomId === space.roomId) {
     // allow to view space timeline
     return (
       <RoomProvider key={room.roomId} value={room}>

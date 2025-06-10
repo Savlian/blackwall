@@ -13,6 +13,8 @@ import { getOrphanParents } from '../utils/room';
 import { roomToParentsAtom } from '../state/room/roomToParents';
 import { mDirectAtom } from '../state/mDirectList';
 import { useSelectedSpace } from './router/useSelectedSpace';
+import { settingsAtom } from '../state/settings';
+import { useSetting } from '../state/hooks/settings';
 
 export const useRoomNavigate = () => {
   const navigate = useNavigate();
@@ -20,6 +22,7 @@ export const useRoomNavigate = () => {
   const roomToParents = useAtomValue(roomToParentsAtom);
   const mDirects = useAtomValue(mDirectAtom);
   const spaceSelectedId = useSelectedSpace();
+  const [developerTools] = useSetting(settingsAtom, 'developerTools');
 
   const navigateSpace = useCallback(
     (roomId: string) => {
@@ -32,9 +35,9 @@ export const useRoomNavigate = () => {
   const navigateRoom = useCallback(
     (roomId: string, eventId?: string, opts?: NavigateOptions) => {
       const roomIdOrAlias = getCanonicalAliasOrRoomId(mx, roomId);
+      const openSpaceTimeline = developerTools && spaceSelectedId === roomId;
 
-      const orphanParents =
-        spaceSelectedId === roomId ? [roomId] : getOrphanParents(roomToParents, roomId);
+      const orphanParents = openSpaceTimeline ? [roomId] : getOrphanParents(roomToParents, roomId);
       if (orphanParents.length > 0) {
         const pSpaceIdOrAlias = getCanonicalAliasOrRoomId(
           mx,
@@ -43,7 +46,7 @@ export const useRoomNavigate = () => {
             : orphanParents[0] // TODO: better orphan parent selection.
         );
 
-        if (spaceSelectedId === roomId) {
+        if (openSpaceTimeline) {
           navigate(getSpaceRoomPath(pSpaceIdOrAlias, roomId, eventId), opts);
           return;
         }
@@ -59,7 +62,7 @@ export const useRoomNavigate = () => {
 
       navigate(getHomeRoomPath(roomIdOrAlias, eventId), opts);
     },
-    [mx, navigate, spaceSelectedId, roomToParents, mDirects]
+    [mx, navigate, spaceSelectedId, roomToParents, mDirects, developerTools]
   );
 
   return {
