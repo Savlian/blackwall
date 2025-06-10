@@ -33,14 +33,21 @@ export const useRoomNavigate = () => {
     (roomId: string, eventId?: string, opts?: NavigateOptions) => {
       const roomIdOrAlias = getCanonicalAliasOrRoomId(mx, roomId);
 
-      const orphanParents = getOrphanParents(roomToParents, roomId);
+      const orphanParents =
+        spaceSelectedId === roomId ? [roomId] : getOrphanParents(roomToParents, roomId);
       if (orphanParents.length > 0) {
         const pSpaceIdOrAlias = getCanonicalAliasOrRoomId(
           mx,
           spaceSelectedId && orphanParents.includes(spaceSelectedId)
             ? spaceSelectedId
-            : orphanParents[0]
+            : orphanParents[0] // TODO: better orphan parent selection.
         );
+
+        if (spaceSelectedId === roomId) {
+          navigate(getSpaceRoomPath(pSpaceIdOrAlias, roomId, eventId), opts);
+          return;
+        }
+
         navigate(getSpaceRoomPath(pSpaceIdOrAlias, roomIdOrAlias, eventId), opts);
         return;
       }
