@@ -252,6 +252,12 @@ function CodeBlockControls({
 export function CodeBlock(children: ChildNode[], opts: HTMLReactParserOptions) {
   const LINE_LIMIT = 14;
 
+  /**
+   * Recursively extracts and concatenates all text content from an array of ChildNode objects.
+   *
+   * @param {ChildNode[]} nodes - An array of ChildNode objects to extract text from.
+   * @returns {string} The concatenated plain text content of all descendant text nodes.
+   */
   const extractTextFromChildren = useCallback((nodes: ChildNode[]): string => {
     let text = '';
 
