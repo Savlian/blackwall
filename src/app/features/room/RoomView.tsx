@@ -65,7 +65,6 @@ export function RoomView({ room, eventId }: { room: Room; eventId?: string }) {
   const [hideActivity] = useSetting(settingsAtom, 'hideActivity');
 
   const screenSize = useScreenSizeContext();
-
   const { roomId } = room;
   const editor = useEditor();
 
@@ -103,7 +102,7 @@ export function RoomView({ room, eventId }: { room: Room; eventId?: string }) {
   );
 
   useEffect(() => {
-    if (screenSize === ScreenSize.Desktop && canMessage) {
+    if (screenSize === ScreenSize.Desktop && canMessage && editor) {
       ReactEditor.focus(editor);
     }
   }, [editor, screenSize, canMessage]);
