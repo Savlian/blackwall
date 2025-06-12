@@ -4,6 +4,8 @@ import React, {
   ReactEventHandler,
   Suspense,
   lazy,
+  useCallback,
+  useMemo,
   useState,
 } from 'react';
 import {
@@ -202,45 +204,103 @@ export const highlightText = (
     );
   });
 
-export function CodeBlock(children: ChildNode[], opts: HTMLReactParserOptions) {
-  const [copied, setCopied] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+type CodeBlockControlsProps = {
+  copied: boolean;
+  onCopy: () => void;
+  collapsible: boolean;
+  collapsed: boolean;
+  onToggle: () => void;
+};
 
-  //HANDLECOPY FUNCTION HERE?
-  const handleCopyClick = () => {
-    //const codeText = extractTextFromChildren(children); // IDK HOW THIS SHOULD BE DONE
-    //copyToClipboard(codeText);
-
-    setCopied(true);
-  };
-
+function CodeBlockControls({
+  copied,
+  onCopy,
+  collapsible,
+  collapsed,
+  onToggle,
+}: CodeBlockControlsProps) {
   return (
-    // Probably need a better copy icon
-    <>
-      <div className={css.CodeBlockControls}>
+    // Needs a better copy icon
+    <div className={css.CodeBlockControls}>
+      <IconButton
+        variant="Secondary"
+        size="300"
+        radii="300"
+        onClick={onCopy}
+        aria-label="Copy Code Block"
+      >
+        <Icon src={copied ? Icons.Check : Icons.File} size="50" />
+      </IconButton>
+      {collapsible && (
         <IconButton
           variant="Secondary"
           size="300"
           radii="300"
-          onClick={() => {
-            handleCopyClick();
-          }}
-        >
-          <Icon src={copied ? Icons.Check : Icons.File} size="50" />
-        </IconButton>
-        <IconButton
-          variant="Secondary" // Collapse - how to show icon even when not hovering if collapsed?
-          size="300" //This should be somewhat persistent - how?
-          radii="300"
-          onClick={() => {
-            setCollapsed(!collapsed);
-          }}
+          onClick={onToggle}
+          aria-expanded={!collapsed}
+          aria-controls="code-block-content"
+          aria-label={collapsed ? 'Show Full Code Block' : 'Show Code Block Preview'}
+          style={collapsed ? { visibility: 'visible' } : {}}
         >
           <Icon src={collapsed ? Icons.ChevronRight : Icons.ChevronBottom} size="50" />
         </IconButton>
-      </div>
-      <Scroll direction="Horizontal" variant="Secondary" size="300" visibility="Hover" hideTrack>
-        <div className={css.CodeBlockInternal({ collapsed })}>{domToReact(children, opts)}</div>
+      )}
+    </div>
+  );
+}
+
+export function CodeBlock(children: ChildNode[], opts: HTMLReactParserOptions) {
+  const LINE_LIMIT = 14;
+
+  const extractTextFromChildren = useCallback((nodes: ChildNode[]): string => {
+    let text = '';
+
+    nodes.forEach((node) => {
+      if (node.type === 'text') {
+        text += node.data;
+      } else if (node instanceof Element && node.children) {
+        text += extractTextFromChildren(node.children);
+      }
+    });
+
+    return text;
+  }, []);
+
+  const [copied, setCopied] = useState(false);
+  const collapsible = useMemo(
+    () => extractTextFromChildren(children).split('\n').length > LINE_LIMIT,
+    [children, extractTextFromChildren]
+  );
+  const [collapsed, setCollapsed] = useState(collapsible);
+
+  const handleCopy = useCallback(() => {
+    copyToClipboard(extractTextFromChildren(children));
+    setCopied(true);
+  }, [children, extractTextFromChildren]);
+
+  const toggleCollapse = useCallback(() => {
+    setCollapsed((prev) => !prev);
+  }, []);
+
+  return (
+    <>
+      <CodeBlockControls
+        copied={copied}
+        onCopy={handleCopy}
+        collapsible={collapsible}
+        collapsed={collapsed}
+        onToggle={toggleCollapse}
+      />
+      <Scroll
+        direction={collapsed ? 'Both' : 'Horizontal'}
+        variant="Secondary"
+        size="300"
+        visibility="Hover"
+        hideTrack
+      >
+        <div id="code-block-content" className={css.CodeBlockInternal({ collapsed })}>
+          {domToReact(children, opts)}
+        </div>
       </Scroll>
     </>
   );
@@ -321,8 +381,7 @@ export const getReactCustomHtmlParser = (
 
         if (name === 'pre') {
           return (
-            //SHOULD ALL OF THIS BE IN A renderCodeBlock function? not text, but one layr down
-            <Text {...props} as="pre" className={css.CodeBlock} style={{ position: 'relative' }}>
+            <Text {...props} as="pre" className={css.CodeBlock}>
               {CodeBlock(children, opts)}
             </Text>
           );

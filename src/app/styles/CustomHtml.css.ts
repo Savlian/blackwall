@@ -85,6 +85,7 @@ export const CodeBlock = style([
   MarginSpaced,
   {
     fontStyle: 'normal',
+    position: 'relative',
   },
 ]);
 export const CodeBlockInternal = recipe({
@@ -98,8 +99,7 @@ export const CodeBlockInternal = recipe({
   variants: {
     collapsed: {
       true: {
-        maxHeight: config.space.S700, // should controls (collapse) be visible when collapsed? - yes, what's the best way to do this?
-        overflow: 'hidden', // collapse should also only be visible if the doc has more than 1 line
+        maxHeight: `calc(${config.size.ModalDrawerWidth} - ${config.lineHeight.T400} / 2)`,
       },
     },
   },
@@ -108,10 +108,10 @@ export const CodeBlockControls = style({
   position: 'absolute',
   top: config.space.S200,
   right: config.space.S200,
-  display: 'none',
+  visibility: 'hidden',
   selectors: {
     [`${CodeBlock}:hover &`]: {
-      display: 'inline',
+      visibility: 'visible',
     },
   },
 });
