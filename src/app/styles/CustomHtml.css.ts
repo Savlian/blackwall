@@ -113,6 +113,9 @@ export const CodeBlockControls = style({
     [`${CodeBlock}:hover &`]: {
       visibility: 'visible',
     },
+    [`${CodeBlock}:focus-within &`]: {
+      visibility: 'visible',
+    },
   },
 });
 
