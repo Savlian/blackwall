@@ -34,7 +34,7 @@ import { RoomTopicViewer } from '../../components/room-topic-viewer';
 import { StateEvent } from '../../../types/matrix/room';
 import { useMatrixClient } from '../../hooks/useMatrixClient';
 import { useRoom } from '../../hooks/useRoom';
-import { useSetSetting, useSetting } from '../../state/hooks/settings';
+import { useSetting } from '../../state/hooks/settings';
 import { settingsAtom } from '../../state/settings';
 import { useSpaceOptionally } from '../../hooks/useSpace';
 import { getHomeSearchPath, getSpaceSearchPath, withSearchParam } from '../../pages/pathUtils';
@@ -230,7 +230,7 @@ export function RoomViewHeader() {
     ? mxcUrlToHttp(mx, avatarMxc, useAuthentication, 96, 96, 'crop') ?? undefined
     : undefined;
 
-  const setPeopleDrawer = useSetSetting(settingsAtom, 'isPeopleDrawer');
+  const [peopleDrawer, setPeopleDrawer] = useSetting(settingsAtom, 'isPeopleDrawer');
 
   const handleSearchClick = () => {
     const searchParams: _SearchPathSearchParams = {
@@ -410,7 +410,7 @@ export function RoomViewHeader() {
             >
               {(triggerRef) => (
                 <IconButton ref={triggerRef} onClick={() => setPeopleDrawer((drawer) => !drawer)}>
-                  <Icon size="400" src={Icons.User} />
+                  <Icon size="400" src={Icons.User} filled={peopleDrawer} />
                 </IconButton>
               )}
             </TooltipProvider>
