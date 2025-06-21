@@ -89,13 +89,10 @@ export const CodeBlock = style([
   },
 ]);
 export const CodeBlockInternal = recipe({
-  base: [
-    DefaultReset,
-    {
-      padding: `${config.space.S200} ${config.space.S200} 0`,
-      minWidth: config.size.ModalDrawerWidth,
-    },
-  ],
+  base: {
+    padding: `${config.space.S200} ${config.space.S200} 0`,
+    minWidth: config.size.ModalDrawerWidth,
+  },
   variants: {
     collapsed: {
       true: {
