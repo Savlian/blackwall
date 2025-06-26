@@ -1,5 +1,7 @@
 @use './app/partials/screen';
 
+@import url('https://fonts.googleapis.com/css2?family=Questrial&display=swap');
+
 @font-face {
   font-family: Twemoji;
   src: url('../public/font/Twemoji.Mozilla.v15.1.0.woff2'),
@@ -11,18 +13,18 @@
   /* background color | --bg-[background type]: value */
   --bg-surface: #ffffff;
   --bg-surface-transparent: #ffffff00;
-  --bg-surface-low: #f6f6f6;
-  --bg-surface-low-transparent: #f6f6f600;
-  --bg-surface-extra-low: #f6f6f6;
-  --bg-surface-extra-low-transparent: #f6f6f600;
+  --bg-surface-low: #ffffff;
+  --bg-surface-low-transparent: #ffffff00;
+  --bg-surface-extra-low: #f8f8f8;
+  --bg-surface-extra-low-transparent: #f8f8f800;
   --bg-surface-hover: rgba(0, 0, 0, 3%);
   --bg-surface-active: rgba(0, 0, 0, 5%);
-  --bg-surface-border: rgba(0, 0, 0, 6%);
+  --bg-surface-border: rgba(220, 220, 220, 100%);
 
-  --bg-primary: rgb(18, 69, 168);
-  --bg-primary-hover: rgba(18, 69, 168, 80%);
-  --bg-primary-active: rgba(18, 69, 168, 70%);
-  --bg-primary-border: rgba(18, 69, 168, 38%);
+  --bg-primary: rgb(0, 0, 0);
+  --bg-primary-hover: rgba(0, 0, 0, 80%);
+  --bg-primary-active: rgba(0, 0, 0, 70%);
+  --bg-primary-border: rgba(0, 0, 0, 20%);
 
   --bg-positive: rgb(1, 115, 67);
   --bg-positive-hover: rgba(1, 115, 67, 8%);
@@ -193,8 +195,8 @@
   --fluid-slide-up: cubic-bezier(0.13, 0.56, 0.25, 0.99);
 
   --font-emoji: 'Twemoji_DISABLED';
-  --font-primary: 'InterVariable', var(--font-emoji), sans-serif;
-  --font-secondary: 'InterVariable', var(--font-emoji), sans-serif;
+  --font-primary: 'Questrial', var(--font-emoji), sans-serif;
+  --font-secondary: 'Questrial', var(--font-emoji), sans-serif;
 }
 
 .silver-theme {

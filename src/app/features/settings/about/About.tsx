@@ -4,7 +4,7 @@ import { Page, PageContent, PageHeader } from '../../../components/page';
 import { SequenceCard } from '../../../components/sequence-card';
 import { SequenceCardStyle } from '../styles.css';
 import { SettingTile } from '../../../components/setting-tile';
-import CinnySVG from '../../../../../public/res/svg/cinny.svg';
+import ClovrLabsLogo from '../../../../../public/res/clovrlabs-logo-black.webp';
 import cons from '../../../../client/state/cons';
 import { clearCacheAndReload } from '../../../../client/initMatrix';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
@@ -39,23 +39,23 @@ export function About({ requestClose }: AboutProps) {
                 <Box shrink="No">
                   <img
                     style={{ width: toRem(60), height: toRem(60) }}
-                    src={CinnySVG}
-                    alt="Cinny logo"
+                    src={ClovrLabsLogo}
+                    alt="Clovr Labs logo"
                   />
                 </Box>
                 <Box direction="Column" gap="300">
                   <Box direction="Column" gap="100">
                     <Box gap="100" alignItems="End">
-                      <Text size="H3">Cinny</Text>
+                      <Text size="H3">Clovr Labs</Text>
                       <Text size="T200">v{cons.version}</Text>
                     </Box>
-                    <Text>Yet another matrix client.</Text>
+                    <Text>Secure matrix client for teams.</Text>
                   </Box>
 
                   <Box gap="200" wrap="Wrap">
                     <Button
                       as="a"
-                      href="https://github.com/cinnyapp/cinny"
+                      href="https://clovrlabs.com/products"
                       rel="noreferrer noopener"
                       target="_blank"
                       variant="Secondary"
@@ -64,11 +64,11 @@ export function About({ requestClose }: AboutProps) {
                       radii="300"
                       before={<Icon src={Icons.Code} size="100" filled />}
                     >
-                      <Text size="B300">Source Code</Text>
+                      <Text size="B300">Our Products</Text>
                     </Button>
                     <Button
                       as="a"
-                      href="https://cinny.in/#sponsor"
+                      href="https://clovrlabs.com/contact"
                       rel="noreferrer noopener"
                       target="_blank"
                       variant="Critical"
@@ -77,7 +77,7 @@ export function About({ requestClose }: AboutProps) {
                       radii="300"
                       before={<Icon src={Icons.Heart} size="100" filled />}
                     >
-                      <Text size="B300">Support</Text>
+                      <Text size="B300">Contact Us</Text>
                     </Button>
                   </Box>
                 </Box>

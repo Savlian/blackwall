@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Button, Icon, Icons, Text, config, toRem } from 'folds';
 import { Page, PageHero, PageHeroSection } from '../../components/page';
-import CinnySVG from '../../../../public/res/svg/cinny.svg';
+import ClovrLabsLogo from '../../../../public/res/clovrlabs-logo-black.webp';
 
 export function WelcomePage() {
   return (
@@ -14,17 +14,17 @@ export function WelcomePage() {
       >
         <PageHeroSection>
           <PageHero
-            icon={<img width="70" height="70" src={CinnySVG} alt="Cinny Logo" />}
-            title="Welcome to Cinny"
+            icon={<img width="170" height="auto" src={ClovrLabsLogo} alt="Clovr Labs Logo" />}
+            title="Welcome to Clovr Labs"
             subTitle={
               <span>
-                Yet another matrix client.{' '}
+                Reach out channel for .{' '}
                 <a
-                  href="https://github.com/cinnyapp/cinny/releases"
+                  href="https://clovrlabs.com"
                   target="_blank"
                   rel="noreferrer noopener"
                 >
-                  v4.8.1
+                  Learn More
                 </a>
               </span>
             }
@@ -33,25 +33,25 @@ export function WelcomePage() {
               <Box grow="Yes" style={{ maxWidth: toRem(300) }} direction="Column" gap="300">
                 <Button
                   as="a"
-                  href="https://github.com/cinnyapp/cinny"
+                  href="https://clovrlabs.com/products"
                   target="_blank"
                   rel="noreferrer noopener"
                   before={<Icon size="200" src={Icons.Code} />}
                 >
                   <Text as="span" size="B400" truncate>
-                    Source Code
+                    Our Products
                   </Text>
                 </Button>
                 <Button
                   as="a"
-                  href="https://cinny.in/#sponsor"
+                  href="https://clovrlabs.com/contact"
                   target="_blank"
                   rel="noreferrer noopener"
                   fill="Soft"
                   before={<Icon size="200" src={Icons.Heart} />}
                 >
                   <Text as="span" size="B400" truncate>
-                    Support
+                    Contact Us
                   </Text>
                 </Button>
               </Box>
