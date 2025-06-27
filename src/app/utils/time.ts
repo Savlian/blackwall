@@ -24,7 +24,7 @@ export const timeDayMonYear = (ts: number): string => dayjs(ts).format('D MMM YY
 export const timeDayMonthYear = (ts: number): string => dayjs(ts).format('D MMMM YYYY');
 
 export const daysInMonth = (month: number, year: number): number =>
-  dayjs(`${year}-${month}-1'`).daysInMonth();
+  dayjs(`${year}-${month}-1`).daysInMonth();
 
 export const dateFor = (year: number, month: number, day: number): number =>
   dayjs(`${year}-${month}-${day}`).valueOf();
