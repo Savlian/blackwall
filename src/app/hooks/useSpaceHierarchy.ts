@@ -1,6 +1,6 @@
 import { atom, useAtom, useAtomValue } from 'jotai';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MatrixError, Room } from 'matrix-js-sdk';
+import { MatrixError, MatrixEvent, Room } from 'matrix-js-sdk';
 import { IHierarchyRoom } from 'matrix-js-sdk/lib/@types/spaces';
 import { QueryFunction, useInfiniteQuery } from '@tanstack/react-query';
 import { useMatrixClient } from './useMatrixClient';
@@ -18,6 +18,7 @@ export type HierarchyItemSpace = {
   ts: number;
   space: true;
   parentId?: string;
+  depth: number;
 };
 
 export type HierarchyItemRoom = {
@@ -25,6 +26,7 @@ export type HierarchyItemRoom = {
   content: MSpaceChildContent;
   ts: number;
   parentId: string;
+  depth: number;
 };
 
 export type HierarchyItem = HierarchyItemSpace | HierarchyItemRoom;
@@ -34,6 +36,10 @@ type GetRoomCallback = (roomId: string) => Room | undefined;
 const hierarchyItemTs: SortFunc<HierarchyItem> = (a, b) => byTsOldToNew(a.ts, b.ts);
 const hierarchyItemByOrder: SortFunc<HierarchyItem> = (a, b) =>
   byOrderKey(a.content.order, b.content.order);
+
+const childEventTs: SortFunc<MatrixEvent> = (a, b) => byTsOldToNew(a.getTs(), b.getTs());
+const childEventByOrder: SortFunc<MatrixEvent> = (a, b) =>
+  byOrderKey(a.getContent<MSpaceChildContent>().order, b.getContent<MSpaceChildContent>().order);
 
 const getHierarchySpaces = (
   rootSpaceId: string,
@@ -45,8 +51,9 @@ const getHierarchySpaces = (
     content: { via: [] },
     ts: 0,
     space: true,
+    depth: 0,
   };
-  let spaceItems: HierarchyItemSpace[] = [];
+  const spaceItems: HierarchyItemSpace[] = [];
 
   const findAndCollectHierarchySpaces = (spaceItem: HierarchyItemSpace) => {
     if (spaceItems.find((item) => item.roomId === spaceItem.roomId)) return;
@@ -55,36 +62,36 @@ const getHierarchySpaces = (
 
     if (!space) return;
     const childEvents = getStateEvents(space, StateEvent.SpaceChild);
+    childEvents
+      .filter((childEvent) => {
+        if (!isValidChild(childEvent)) return false;
+        const childId = childEvent.getStateKey();
+        if (!childId || !isRoomId(childId)) return false;
+
+        // because we can not find if a childId is space without joining
+        // or requesting room summary, we will look it into spaceRooms local
+        // cache which we maintain as we load summary in UI.
+        return getRoom(childId)?.isSpaceRoom() || spaceRooms.has(childId);
+      })
+      .sort(childEventTs)
+      .sort(childEventByOrder);
 
     childEvents.forEach((childEvent) => {
-      if (!isValidChild(childEvent)) return;
       const childId = childEvent.getStateKey();
       if (!childId || !isRoomId(childId)) return;
 
-      // because we can not find if a childId is space without joining
-      // or requesting room summary, we will look it into spaceRooms local
-      // cache which we maintain as we load summary in UI.
-      if (getRoom(childId)?.isSpaceRoom() || spaceRooms.has(childId)) {
-        const childItem: HierarchyItemSpace = {
-          roomId: childId,
-          content: childEvent.getContent<MSpaceChildContent>(),
-          ts: childEvent.getTs(),
-          space: true,
-          parentId: spaceItem.roomId,
-        };
-        findAndCollectHierarchySpaces(childItem);
-      }
+      const childItem: HierarchyItemSpace = {
+        roomId: childId,
+        content: childEvent.getContent<MSpaceChildContent>(),
+        ts: childEvent.getTs(),
+        space: true,
+        parentId: spaceItem.roomId,
+        depth: spaceItem.depth + 1,
+      };
+      findAndCollectHierarchySpaces(childItem);
     });
   };
   findAndCollectHierarchySpaces(rootSpaceItem);
-
-  spaceItems = [
-    rootSpaceItem,
-    ...spaceItems
-      .filter((item) => item.roomId !== rootSpaceId)
-      .sort(hierarchyItemTs)
-      .sort(hierarchyItemByOrder),
-  ];
 
   return spaceItems;
 };
@@ -121,6 +128,7 @@ const getSpaceHierarchy = (
         content: childEvent.getContent<MSpaceChildContent>(),
         ts: childEvent.getTs(),
         parentId: spaceItem.roomId,
+        depth: spaceItem.depth,
       };
       childItems.push(childItem);
     });
@@ -208,6 +216,7 @@ const getSpaceJoinedHierarchy = (
         content: childEvent.getContent<MSpaceChildContent>(),
         ts: childEvent.getTs(),
         parentId: spaceItem.roomId,
+        depth: spaceItem.depth,
       };
       childItems.push(childItem);
     });

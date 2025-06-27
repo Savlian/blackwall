@@ -318,7 +318,8 @@ export function Space() {
     useCallback(
       (parentId, roomId) => {
         if (!closedCategories.has(makeNavCategoryId(space.roomId, parentId))) {
-          return false;
+          // REWORK HOW THIS WORKS?
+          return false; // This does not account for sub-subspaces, best way to do? - first fix useSpaceHie...
         }
         const showRoom = roomToUnread.has(roomId) || roomId === selectedRoomId;
         if (showRoom) return false;
@@ -345,6 +346,12 @@ export function Space() {
 
   const getToLink = (roomId: string) =>
     getSpaceRoomPath(spaceIdOrAlias, getCanonicalAliasOrRoomId(mx, roomId));
+
+  const getCategoryPadding = (depth: number): string | undefined => {
+    if (depth === 0) return undefined;
+    if (depth === 1) return config.space.S400;
+    return config.space.S200;
+  };
 
   return (
     <PageNav>
@@ -392,12 +399,17 @@ export function Space() {
             }}
           >
             {virtualizer.getVirtualItems().map((vItem) => {
-              const { roomId } = hierarchy[vItem.index] ?? {};
+              const { roomId, depth } = hierarchy[vItem.index] ?? {};
               const room = mx.getRoom(roomId);
               if (!room) return null;
 
+              const paddingLeft = `calc((${depth} - 1) * ${config.space.S200})`;
+
               if (room.isSpaceRoom()) {
                 const categoryId = makeNavCategoryId(space.roomId, roomId);
+                const closed = closedCategories.has(categoryId);
+
+                const paddingTop = getCategoryPadding(depth);
 
                 return (
                   <VirtualTile
@@ -405,12 +417,18 @@ export function Space() {
                     key={vItem.index}
                     ref={virtualizer.measureElement}
                   >
-                    <div style={{ paddingTop: vItem.index === 0 ? undefined : config.space.S400 }}>
+                    <div
+                      style={{
+                        paddingTop,
+                        paddingLeft,
+                      }}
+                    >
                       <NavCategoryHeader>
                         <RoomNavCategoryButton
                           data-category-id={categoryId}
                           onClick={handleCategoryClick}
-                          closed={closedCategories.has(categoryId)}
+                          closed={closed}
+                          aria-expanded={!closed}
                         >
                           {roomId === space.roomId ? 'Rooms' : room?.name}
                         </RoomNavCategoryButton>
@@ -422,14 +440,19 @@ export function Space() {
 
               return (
                 <VirtualTile virtualItem={vItem} key={vItem.index} ref={virtualizer.measureElement}>
-                  <RoomNavItem
-                    room={room}
-                    selected={selectedRoomId === roomId}
-                    showAvatar={mDirects.has(roomId)}
-                    direct={mDirects.has(roomId)}
-                    linkPath={getToLink(roomId)}
-                    notificationMode={getRoomNotificationMode(notificationPreferences, room.roomId)}
-                  />
+                  <div style={{ paddingLeft }}>
+                    <RoomNavItem
+                      room={room}
+                      selected={selectedRoomId === roomId}
+                      showAvatar={mDirects.has(roomId)}
+                      direct={mDirects.has(roomId)}
+                      linkPath={getToLink(roomId)}
+                      notificationMode={getRoomNotificationMode(
+                        notificationPreferences,
+                        room.roomId
+                      )}
+                    />
+                  </div>
                 </VirtualTile>
               );
             })}
