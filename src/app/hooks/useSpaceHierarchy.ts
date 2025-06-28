@@ -44,6 +44,7 @@ const childEventByOrder: SortFunc<MatrixEvent> = (a, b) =>
 const getHierarchySpaces = (
   rootSpaceId: string,
   getRoom: GetRoomCallback,
+  excludeRoom: (parentId: string, roomId: string) => boolean,
   spaceRooms: Set<string>
 ): HierarchyItemSpace[] => {
   const rootSpaceItem: HierarchyItemSpace = {
@@ -79,6 +80,7 @@ const getHierarchySpaces = (
     childEvents.forEach((childEvent) => {
       const childId = childEvent.getStateKey();
       if (!childId || !isRoomId(childId)) return;
+      if (excludeRoom(spaceItem.roomId, childId)) return;
 
       const childItem: HierarchyItemSpace = {
         roomId: childId,
@@ -106,7 +108,12 @@ const getSpaceHierarchy = (
   getRoom: (roomId: string) => Room | undefined,
   closedCategory: (spaceId: string) => boolean
 ): SpaceHierarchy[] => {
-  const spaceItems: HierarchyItemSpace[] = getHierarchySpaces(rootSpaceId, getRoom, spaceRooms);
+  const spaceItems: HierarchyItemSpace[] = getHierarchySpaces(
+    rootSpaceId,
+    getRoom,
+    () => false,
+    spaceRooms
+  );
 
   const hierarchy: SpaceHierarchy[] = spaceItems.map((spaceItem) => {
     const space = getRoom(spaceItem.roomId);
@@ -185,7 +192,12 @@ const getSpaceJoinedHierarchy = (
   excludeRoom: (parentId: string, roomId: string) => boolean,
   sortRoomItems: (parentId: string, items: HierarchyItem[]) => HierarchyItem[]
 ): HierarchyItem[] => {
-  const spaceItems: HierarchyItemSpace[] = getHierarchySpaces(rootSpaceId, getRoom, new Set());
+  const spaceItems: HierarchyItemSpace[] = getHierarchySpaces(
+    rootSpaceId,
+    getRoom,
+    excludeRoom,
+    new Set()
+  );
 
   const hierarchy: HierarchyItem[] = spaceItems.flatMap((spaceItem) => {
     const space = getRoom(spaceItem.roomId);

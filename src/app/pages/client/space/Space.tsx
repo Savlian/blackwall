@@ -292,6 +292,7 @@ export function Space() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const mDirects = useAtomValue(mDirectAtom);
   const roomToUnread = useAtomValue(roomToUnreadAtom);
+  const roomToParents = useAtomValue(roomToParentsAtom);
   const allRooms = useAtomValue(allRoomsAtom);
   const allJoinedRooms = useMemo(() => new Set(allRooms), [allRooms]);
   const notificationPreferences = useRoomsNotificationPreferencesContext();
@@ -312,24 +313,93 @@ export function Space() {
     [mx, allJoinedRooms]
   );
 
+  /**
+   * Recursively checks if a given parentId (and its ancestors) is in a closed category.
+   *
+   * @param spaceId - The root space ID to check against.
+   * @param parentId - The parent room or space ID to start the check from.
+   * @returns True if parentId or any ancestor is in a closed category.
+   */
+  const getInClosedCategories = useCallback(
+    (spaceId: string, parentId: string): boolean => {
+      if (closedCategories.has(makeNavCategoryId(spaceId, parentId))) {
+        return true;
+      }
+
+      const parentParentIds = roomToParents.get(parentId);
+      if (!parentParentIds || parentParentIds.size === 0) {
+        return false;
+      }
+      parentParentIds.forEach((id) => getInClosedCategories(spaceId, id));
+
+      return false;
+    },
+    [closedCategories, roomToParents]
+  );
+
+  // There are a lot better ways to do this
+  const roomToChildren = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    roomToParents.forEach((parentSet, childId) => {
+      parentSet.forEach((parentId) => {
+        if (!map.has(parentId)) map.set(parentId, new Set());
+        /* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */
+        map.get(parentId)!.add(childId);
+      });
+    });
+    return map;
+  }, [roomToParents]);
+
+  /**
+   * Recursively checks if the given room or any of its descendants should be visible.
+   *
+   * @param roomId - The room ID to check.
+   * @returns True if the room or any descendant should be visible.
+   */
+  const getContainsShowRoom = useCallback(
+    (roomId: string): boolean => {
+      if (roomToUnread.has(roomId) || roomId === selectedRoomId) {
+        return true;
+      }
+
+      const childIds = roomToChildren.get(roomId);
+      console.log('CHILDREN');
+      console.log(childIds?.forEach((childId) => getRoom(childId)?.name));
+      if (!childIds || childIds.size === 0) {
+        return false;
+      }
+
+      // CHILD CATEGORY SHOULD COLLAPSE IF PARENT IS COLLAPSED (but retain their set state when expanded?)
+      // WHY ARE CHILDREN DISPLAYED?
+      let visible = false;
+      childIds.forEach((id) => {
+        if (getContainsShowRoom(id)) {
+          visible = true;
+        }
+      });
+
+      return visible;
+    },
+    [roomToUnread, selectedRoomId, roomToChildren]
+  );
+
   const hierarchy = useSpaceJoinedHierarchy(
     space.roomId,
     getRoom,
     useCallback(
       (parentId, roomId) => {
-        if (!closedCategories.has(makeNavCategoryId(space.roomId, parentId))) {
-          // REWORK HOW THIS WORKS?
-          return false; // This does not account for sub-subspaces, best way to do? - first fix useSpaceHie...
+        if (!getInClosedCategories(space.roomId, parentId)) {
+          return false;
         }
-        const showRoom = roomToUnread.has(roomId) || roomId === selectedRoomId;
-        if (showRoom) return false;
+        if (getContainsShowRoom(roomId)) return false;
         return true;
       },
-      [space.roomId, closedCategories, roomToUnread, selectedRoomId]
+      [getContainsShowRoom, getInClosedCategories, space.roomId]
     ),
     useCallback(
-      (sId) => closedCategories.has(makeNavCategoryId(space.roomId, sId)),
-      [closedCategories, space.roomId]
+      //IS CATEGORY CLOSED - SHOULD BE CLOSED IF PARENT IS, add new param?? HOW IS IT HANDLED
+      (sId) => getInClosedCategories(space.roomId, sId),
+      [getInClosedCategories, space.roomId]
     )
   );
 
