@@ -1,10 +1,9 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { Box, Text, config } from 'folds';
 import { EventType, Room } from 'matrix-js-sdk';
 import { ReactEditor } from 'slate-react';
 import { isKeyHotkey } from 'is-hotkey';
 import { useStateEvent } from '../../hooks/useStateEvent';
-import { ScreenSize, useScreenSizeContext } from '../../hooks/useScreenSize';
 import { StateEvent } from '../../../types/matrix/room';
 import { usePowerLevelsAPI, usePowerLevelsContext } from '../../hooks/usePowerLevels';
 import { useMatrixClient } from '../../hooks/useMatrixClient';
@@ -64,7 +63,6 @@ export function RoomView({ room, eventId }: { room: Room; eventId?: string }) {
 
   const [hideActivity] = useSetting(settingsAtom, 'hideActivity');
 
-  const screenSize = useScreenSizeContext();
   const { roomId } = room;
   const editor = useEditor();
 
@@ -100,12 +98,6 @@ export function RoomView({ room, eventId }: { room: Room; eventId?: string }) {
       [editor]
     )
   );
-
-  useEffect(() => {
-    if (screenSize === ScreenSize.Desktop && canMessage && editor) {
-      ReactEditor.focus(editor);
-    }
-  }, [editor, screenSize, canMessage]);
 
   return (
     <Page ref={roomViewRef}>
