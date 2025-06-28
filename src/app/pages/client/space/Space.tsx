@@ -313,30 +313,6 @@ export function Space() {
     [mx, allJoinedRooms]
   );
 
-  /**
-   * Recursively checks if a given parentId (and its ancestors) is in a closed category.
-   *
-   * @param spaceId - The root space ID to check against.
-   * @param parentId - The parent room or space ID to start the check from.
-   * @returns True if parentId or any ancestor is in a closed category.
-   */
-  const getInClosedCategories = useCallback(
-    (spaceId: string, parentId: string): boolean => {
-      if (closedCategories.has(makeNavCategoryId(spaceId, parentId))) {
-        return true;
-      }
-
-      const parentParentIds = roomToParents.get(parentId);
-      if (!parentParentIds || parentParentIds.size === 0) {
-        return false;
-      }
-      parentParentIds.forEach((id) => getInClosedCategories(spaceId, id));
-
-      return false;
-    },
-    [closedCategories, roomToParents]
-  );
-
   // There are a lot better ways to do this
   const roomToChildren = useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -363,14 +339,11 @@ export function Space() {
       }
 
       const childIds = roomToChildren.get(roomId);
-      console.log('CHILDREN');
-      console.log(childIds?.forEach((childId) => getRoom(childId)?.name));
       if (!childIds || childIds.size === 0) {
         return false;
       }
 
       // CHILD CATEGORY SHOULD COLLAPSE IF PARENT IS COLLAPSED (but retain their set state when expanded?)
-      // WHY ARE CHILDREN DISPLAYED?
       let visible = false;
       childIds.forEach((id) => {
         if (getContainsShowRoom(id)) {
@@ -388,18 +361,19 @@ export function Space() {
     getRoom,
     useCallback(
       (parentId, roomId) => {
-        if (!getInClosedCategories(space.roomId, parentId)) {
+        // closedCategories.has(makeNavCategoryId(spaceId, parentId))
+        // NOT SURE THIS IS NEEDED - children of hidden spaces are not displayed
+        if (!closedCategories.has(makeNavCategoryId(space.roomId, parentId))) {
           return false;
         }
         if (getContainsShowRoom(roomId)) return false;
         return true;
       },
-      [getContainsShowRoom, getInClosedCategories, space.roomId]
+      [closedCategories, getContainsShowRoom, space.roomId]
     ),
     useCallback(
-      //IS CATEGORY CLOSED - SHOULD BE CLOSED IF PARENT IS, add new param?? HOW IS IT HANDLED
-      (sId) => getInClosedCategories(space.roomId, sId),
-      [getInClosedCategories, space.roomId]
+      (sId) => closedCategories.has(makeNavCategoryId(space.roomId, sId)),
+      [closedCategories, space.roomId]
     )
   );
 
