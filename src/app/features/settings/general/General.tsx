@@ -346,16 +346,16 @@ function Appearance() {
 }
 
 type CustomDateFormatProps = {
-  dateFormatString: string;
-  setDateFormatString: (format: string) => void;
+  value: string;
+  onChange: (format: string) => void;
 };
 
-function CustomDateFormat({ dateFormatString, setDateFormatString }: CustomDateFormatProps) {
-  const [dateFormatCustom, setDateFormatCustom] = useState(dateFormatString);
+function CustomDateFormat({ value, onChange }: CustomDateFormatProps) {
+  const [dateFormatCustom, setDateFormatCustom] = useState(value);
 
   useEffect(() => {
-    setDateFormatCustom(dateFormatString);
-  }, [dateFormatString]);
+    setDateFormatCustom(value);
+  }, [value]);
 
   const handleChange: ChangeEventHandler<HTMLInputElement> = (evt) => {
     const format = evt.currentTarget.value;
@@ -363,7 +363,7 @@ function CustomDateFormat({ dateFormatString, setDateFormatString }: CustomDateF
   };
 
   const handleReset = () => {
-    setDateFormatCustom(dateFormatString);
+    setDateFormatCustom(value);
   };
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = (evt) => {
@@ -374,10 +374,10 @@ function CustomDateFormat({ dateFormatString, setDateFormatString }: CustomDateF
     const format = customDateFormatInput?.value;
     if (!format) return;
 
-    setDateFormatString(format);
+    onChange(format);
   };
 
-  const hasChanges = dateFormatCustom !== dateFormatString;
+  const hasChanges = dateFormatCustom !== value;
   return (
     <SettingTile
       description={
@@ -438,20 +438,23 @@ function CustomDateFormat({ dateFormatString, setDateFormatString }: CustomDateF
 }
 
 type PresetDateFormatProps = {
-  dateFormatPreset: string;
-  handlePresetChange: (format: string) => void;
+  value: string;
+  onChange: (format: string) => void;
 };
 
-function PresetDateFormat({ dateFormatPreset, handlePresetChange }: PresetDateFormatProps) {
+function PresetDateFormat({ value, onChange }: PresetDateFormatProps) {
   const [menuCords, setMenuCords] = useState<RectCords>();
   const dateFormatItems = useDateFormatItems();
+
+  const getDisplayDate = (format: string): string =>
+    format !== '' ? dayjs().format(format) : 'Custom';
 
   const handleMenu: MouseEventHandler<HTMLButtonElement> = (evt) => {
     setMenuCords(evt.currentTarget.getBoundingClientRect());
   };
 
   const handleSelect = (format: DateFormat) => {
-    handlePresetChange(format);
+    onChange(format);
     setMenuCords(undefined);
   };
 
@@ -467,7 +470,7 @@ function PresetDateFormat({ dateFormatPreset, handlePresetChange }: PresetDateFo
         onClick={handleMenu}
       >
         <Text size="T300">
-          {dateFormatItems.find((i) => i.format === dateFormatPreset)?.name ?? dateFormatPreset}
+          {getDisplayDate(dateFormatItems.find((i) => i.format === value)?.format ?? value)}
         </Text>
       </Button>
       <PopOut
@@ -494,11 +497,11 @@ function PresetDateFormat({ dateFormatPreset, handlePresetChange }: PresetDateFo
                   <MenuItem
                     key={item.format}
                     size="300"
-                    variant={dateFormatPreset === item.format ? 'Primary' : 'Surface'}
+                    variant={value === item.format ? 'Primary' : 'Surface'}
                     radii="300"
                     onClick={() => handleSelect(item.format)}
                   >
-                    <Text size="T300">{item.name}</Text>
+                    <Text size="T300">{getDisplayDate(item.format)}</Text>
                   </MenuItem>
                 ))}
               </Box>
@@ -512,10 +515,11 @@ function PresetDateFormat({ dateFormatPreset, handlePresetChange }: PresetDateFo
 
 function SelectDateFormat() {
   const [dateFormatString, setDateFormatString] = useSetting(settingsAtom, 'dateFormatString');
-  const [dateFormatPreset, setDateFormatPreset] = useState(dateFormatString);
+  const [selectedDateFormat, setSelectedDateFormat] = useState(dateFormatString);
+  const customDateFormat = selectedDateFormat === '';
 
   const handlePresetChange = (format: string) => {
-    setDateFormatPreset(format);
+    setSelectedDateFormat(format);
     if (format !== '') {
       setDateFormatString(format);
     }
@@ -525,19 +529,11 @@ function SelectDateFormat() {
     <>
       <SettingTile
         title="Date Format"
-        description={dayjs().format(dateFormatString)}
-        after={
-          <PresetDateFormat
-            dateFormatPreset={dateFormatPreset}
-            handlePresetChange={handlePresetChange}
-          />
-        }
+        description={customDateFormat ? dayjs().format(dateFormatString) : ''}
+        after={<PresetDateFormat value={selectedDateFormat} onChange={handlePresetChange} />}
       />
-      {dateFormatPreset === '' && (
-        <CustomDateFormat
-          dateFormatString={dateFormatString}
-          setDateFormatString={setDateFormatString}
-        />
+      {customDateFormat && (
+        <CustomDateFormat value={dateFormatString} onChange={setDateFormatString} />
       )}
     </>
   );
