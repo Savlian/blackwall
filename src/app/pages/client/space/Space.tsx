@@ -313,7 +313,37 @@ export function Space() {
     [mx, allJoinedRooms]
   );
 
-  // There are a lot better ways to do this
+  /**
+   * Recursively checks if a given parentId (and its ancestors) is in a closed category.
+   *
+   * @param spaceId - The root space ID.
+   * @param parentId - The parent space ID to start the check from.
+   * @returns True if parentId or any ancestor is in a closed category.
+   */
+  const getInClosedCategories = useCallback(
+    (spaceId: string, parentId: string): boolean => {
+      if (closedCategories.has(makeNavCategoryId(spaceId, parentId))) {
+        return true;
+      }
+
+      const parentParentIds = roomToParents.get(parentId);
+      if (!parentParentIds || parentParentIds.size === 0) {
+        return false;
+      }
+
+      let closed = false;
+      parentParentIds.forEach((id) => {
+        if (getInClosedCategories(spaceId, id)) {
+          closed = true;
+        }
+      });
+
+      return closed;
+    },
+    [closedCategories, roomToParents]
+  );
+
+  // There are better ways to do this
   const roomToChildren = useMemo(() => {
     const map = new Map<string, Set<string>>();
     roomToParents.forEach((parentSet, childId) => {
@@ -343,7 +373,6 @@ export function Space() {
         return false;
       }
 
-      // CHILD CATEGORY SHOULD COLLAPSE IF PARENT IS COLLAPSED (but retain their set state when expanded?)
       let visible = false;
       childIds.forEach((id) => {
         if (getContainsShowRoom(id)) {
@@ -356,24 +385,46 @@ export function Space() {
     [roomToUnread, selectedRoomId, roomToChildren]
   );
 
+  /**
+   * Determines whether all parent categories are collapsed.
+   *
+   * @param spaceId - The root space ID.
+   * @param roomId - The room ID to start the check from.
+   * @returns True if every parent category is collapsed; false otherwise.
+   */
+
+  const getAllAncestorsCollapsed = (spaceId: string, roomId: string): boolean => {
+    const parentIds = roomToParents.get(roomId);
+
+    if (!parentIds || parentIds.size === 0) {
+      return false;
+    }
+
+    let allCollapsed = true;
+    parentIds.forEach((id) => {
+      if (!getInClosedCategories(spaceId, id)) {
+        allCollapsed = false;
+      }
+    });
+    return allCollapsed;
+  };
+
   const hierarchy = useSpaceJoinedHierarchy(
     space.roomId,
     getRoom,
     useCallback(
       (parentId, roomId) => {
-        // closedCategories.has(makeNavCategoryId(spaceId, parentId))
-        // NOT SURE THIS IS NEEDED - children of hidden spaces are not displayed
-        if (!closedCategories.has(makeNavCategoryId(space.roomId, parentId))) {
+        if (!getInClosedCategories(space.roomId, parentId)) {
           return false;
         }
         if (getContainsShowRoom(roomId)) return false;
         return true;
       },
-      [closedCategories, getContainsShowRoom, space.roomId]
+      [getContainsShowRoom, getInClosedCategories, space.roomId]
     ),
     useCallback(
-      (sId) => closedCategories.has(makeNavCategoryId(space.roomId, sId)),
-      [closedCategories, space.roomId]
+      (sId) => getInClosedCategories(space.roomId, sId),
+      [getInClosedCategories, space.roomId]
     )
   );
 
@@ -384,9 +435,18 @@ export function Space() {
     overscan: 10,
   });
 
-  const handleCategoryClick = useCategoryHandler(setClosedCategories, (categoryId) =>
-    closedCategories.has(categoryId)
-  );
+  const handleCategoryClick = useCategoryHandler(setClosedCategories, (categoryId) => {
+    const collapsed = closedCategories.has(categoryId);
+    const [spaceId, roomId] = categoryId.split('|').slice(-2);
+
+    // Only prevent collapsing if all parents are collapsed
+    const toggleable = !getAllAncestorsCollapsed(spaceId, roomId);
+
+    if (toggleable) {
+      return collapsed;
+    }
+    return !collapsed;
+  });
 
   const getToLink = (roomId: string) =>
     getSpaceRoomPath(spaceIdOrAlias, getCanonicalAliasOrRoomId(mx, roomId));
@@ -451,7 +511,8 @@ export function Space() {
 
               if (room.isSpaceRoom()) {
                 const categoryId = makeNavCategoryId(space.roomId, roomId);
-                const closed = closedCategories.has(categoryId);
+                const closed = getInClosedCategories(space.roomId, roomId);
+                const toggleable = !getAllAncestorsCollapsed(space.roomId, roomId);
 
                 const paddingTop = getCategoryPadding(depth);
 
@@ -473,6 +534,7 @@ export function Space() {
                           onClick={handleCategoryClick}
                           closed={closed}
                           aria-expanded={!closed}
+                          aria-disabled={!toggleable}
                         >
                           {roomId === space.roomId ? 'Rooms' : room?.name}
                         </RoomNavCategoryButton>
