@@ -62,12 +62,12 @@ const getHierarchySpaces = (
     spaceItems.push(spaceItem);
 
     if (!space) return;
-    const childEvents = getStateEvents(space, StateEvent.SpaceChild);
-    childEvents
+    const childEvents = getStateEvents(space, StateEvent.SpaceChild)
       .filter((childEvent) => {
         if (!isValidChild(childEvent)) return false;
         const childId = childEvent.getStateKey();
         if (!childId || !isRoomId(childId)) return false;
+        if (excludeRoom(spaceItem.roomId, childId)) return false;
 
         // because we can not find if a childId is space without joining
         // or requesting room summary, we will look it into spaceRooms local
@@ -80,7 +80,6 @@ const getHierarchySpaces = (
     childEvents.forEach((childEvent) => {
       const childId = childEvent.getStateKey();
       if (!childId || !isRoomId(childId)) return;
-      if (excludeRoom(spaceItem.roomId, childId)) return;
 
       const childItem: HierarchyItemSpace = {
         roomId: childId,
