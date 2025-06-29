@@ -162,6 +162,7 @@ export function Lobby() {
   const screenSize = useScreenSizeContext();
   const [onTop, setOnTop] = useState(true);
   const [closedCategories, setClosedCategories] = useAtom(useClosedLobbyCategoriesAtom());
+  const roomToParents = useAtomValue(roomToParentsAtom);
   const [sidebarItems] = useSidebarItems(
     useOrphanSpaces(mx, allRoomsAtom, useAtomValue(roomToParentsAtom))
   );
@@ -193,6 +194,36 @@ export function Lobby() {
     [mx]
   );
 
+  /**
+   * Recursively checks if a given parentId (or all its ancestors) is in a closed category.
+   *
+   * @param spaceId - The root space ID.
+   * @param parentId - The parent space ID to start the check from.
+   * @returns True if parentId or all ancestors is in a closed category.
+   */
+  const getInClosedCategories = useCallback(
+    (spaceId: string, parentId: string): boolean => {
+      if (closedCategories.has(makeLobbyCategoryId(spaceId, parentId))) {
+        return true;
+      }
+
+      const parentParentIds = roomToParents.get(parentId);
+      if (!parentParentIds || parentParentIds.size === 0) {
+        return false;
+      }
+
+      let anyOpen = false;
+      parentParentIds.forEach((id) => {
+        if (!getInClosedCategories(spaceId, id)) {
+          anyOpen = true;
+        }
+      });
+
+      return !anyOpen;
+    },
+    [closedCategories, roomToParents]
+  );
+
   const [draggingItem, setDraggingItem] = useState<HierarchyItem>();
   const hierarchy = useSpaceHierarchy(
     space.roomId,
@@ -200,9 +231,9 @@ export function Lobby() {
     getRoom,
     useCallback(
       (childId) =>
-        closedCategories.has(makeLobbyCategoryId(space.roomId, childId)) ||
+        getInClosedCategories(space.roomId, childId) ||
         (draggingItem ? 'space' in draggingItem : false),
-      [closedCategories, space.roomId, draggingItem]
+      [draggingItem, getInClosedCategories, space.roomId]
     )
   );
 
@@ -476,14 +507,20 @@ export function Lobby() {
                       const item = hierarchy[vItem.index];
                       if (!item) return null;
                       const nextSpaceId = hierarchy[vItem.index + 1]?.space.roomId;
-
                       const categoryId = makeLobbyCategoryId(space.roomId, item.space.roomId);
+                      const inClosedCategory = getInClosedCategories(
+                        space.roomId,
+                        item.space.roomId
+                      );
+
+                      const paddingLeft = `calc((${item.space.depth} - 1) * ${config.space.S200})`;
 
                       return (
                         <VirtualTile
                           virtualItem={vItem}
                           style={{
                             paddingTop: vItem.index === 0 ? 0 : config.space.S500,
+                            paddingLeft,
                           }}
                           ref={virtualizer.measureElement}
                           key={vItem.index}
@@ -498,8 +535,7 @@ export function Lobby() {
                             canEditSpaceChild={canEditSpaceChild}
                             categoryId={categoryId}
                             closed={
-                              closedCategories.has(categoryId) ||
-                              (draggingItem ? 'space' in draggingItem : false)
+                              inClosedCategory || (draggingItem ? 'space' in draggingItem : false)
                             }
                             handleClose={handleCategoryClick}
                             draggingItem={draggingItem}

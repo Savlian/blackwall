@@ -314,11 +314,11 @@ export function Space() {
   );
 
   /**
-   * Recursively checks if a given parentId (and its ancestors) is in a closed category.
+   * Recursively checks if a given parentId (or all its ancestors) is in a closed category.
    *
    * @param spaceId - The root space ID.
    * @param parentId - The parent space ID to start the check from.
-   * @returns True if parentId or any ancestor is in a closed category.
+   * @returns True if parentId or all ancestors is in a closed category.
    */
   const getInClosedCategories = useCallback(
     (spaceId: string, parentId: string): boolean => {
@@ -331,14 +331,14 @@ export function Space() {
         return false;
       }
 
-      let closed = false;
+      let anyOpen = false;
       parentParentIds.forEach((id) => {
-        if (getInClosedCategories(spaceId, id)) {
-          closed = true;
+        if (!getInClosedCategories(spaceId, id)) {
+          anyOpen = true;
         }
       });
 
-      return closed;
+      return !anyOpen;
     },
     [closedCategories, roomToParents]
   );
