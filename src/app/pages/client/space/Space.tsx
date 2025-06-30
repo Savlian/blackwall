@@ -318,6 +318,7 @@ export function Space() {
    *
    * @param spaceId - The root space ID.
    * @param parentId - The parent space ID to start the check from.
+   * @param previousId - The last ID checked, only used to ignore root collapse state.
    * @returns True if parentId or all ancestors is in a closed category.
    */
   const getInClosedCategories = useCallback(
@@ -354,13 +355,14 @@ export function Space() {
   // There are better ways to do this
   const roomToChildren = useMemo(() => {
     const map = new Map<string, Set<string>>();
+
     roomToParents.forEach((parentSet, childId) => {
       parentSet.forEach((parentId) => {
         if (!map.has(parentId)) map.set(parentId, new Set());
-        /* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */
-        map.get(parentId)!.add(childId);
+        map.get(parentId)?.add(childId);
       });
     });
+
     return map;
   }, [roomToParents]);
 
@@ -400,10 +402,8 @@ export function Space() {
    * @param roomId - The room ID to start the check from.
    * @returns True if every parent category is collapsed; false otherwise.
    */
-
   const getAllAncestorsCollapsed = (spaceId: string, roomId: string): boolean => {
     const parentIds = roomToParents.get(roomId);
-
     if (!parentIds || parentIds.size === 0) {
       return false;
     }
@@ -431,7 +431,7 @@ export function Space() {
       [getContainsShowRoom, getInClosedCategories, space.roomId]
     ),
     useCallback(
-      (sId) => getInClosedCategories(space.roomId, sId, sId),
+      (sId) => getInClosedCategories(space.roomId, sId),
       [getInClosedCategories, space.roomId]
     )
   );

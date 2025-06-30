@@ -239,7 +239,6 @@ export function Lobby() {
    * @param roomId - The room ID to start the check from.
    * @returns True if every parent category is collapsed; false otherwise.
    */
-
   const getAllAncestorsCollapsed = (spaceId: string, roomId: string): boolean => {
     const parentIds = roomToParents.get(roomId);
 
