@@ -321,7 +321,15 @@ export function Space() {
    * @returns True if parentId or all ancestors is in a closed category.
    */
   const getInClosedCategories = useCallback(
-    (spaceId: string, parentId: string): boolean => {
+    (spaceId: string, parentId: string, previousId?: string): boolean => {
+      // Ignore root space being collapsed if in a subspace,
+      // this is due to many spaces dumping all rooms in the top-level space.
+      if (parentId === spaceId) {
+        if (previousId) {
+          if (getRoom(previousId)?.isSpaceRoom()) return false;
+        }
+      }
+
       if (closedCategories.has(makeNavCategoryId(spaceId, parentId))) {
         return true;
       }
@@ -333,14 +341,14 @@ export function Space() {
 
       let anyOpen = false;
       parentParentIds.forEach((id) => {
-        if (!getInClosedCategories(spaceId, id)) {
+        if (!getInClosedCategories(spaceId, id, parentId)) {
           anyOpen = true;
         }
       });
 
       return !anyOpen;
     },
-    [closedCategories, roomToParents]
+    [closedCategories, getRoom, roomToParents]
   );
 
   // There are better ways to do this
@@ -402,7 +410,7 @@ export function Space() {
 
     let allCollapsed = true;
     parentIds.forEach((id) => {
-      if (!getInClosedCategories(spaceId, id)) {
+      if (!getInClosedCategories(spaceId, id, roomId)) {
         allCollapsed = false;
       }
     });
@@ -414,7 +422,7 @@ export function Space() {
     getRoom,
     useCallback(
       (parentId, roomId) => {
-        if (!getInClosedCategories(space.roomId, parentId)) {
+        if (!getInClosedCategories(space.roomId, parentId, roomId)) {
           return false;
         }
         if (getContainsShowRoom(roomId)) return false;
@@ -423,7 +431,7 @@ export function Space() {
       [getContainsShowRoom, getInClosedCategories, space.roomId]
     ),
     useCallback(
-      (sId) => getInClosedCategories(space.roomId, sId),
+      (sId) => getInClosedCategories(space.roomId, sId, sId),
       [getInClosedCategories, space.roomId]
     )
   );

@@ -199,10 +199,18 @@ export function Lobby() {
    *
    * @param spaceId - The root space ID.
    * @param parentId - The parent space ID to start the check from.
+   * @param previousId - The last ID checked, only used to ignore root collapse state.
    * @returns True if parentId or all ancestors is in a closed category.
    */
   const getInClosedCategories = useCallback(
-    (spaceId: string, parentId: string): boolean => {
+    (spaceId: string, parentId: string, previousId?: string): boolean => {
+      // Ignore root space being collapsed if in a subspace,
+      // this is due to many spaces dumping all rooms in the top-level space.
+      if (parentId === spaceId) {
+        if (previousId) {
+          if (getRoom(previousId)?.isSpaceRoom() || spaceRooms.has(previousId)) return false;
+        }
+      }
       if (closedCategories.has(makeLobbyCategoryId(spaceId, parentId))) {
         return true;
       }
@@ -214,15 +222,39 @@ export function Lobby() {
 
       let anyOpen = false;
       parentParentIds.forEach((id) => {
-        if (!getInClosedCategories(spaceId, id)) {
+        if (!getInClosedCategories(spaceId, id, parentId)) {
           anyOpen = true;
         }
       });
 
       return !anyOpen;
     },
-    [closedCategories, roomToParents]
+    [closedCategories, getRoom, roomToParents, spaceRooms]
   );
+
+  /**
+   * Determines whether all parent categories are collapsed.
+   *
+   * @param spaceId - The root space ID.
+   * @param roomId - The room ID to start the check from.
+   * @returns True if every parent category is collapsed; false otherwise.
+   */
+
+  const getAllAncestorsCollapsed = (spaceId: string, roomId: string): boolean => {
+    const parentIds = roomToParents.get(roomId);
+
+    if (!parentIds || parentIds.size === 0) {
+      return false;
+    }
+
+    let allCollapsed = true;
+    parentIds.forEach((id) => {
+      if (!getInClosedCategories(spaceId, id, roomId)) {
+        allCollapsed = false;
+      }
+    });
+    return allCollapsed;
+  };
 
   const [draggingItem, setDraggingItem] = useState<HierarchyItem>();
   const hierarchy = useSpaceHierarchy(
@@ -443,9 +475,18 @@ export function Lobby() {
     [setSpaceRooms]
   );
 
-  const handleCategoryClick = useCategoryHandler(setClosedCategories, (categoryId) =>
-    closedCategories.has(categoryId)
-  );
+  const handleCategoryClick = useCategoryHandler(setClosedCategories, (categoryId) => {
+    const collapsed = closedCategories.has(categoryId);
+    const [spaceId, roomId] = categoryId.split('|').slice(-2);
+
+    // Only prevent collapsing if all parents are collapsed
+    const toggleable = !getAllAncestorsCollapsed(spaceId, roomId);
+
+    if (toggleable) {
+      return collapsed;
+    }
+    return !collapsed;
+  });
 
   const handleOpenRoom: MouseEventHandler<HTMLButtonElement> = (evt) => {
     const rId = evt.currentTarget.getAttribute('data-room-id');
