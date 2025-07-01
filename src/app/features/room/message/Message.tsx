@@ -934,7 +934,7 @@ export const Message = as<'div', MessageProps>(
                     size="300"
                     radii="300"
                   >
-                    <Icon src={Icons.Message} size="100" />
+                    <Icon src={Icons.ThreadPlus} size="100" />
                   </IconButton>
                 )}
                 {canEditEvent(mx, mEvent) && onEditId && (
