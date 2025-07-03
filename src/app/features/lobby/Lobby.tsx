@@ -32,7 +32,7 @@ import {
   useRoomsPowerLevels,
 } from '../../hooks/usePowerLevels';
 import { mDirectAtom } from '../../state/mDirectList';
-import { makeLobbyCategoryId } from '../../state/closedLobbyCategories';
+import { makeLobbyCategoryId, getLobbyCategoryIdParts } from '../../state/closedLobbyCategories';
 import { useCategoryHandler } from '../../hooks/useCategoryHandler';
 import { useMatrixClient } from '../../hooks/useMatrixClient';
 import { allRoomsAtom } from '../../state/room-list/roomList';
@@ -73,6 +73,11 @@ const useCanDropLobbyItem = (
       }
 
       const containerSpaceId = space.roomId;
+
+      // only allow to be dropped in parent space
+      if (item.parentId !== container.item.roomId && item.parentId !== container.item.parentId) {
+        return false;
+      }
 
       if (
         getRoom(containerSpaceId) === undefined ||
@@ -368,7 +373,7 @@ export function Lobby() {
 
         // remove from current space
         if (item.parentId !== containerParentId) {
-          mx.sendStateEvent(item.parentId, StateEvent.SpaceChild as any, {}, item.roomId);
+          await mx.sendStateEvent(item.parentId, StateEvent.SpaceChild as any, {}, item.roomId);
         }
 
         if (
@@ -388,7 +393,7 @@ export function Lobby() {
               joinRuleContent.allow?.filter((allowRule) => allowRule.room_id !== item.parentId) ??
               [];
             allow.push({ type: RestrictedAllowType.RoomMembership, room_id: containerParentId });
-            mx.sendStateEvent(itemRoom.roomId, StateEvent.RoomJoinRules as any, {
+            await mx.sendStateEvent(itemRoom.roomId, StateEvent.RoomJoinRules as any, {
               ...joinRuleContent,
               allow,
             });
@@ -476,7 +481,7 @@ export function Lobby() {
 
   const handleCategoryClick = useCategoryHandler(setClosedCategories, (categoryId) => {
     const collapsed = closedCategories.has(categoryId);
-    const [spaceId, roomId] = categoryId.split('|').slice(-2);
+    const [spaceId, roomId] = getLobbyCategoryIdParts(categoryId);
 
     // Only prevent collapsing if all parents are collapsed
     const toggleable = !getAllAncestorsCollapsed(spaceId, roomId);

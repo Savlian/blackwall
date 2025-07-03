@@ -45,7 +45,7 @@ import {
 import { useSpace } from '../../../hooks/useSpace';
 import { VirtualTile } from '../../../components/virtualizer';
 import { RoomNavCategoryButton, RoomNavItem } from '../../../features/room-nav';
-import { makeNavCategoryId } from '../../../state/closedNavCategories';
+import { makeNavCategoryId, getNavCategoryIdParts } from '../../../state/closedNavCategories';
 import { roomToUnreadAtom } from '../../../state/room/roomToUnread';
 import { useCategoryHandler } from '../../../hooks/useCategoryHandler';
 import { useNavToActivePathMapper } from '../../../hooks/useNavToActivePathMapper';
@@ -57,6 +57,7 @@ import { usePowerLevels, usePowerLevelsAPI } from '../../../hooks/usePowerLevels
 import { openInviteUser } from '../../../../client/action/navigation';
 import { useRecursiveChildScopeFactory, useSpaceChildren } from '../../../state/hooks/roomList';
 import { roomToParentsAtom } from '../../../state/room/roomToParents';
+import { roomToChildrenAtom } from '../../../state/room/roomToChildren';
 import { markAsRead } from '../../../../client/action/notifications';
 import { useRoomsUnread } from '../../../state/hooks/unread';
 import { UseStateProvider } from '../../../components/UseStateProvider';
@@ -293,6 +294,7 @@ export function Space() {
   const mDirects = useAtomValue(mDirectAtom);
   const roomToUnread = useAtomValue(roomToUnreadAtom);
   const roomToParents = useAtomValue(roomToParentsAtom);
+  const roomToChildren = useAtomValue(roomToChildrenAtom);
   const allRooms = useAtomValue(allRoomsAtom);
   const allJoinedRooms = useMemo(() => new Set(allRooms), [allRooms]);
   const notificationPreferences = useRoomsNotificationPreferencesContext();
@@ -351,20 +353,6 @@ export function Space() {
     },
     [closedCategories, getRoom, roomToParents]
   );
-
-  // There are better ways to do this
-  const roomToChildren = useMemo(() => {
-    const map = new Map<string, Set<string>>();
-
-    roomToParents.forEach((parentSet, childId) => {
-      parentSet.forEach((parentId) => {
-        if (!map.has(parentId)) map.set(parentId, new Set());
-        map.get(parentId)?.add(childId);
-      });
-    });
-
-    return map;
-  }, [roomToParents]);
 
   /**
    * Recursively checks if the given room or any of its descendants should be visible.
@@ -445,7 +433,7 @@ export function Space() {
 
   const handleCategoryClick = useCategoryHandler(setClosedCategories, (categoryId) => {
     const collapsed = closedCategories.has(categoryId);
-    const [spaceId, roomId] = categoryId.split('|').slice(-2);
+    const [spaceId, roomId] = getNavCategoryIdParts(categoryId);
 
     // Only prevent collapsing if all parents are collapsed
     const toggleable = !getAllAncestorsCollapsed(spaceId, roomId);
