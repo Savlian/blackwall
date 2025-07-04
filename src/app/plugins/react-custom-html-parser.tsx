@@ -41,6 +41,7 @@ import {
 } from './matrix-to';
 import { onEnterOrSpace } from '../utils/keyboard';
 import { copyToClipboard, tryDecodeURIComponent } from '../utils/dom';
+import { useTimeoutToggle } from '../hooks/useTimeoutToggle';
 
 const ReactPrism = lazy(() => import('./react-prism/ReactPrism'));
 
@@ -204,51 +205,6 @@ export const highlightText = (
     );
   });
 
-type CodeBlockControlsProps = {
-  copied: boolean;
-  onCopy: () => void;
-  collapsible: boolean;
-  collapsed: boolean;
-  onToggle: () => void;
-};
-
-function CodeBlockControls({
-  copied,
-  onCopy,
-  collapsible,
-  collapsed,
-  onToggle,
-}: CodeBlockControlsProps) {
-  return (
-    // Needs a better copy icon
-    <div className={css.CodeBlockControls}>
-      <IconButton
-        variant="Secondary"
-        size="300"
-        radii="300"
-        onClick={onCopy}
-        aria-label="Copy Code Block"
-      >
-        <Icon src={copied ? Icons.Check : Icons.File} size="50" />
-      </IconButton>
-      {collapsible && (
-        <IconButton
-          variant="Secondary"
-          size="300"
-          radii="300"
-          onClick={onToggle}
-          aria-expanded={!collapsed}
-          aria-controls="code-block-content"
-          aria-label={collapsed ? 'Show Full Code Block' : 'Show Code Block Preview'}
-          style={collapsed ? { visibility: 'visible' } : {}}
-        >
-          <Icon src={collapsed ? Icons.ChevronRight : Icons.ChevronBottom} size="50" />
-        </IconButton>
-      )}
-    </div>
-  );
-}
-
 export function CodeBlock(children: ChildNode[], opts: HTMLReactParserOptions) {
   const LINE_LIMIT = 14;
 
@@ -272,7 +228,7 @@ export function CodeBlock(children: ChildNode[], opts: HTMLReactParserOptions) {
     return text;
   }, []);
 
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useTimeoutToggle();
   const collapsible = useMemo(
     () => extractTextFromChildren(children).split('\n').length > LINE_LIMIT,
     [children, extractTextFromChildren]
@@ -281,8 +237,8 @@ export function CodeBlock(children: ChildNode[], opts: HTMLReactParserOptions) {
 
   const handleCopy = useCallback(() => {
     copyToClipboard(extractTextFromChildren(children));
-    setCopied(true);
-  }, [children, extractTextFromChildren]);
+    setCopied();
+  }, [children, extractTextFromChildren, setCopied]);
 
   const toggleCollapse = useCallback(() => {
     setCollapsed((prev) => !prev);
@@ -290,13 +246,32 @@ export function CodeBlock(children: ChildNode[], opts: HTMLReactParserOptions) {
 
   return (
     <>
-      <CodeBlockControls
-        copied={copied}
-        onCopy={handleCopy}
-        collapsible={collapsible}
-        collapsed={collapsed}
-        onToggle={toggleCollapse}
-      />
+      <div className={css.CodeBlockControls}>
+        <IconButton
+          variant="Secondary" // Needs a better copy icon
+          size="300"
+          radii="300"
+          onClick={handleCopy}
+          aria-label="Copy Code Block"
+        >
+          <Icon src={copied ? Icons.Check : Icons.File} size="50" />
+        </IconButton>
+        {collapsible && (
+          <IconButton
+            variant="Secondary"
+            size="300"
+            radii="300"
+            onClick={toggleCollapse}
+            aria-expanded={!collapsed}
+            aria-pressed={!collapsed}
+            aria-controls="code-block-content"
+            aria-label={collapsed ? 'Show Full Code Block' : 'Show Code Block Preview'}
+            style={collapsed ? { visibility: 'visible' } : {}}
+          >
+            <Icon src={collapsed ? Icons.ChevronBottom : Icons.ChevronTop} size="50" />
+          </IconButton>
+        )}
+      </div>
       <Scroll
         direction={collapsed ? 'Both' : 'Horizontal'}
         variant="Secondary"

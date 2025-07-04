@@ -91,12 +91,12 @@ export const CodeBlock = style([
 export const CodeBlockInternal = recipe({
   base: {
     padding: `${config.space.S200} ${config.space.S200} 0`,
-    minWidth: config.size.ModalDrawerWidth,
+    minWidth: toRem(100),
   },
   variants: {
     collapsed: {
       true: {
-        maxHeight: `calc(${config.size.ModalDrawerWidth} - ${config.lineHeight.T400} / 2)`,
+        maxHeight: `calc(${config.lineHeight.T400} * 9.6)`,
       },
     },
   },
