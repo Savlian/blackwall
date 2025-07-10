@@ -37,7 +37,7 @@ import { AsyncStatus, useAsyncCallback } from '../../hooks/useAsyncCallback';
 import { useSyncState } from '../../hooks/useSyncState';
 import { stopPropagation } from '../../utils/keyboard';
 import { SyncStatus } from './SyncStatus';
-import { AuthMetadataProvider } from '../../hooks/useAuthMetaData';
+import { AuthMetadataProvider } from '../../hooks/useAuthMetadata';
 
 function ClientRootLoading() {
   return (
