@@ -76,6 +76,8 @@ import {
 } from '../../../hooks/useRoomsNotificationPreferences';
 import { useOpenSpaceSettings } from '../../../state/hooks/spaceSettings';
 import { useRoomNavigate } from '../../../hooks/useRoomNavigate';
+import { CallNavStatus } from '../../../features/room-nav/RoomCallNavStatus';
+import { useCallState } from '../call/CallProvider';
 
 type SpaceMenuProps = {
   room: Room;
@@ -275,7 +277,7 @@ function SpaceHeader() {
                 escapeDeactivates: stopPropagation,
               }}
             >
-              <SpaceMenu room={space} requestClose={() => setMenuAnchor(undefined)} />
+              {space && <SpaceMenu room={space} requestClose={() => setMenuAnchor(undefined)} />}
             </FocusTrap>
           }
         />
@@ -295,15 +297,15 @@ export function Space() {
   const allRooms = useAtomValue(allRoomsAtom);
   const allJoinedRooms = useMemo(() => new Set(allRooms), [allRooms]);
   const notificationPreferences = useRoomsNotificationPreferencesContext();
-
   const selectedRoomId = useSelectedRoom();
   const lobbySelected = useSpaceLobbySelected(spaceIdOrAlias);
   const searchSelected = useSpaceSearchSelected(spaceIdOrAlias);
+  const { isCallActive, activeCallRoomId } = useCallState();
 
   const [closedCategories, setClosedCategories] = useAtom(useClosedNavCategoriesAtom());
 
   const getRoom = useCallback(
-    (rId: string) => {
+    (rId: string): Room | undefined => {
       if (allJoinedRooms.has(rId)) {
         return mx.getRoom(rId) ?? undefined;
       }
@@ -320,11 +322,13 @@ export function Space() {
         if (!closedCategories.has(makeNavCategoryId(space.roomId, parentId))) {
           return false;
         }
-        const showRoom = roomToUnread.has(roomId) || roomId === selectedRoomId;
-        if (showRoom) return false;
-        return true;
+        const showRoomAnyway =
+          roomToUnread.has(roomId) ||
+          roomId === selectedRoomId ||
+          (isCallActive && activeCallRoomId === roomId);
+        return !showRoomAnyway;
       },
-      [space.roomId, closedCategories, roomToUnread, selectedRoomId]
+      [space.roomId, closedCategories, roomToUnread, selectedRoomId, activeCallRoomId, isCallActive]
     ),
     useCallback(
       (sId) => closedCategories.has(makeNavCategoryId(space.roomId, sId)),
@@ -335,7 +339,7 @@ export function Space() {
   const virtualizer = useVirtualizer({
     count: hierarchy.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 0,
+    estimateSize: () => 32,
     overscan: 10,
   });
 
@@ -436,6 +440,7 @@ export function Space() {
           </NavCategory>
         </Box>
       </PageNavContent>
+      <CallNavStatus />
     </PageNav>
   );
 }
