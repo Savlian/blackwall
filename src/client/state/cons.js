@@ -35,6 +35,9 @@ const cons = {
       REUSABLE_DIALOG_OPENED: 'REUSABLE_DIALOG_OPENED',
     },
   },
+  api: {
+    GIF_PROXY_URL: 'https://proxy.commet.chat',
+  },
 };
 
 Object.freeze(cons);

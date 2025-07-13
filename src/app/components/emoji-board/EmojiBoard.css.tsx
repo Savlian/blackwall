@@ -134,3 +134,43 @@ export const StickerImg = style([
     objectFit: 'contain',
   },
 ]);
+
+export const GifContainer = style({
+  columnCount: 3,
+  columnGap: toRem(8),
+  padding: toRem(16),
+  
+  '@media': {
+    '(max-width: 768px)': {
+      columnCount: 2,
+    },
+    '(max-width: 480px)': {
+      columnCount: 1,
+    },
+  },
+});
+
+export const GifItem = style([
+  DefaultReset,
+  FocusOutline,
+  {
+    width: '100%',
+    marginBottom: toRem(8),
+    breakInside: 'avoid',
+    borderRadius: config.radii.R400,
+    cursor: 'pointer',
+    overflow: 'hidden',
+    display: 'block',
+
+    ':hover': {
+      backgroundColor: color.Surface.ContainerHover,
+    },
+  },
+]);
+
+export const GifImg = style({
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
+  borderRadius: config.radii.R400,
+});

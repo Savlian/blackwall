@@ -54,7 +54,7 @@ import {
   trimCommand,
   getMentions,
 } from '../../components/editor';
-import { EmojiBoard, EmojiBoardTab } from '../../components/emoji-board';
+import { EmojiBoard, EmojiBoardTab, GifData } from '../../components/emoji-board';
 import { UseStateProvider } from '../../components/UseStateProvider';
 import {
   TUploadContent,
@@ -112,6 +112,8 @@ import { GetPowerLevelTag } from '../../hooks/usePowerLevelTags';
 import { powerLevelAPI, usePowerLevelsContext } from '../../hooks/usePowerLevels';
 import colorMXID from '../../../util/colorMXID';
 import { useIsDirectRoom } from '../../hooks/useRoom';
+import GifIC from '../../../../public/res/ic/outlined/gif.svg';
+import RawIcon from '../../atoms/system-icons/RawIcon';
 
 interface RoomInputProps {
   editor: Editor;
@@ -430,6 +432,57 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
       });
     };
 
+    const handleGifSelect = async (gif: GifData) => {
+      // Download the GIF data
+      const response = await fetch(gif.url);
+      if (response.status !== 200) {
+        throw new Error(`Failed to fetch GIF: ${response.status}`);
+      }
+
+      const data = await response.arrayBuffer();
+      const uint8Array = new Uint8Array(data);
+
+      // Create a File object for the GIF
+      const filename = `${gif.title}.gif`;
+      const file = new File([uint8Array], filename, { type: 'image/gif' });
+
+      // Upload to Matrix
+      const uploadResponse = await mx.uploadContent(file, {
+        name: filename,
+        type: 'image/gif',
+      });
+      const mxcUrl = uploadResponse.content_uri;
+
+      const content: IContent = {
+        body: filename,
+        url: mxcUrl,
+        info: {
+          w: gif.width,
+          h: gif.height,
+          mimetype: 'image/gif',
+          size: data.byteLength,
+        },
+      };
+
+      // Handle replies if there's a reply draft
+      if (replyDraft) {
+        content['m.relates_to'] = {
+          'm.in_reply_to': {
+            event_id: replyDraft.eventId,
+          },
+        };
+        if (replyDraft.relation?.rel_type === RelationType.Thread) {
+          content['m.relates_to'].event_id = replyDraft.relation.event_id;
+          content['m.relates_to'].rel_type = RelationType.Thread;
+          content['m.relates_to'].is_falling_back = false;
+        }
+      }
+
+      // Send the gif as sticker event.
+      await mx.sendEvent(roomId, EventType.Sticker, content);
+      setReplyDraft(undefined);
+    };
+
     return (
       <div ref={ref}>
         {selectedFiles.length > 0 && (
@@ -607,6 +660,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
                         onEmojiSelect={handleEmoticonSelect}
                         onCustomEmojiSelect={handleEmoticonSelect}
                         onStickerSelect={handleStickerSelect}
+                        onGifSelect={handleGifSelect}
                         requestClose={() => {
                           setEmojiBoardTab((t) => {
                             if (t) {
@@ -619,6 +673,18 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
                       />
                     }
                   >
+                    <IconButton
+                      aria-pressed={emojiBoardTab === EmojiBoardTab.Gif}
+                      onClick={() => setEmojiBoardTab(EmojiBoardTab.Gif)}
+                      variant="SurfaceVariant"
+                      size="300"
+                      radii="300"
+                    >
+                      <RawIcon
+                        src={GifIC}
+                      />
+                    </IconButton>
+
                     {!hideStickerBtn && (
                       <IconButton
                         aria-pressed={emojiBoardTab === EmojiBoardTab.Sticker}
@@ -636,7 +702,10 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
                     <IconButton
                       ref={emojiBtnRef}
                       aria-pressed={
-                        hideStickerBtn ? !!emojiBoardTab : emojiBoardTab === EmojiBoardTab.Emoji
+                        hideStickerBtn ?
+                          (emojiBoardTab === EmojiBoardTab.Emoji
+                            || emojiBoardTab === EmojiBoardTab.Gif) :
+                          emojiBoardTab === EmojiBoardTab.Emoji
                       }
                       onClick={() => setEmojiBoardTab(EmojiBoardTab.Emoji)}
                       variant="SurfaceVariant"
@@ -646,7 +715,10 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
                       <Icon
                         src={Icons.Smile}
                         filled={
-                          hideStickerBtn ? !!emojiBoardTab : emojiBoardTab === EmojiBoardTab.Emoji
+                          hideStickerBtn ?
+                            (emojiBoardTab === EmojiBoardTab.Emoji
+                              || emojiBoardTab === EmojiBoardTab.Gif) :
+                            emojiBoardTab === EmojiBoardTab.Emoji
                         }
                       />
                     </IconButton>

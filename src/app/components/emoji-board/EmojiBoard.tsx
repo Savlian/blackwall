@@ -9,6 +9,7 @@ import React, {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 import {
   Badge,
@@ -32,6 +33,7 @@ import { isKeyHotkey } from 'is-hotkey';
 import classNames from 'classnames';
 import { MatrixClient, Room } from 'matrix-js-sdk';
 import { atom, useAtomValue, useSetAtom } from 'jotai';
+import cons from '../../../client/state/cons';
 
 import * as css from './EmojiBoard.css';
 import { EmojiGroupId, IEmoji, IEmojiGroup, emojiGroups, emojis } from '../../plugins/emoji';
@@ -52,19 +54,33 @@ import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
 import { ImagePack, ImageUsage, PackImageReader } from '../../plugins/custom-emoji';
 import { getEmoticonSearchStr } from '../../plugins/utils';
 
+import GifIC from '../../../../public/res/ic/outlined/gif.svg';
+import RawIcon from '../../atoms/system-icons/RawIcon';
+
 const RECENT_GROUP_ID = 'recent_group';
 const SEARCH_GROUP_ID = 'search_group';
 
 export enum EmojiBoardTab {
   Emoji = 'Emoji',
   Sticker = 'Sticker',
+  Gif = 'Gif',
 }
 
 enum EmojiType {
   Emoji = 'emoji',
   CustomEmoji = 'customEmoji',
   Sticker = 'sticker',
+  Gif = 'gif',
 }
+
+export type GifData = {
+  id: string;
+  title: string;
+  url: string;
+  preview_url?: string;
+  width?: number;
+  height?: number;
+};
 
 export type EmojiItemInfo = {
   type: EmojiType;
@@ -176,6 +192,18 @@ function EmojiBoardTabs({
 }) {
   return (
     <Box gap="100">
+      <Badge
+        className={css.EmojiBoardTab}
+        as="button"
+        variant="Secondary"
+        fill={tab === EmojiBoardTab.Gif ? 'Solid' : 'None'}
+        size="500"
+        onClick={() => onTabChange(EmojiBoardTab.Gif)}
+      >
+        <Text as="span" size="L400">
+          GIF
+        </Text>
+      </Badge>
       <Badge
         className={css.EmojiBoardTab}
         as="button"
@@ -328,6 +356,40 @@ export function StickerItem({
       data-emoji-type={type}
       data-emoji-data={data}
       data-emoji-shortcode={shortcode}
+    >
+      {children}
+    </Box>
+  );
+}
+
+export function GifItem({
+  label,
+  type,
+  data,
+  shortcode,
+  gif,
+  children,
+}: {
+  label: string;
+  type: EmojiType;
+  data: string;
+  shortcode: string;
+  gif?: GifData;
+  children: ReactNode;
+}) {
+  return (
+    <Box
+      as="button"
+      className={css.GifItem}
+      type="button"
+      alignItems="Center"
+      justifyContent="Center"
+      title={label}
+      aria-label={`${label} gif`}
+      data-emoji-type={type}
+      data-emoji-data={data}
+      data-emoji-shortcode={shortcode}
+      data-gif-data={gif ? JSON.stringify(gif) : undefined}
     >
       {children}
     </Box>
@@ -637,6 +699,85 @@ export const NativeEmojiGroups = memo(
   )
 );
 
+export const GifGroups = memo(
+  ({ gifs, loading, error }: { gifs: GifData[]; loading: boolean; error: string | null }) => {
+    if (loading) {
+      return (
+        <Box
+          style={{ padding: `${toRem(60)} ${config.space.S500}` }}
+          alignItems="Center"
+          justifyContent="Center"
+          direction="Column"
+          gap="300"
+        >
+          <Text>Loading GIFs...</Text>
+        </Box>
+      );
+    }
+
+    if (error) {
+      return (
+        <Box
+          style={{ padding: `${toRem(60)} ${config.space.S500}` }}
+          alignItems="Center"
+          justifyContent="Center"
+          direction="Column"
+          gap="300"
+        >
+          <Text>Error: {error}</Text>
+        </Box>
+      );
+    }
+
+    if (gifs.length === 0) {
+      return (
+        <Box
+          style={{ padding: `${toRem(60)} ${config.space.S500}` }}
+          alignItems="Center"
+          justifyContent="Center"
+          direction="Column"
+          gap="300"
+        >
+          <RawIcon size="large" src={GifIC} />
+          <Box direction="Inherit">
+            <Text align="Center">No GIFs found!</Text>
+            <Text priority="300" align="Center" size="T200">
+              Try searching for something else.
+            </Text>
+          </Box>
+        </Box>
+      );
+    }
+
+    return (
+      <Box direction="Column" gap="200">
+        <Text className={css.EmojiGroupLabel} size="O400">
+          GIFs
+        </Text>
+        <div className={css.GifContainer}>
+          {gifs.map((gif) => (
+            <GifItem
+              key={gif.id}
+              label={gif.title}
+              type={EmojiType.Gif}
+              data={gif.url}
+              shortcode={gif.title}
+              gif={gif}
+            >
+              <img
+                loading="lazy"
+                className={css.GifImg}
+                alt={gif.title}
+                src={gif.preview_url || gif.url}
+              />
+            </GifItem>
+          ))}
+        </div>
+      </Box>
+    );
+  }
+);
+
 const SEARCH_OPTIONS: UseAsyncSearchOptions = {
   limit: 1000,
   matchOptions: {
@@ -653,6 +794,7 @@ export function EmojiBoard({
   onEmojiSelect,
   onCustomEmojiSelect,
   onStickerSelect,
+  onGifSelect,
   allowTextCustomEmoji,
   addToRecentEmoji = true,
 }: {
@@ -664,11 +806,13 @@ export function EmojiBoard({
   onEmojiSelect?: (unicode: string, shortcode: string) => void;
   onCustomEmojiSelect?: (mxc: string, shortcode: string) => void;
   onStickerSelect?: (mxc: string, shortcode: string, label: string) => void;
+  onGifSelect?: (gif: GifData) => void;
   allowTextCustomEmoji?: boolean;
   addToRecentEmoji?: boolean;
 }) {
   const emojiTab = tab === EmojiBoardTab.Emoji;
   const stickerTab = tab === EmojiBoardTab.Sticker;
+  const gifTab = tab === EmojiBoardTab.Gif;
   const usage = emojiTab ? ImageUsage.Emoticon : ImageUsage.Sticker;
 
   const setActiveGroupId = useSetAtom(activeGroupIdAtom);
@@ -698,14 +842,116 @@ export function EmojiBoard({
 
   const searchedItems = result?.items.slice(0, 100);
 
+  function useGifSearch() {
+    const [gifs, setGifs] = useState<GifData[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const parseTenorResult = useCallback((tenorResult: any): GifData => {
+      const SIZE_LIMIT = 3 * 1024 * 1024; // 3MB
+
+      const formats = tenorResult.media_formats || {};
+      const preview = formats.tinygif || formats.nanogif || formats.mediumgif;
+
+      // Start with full resolution GIF
+      let fullRes = formats.gif;
+      // If full res is too large and medium exists, use medium instead
+      if (fullRes && fullRes.size > SIZE_LIMIT && formats.mediumgif) {
+        fullRes = formats.mediumgif;
+      }
+
+      // Fallback if no suitable format found
+      if (!fullRes) {
+        fullRes = formats.mediumgif || formats.gif || preview;
+      }
+
+      // Get dimensions from the selected full resolution format
+      const dimensions = fullRes?.dims || preview?.dims || [0, 0];
+
+      // Convert URLs to use proxy
+      const convertUrl = (url: string): string => {
+        if (!url) return '';
+        try {
+          const originalUrl = new URL(url);
+          const proxyUrl = new URL(cons.api.GIF_PROXY_URL);
+          proxyUrl.pathname = `/proxy/tenor/media${originalUrl.pathname}`;
+          return proxyUrl.toString();
+        } catch {
+          // Return original URL as fallback
+          return url;
+        }
+      };
+
+      return {
+        id: tenorResult.id,
+        title: tenorResult.content_description || tenorResult.h1_title || 'GIF',
+        url: convertUrl(fullRes?.url || ''),
+        preview_url: convertUrl(preview?.url || fullRes?.url || ''),
+        width: dimensions[0] || 0,
+        height: dimensions[1] || 0,
+      };
+    }, []);
+
+    const searchGifs = useCallback(
+      async (query: string) => {
+        if (!query.trim()) {
+          setGifs([]);
+          return;
+        }
+
+        setLoading(true);
+        setError(null);
+
+        try {
+          const url = new URL(cons.api.GIF_PROXY_URL);
+          url.pathname = '/proxy/tenor/api/v2/search';
+          url.searchParams.set('q', query);
+
+          const response = await fetch(url.toString());
+
+          if (response.status === 200) {
+            const data = await response.json();
+            const results = data.results as any[] | undefined;
+
+            if (results) {
+              const gifData: GifData[] = results.map(parseTenorResult);
+              setGifs(gifData);
+            } else {
+              setGifs([]);
+            }
+          } else {
+            throw new Error(`HTTP ${response.status}`);
+          }
+        } catch (err) {
+          setError('Failed to search GIFs');
+          setGifs([]);
+        } finally {
+          setLoading(false);
+        }
+      },
+      [parseTenorResult]
+    );
+
+    return { gifs, loading, error, searchGifs };
+  }
+
+  const { gifs, loading: gifsLoading, error: gifsError, searchGifs } = useGifSearch();
+
   const handleOnChange: ChangeEventHandler<HTMLInputElement> = useDebounce(
     useCallback(
       (evt) => {
         const term = evt.target.value;
-        if (term) search(term);
-        else resetSearch();
+        if (gifTab) {
+          if (term) {
+            searchGifs(term);
+          }
+        } else if (term) {
+          search(term);
+        } else {
+          resetSearch();
+        }
       },
-      [search, resetSearch]
+      [search, resetSearch, searchGifs, gifTab]
     ),
     { wait: 200 }
   );
@@ -749,6 +995,12 @@ export function EmojiBoard({
     }
     if (emojiInfo.type === EmojiType.Sticker) {
       onStickerSelect?.(emojiInfo.data, emojiInfo.shortcode, emojiInfo.label);
+      if (!evt.altKey && !evt.shiftKey) requestClose();
+    }
+    if (emojiInfo.type === EmojiType.Gif) {
+      const gifDataStr = targetEl.getAttribute('data-gif-data');
+      const gifData = gifDataStr ? JSON.parse(gifDataStr) : null;
+      onGifSelect?.(gifData);
       if (!evt.altKey && !evt.shiftKey) requestClose();
     }
   };
@@ -823,10 +1075,12 @@ export function EmojiBoard({
                 data-emoji-board-search
                 variant="SurfaceVariant"
                 size="400"
-                placeholder={allowTextCustomEmoji ? 'Search or Text Reaction ' : 'Search'}
+                placeholder={
+                  allowTextCustomEmoji && !gifTab ? 'Search or Text Reaction ' : 'Search'
+                }
                 maxLength={50}
                 after={
-                  allowTextCustomEmoji && result?.query ? (
+                  allowTextCustomEmoji && result?.query && !gifTab ? (
                     <Chip
                       variant="Primary"
                       radii="Pill"
@@ -855,28 +1109,30 @@ export function EmojiBoard({
           </Header>
         }
         sidebar={
-          <Sidebar>
-            {emojiTab && recentEmojis.length > 0 && (
-              <RecentEmojiSidebarStack onItemClick={handleScrollToGroup} />
-            )}
-            {imagePacks.length > 0 && (
-              <ImagePackSidebarStack
-                mx={mx}
-                usage={usage}
-                packs={imagePacks}
-                onItemClick={handleScrollToGroup}
-                useAuthentication={useAuthentication}
-              />
-            )}
-            {emojiTab && (
-              <NativeEmojiSidebarStack
-                groups={emojiGroups}
-                icons={emojiGroupIcons}
-                labels={emojiGroupLabels}
-                onItemClick={handleScrollToGroup}
-              />
-            )}
-          </Sidebar>
+          !gifTab ? (
+            <Sidebar>
+              {emojiTab && recentEmojis.length > 0 && (
+                <RecentEmojiSidebarStack onItemClick={handleScrollToGroup} />
+              )}
+              {imagePacks.length > 0 && (
+                <ImagePackSidebarStack
+                  mx={mx}
+                  usage={usage}
+                  packs={imagePacks}
+                  onItemClick={handleScrollToGroup}
+                  useAuthentication={useAuthentication}
+                />
+              )}
+              {emojiTab && (
+                <NativeEmojiSidebarStack
+                  groups={emojiGroups}
+                  icons={emojiGroupIcons}
+                  labels={emojiGroupLabels}
+                  onItemClick={handleScrollToGroup}
+                />
+              )}
+            </Sidebar>
+          ) : undefined
         }
         footer={
           emojiTab ? (
@@ -895,7 +1151,8 @@ export function EmojiBoard({
               </Text>
             </Footer>
           ) : (
-            imagePacks.length > 0 && (
+            imagePacks.length > 0 &&
+            !gifTab && (
               <Footer>
                 <Text ref={emojiPreviewTextRef} size="H5" truncate>
                   :smiley:
@@ -920,30 +1177,40 @@ export function EmojiBoard({
               direction="Column"
               gap="200"
             >
-              {searchedItems && (
-                <SearchEmojiGroup
-                  mx={mx}
-                  tab={tab}
-                  id={SEARCH_GROUP_ID}
-                  label={searchedItems.length ? 'Search Results' : 'No Results found'}
-                  emojis={searchedItems}
-                  useAuthentication={useAuthentication}
-                />
+              {gifTab ? (
+                <GifGroups gifs={gifs} loading={gifsLoading} error={gifsError} />
+              ) : (
+                <>
+                  {searchedItems && (
+                    <SearchEmojiGroup
+                      mx={mx}
+                      tab={tab}
+                      id={SEARCH_GROUP_ID}
+                      label={searchedItems.length ? 'Search Results' : 'No Results found'}
+                      emojis={searchedItems}
+                      useAuthentication={useAuthentication}
+                    />
+                  )}
+                  {emojiTab && recentEmojis.length > 0 && (
+                    <RecentEmojiGroup id={RECENT_GROUP_ID} label="Recent" emojis={recentEmojis} />
+                  )}
+                  {emojiTab && (
+                    <CustomEmojiGroups
+                      mx={mx}
+                      groups={imagePacks}
+                      useAuthentication={useAuthentication}
+                    />
+                  )}
+                  {stickerTab && (
+                    <StickerGroups
+                      mx={mx}
+                      groups={imagePacks}
+                      useAuthentication={useAuthentication}
+                    />
+                  )}
+                  {emojiTab && <NativeEmojiGroups groups={emojiGroups} labels={emojiGroupLabels} />}
+                </>
               )}
-              {emojiTab && recentEmojis.length > 0 && (
-                <RecentEmojiGroup id={RECENT_GROUP_ID} label="Recent" emojis={recentEmojis} />
-              )}
-              {emojiTab && (
-                <CustomEmojiGroups
-                  mx={mx}
-                  groups={imagePacks}
-                  useAuthentication={useAuthentication}
-                />
-              )}
-              {stickerTab && (
-                <StickerGroups mx={mx} groups={imagePacks} useAuthentication={useAuthentication} />
-              )}
-              {emojiTab && <NativeEmojiGroups groups={emojiGroups} labels={emojiGroupLabels} />}
             </Box>
           </Scroll>
         </Content>
