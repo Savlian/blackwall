@@ -255,14 +255,15 @@ function MessageNotifications() {
 
 function UpdatePresence() {
   const mx = useMatrixClient();
-  const onFocus = () => {
-    mx.setSyncPresence(SetPresence.Online);
-  };
-  const onBlur = () => {
-    mx.setSyncPresence(SetPresence.Unavailable);
-  }
 
   useEffect(() => {
+    const onFocus = () => {
+      mx.setSyncPresence(SetPresence.Online);
+    };
+    const onBlur = () => {
+      mx.setSyncPresence(SetPresence.Unavailable);
+    }
+
     window.addEventListener("focus", onFocus);
     window.addEventListener("blur", onBlur);
     onFocus();
