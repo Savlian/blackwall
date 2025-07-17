@@ -23,9 +23,9 @@ const DOMAIN_REGEX = /\b(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}\b/;
 
 export const isServerName = (serverName: string): boolean => DOMAIN_REGEX.test(serverName);
 
-export const matchMxId = (id: string): RegExpMatchArray | null => id.match(/^([@!$+#])(.+):(\S+)$/);
+const matchMxId = (id: string): RegExpMatchArray | null => id.match(/^([@$+#])(.+):(\S+)$/);
 
-export const validMxId = (id: string): boolean => !!matchMxId(id);
+const validMxId = (id: string): boolean => !!matchMxId(id);
 
 export const getMxIdServer = (userId: string): string | undefined => matchMxId(userId)?.[3];
 
@@ -33,7 +33,7 @@ export const getMxIdLocalPart = (userId: string): string | undefined => matchMxI
 
 export const isUserId = (id: string): boolean => validMxId(id) && id.startsWith('@');
 
-export const isRoomId = (id: string): boolean => validMxId(id) && id.startsWith('!');
+export const isRoomId = (id: string): boolean => id.startsWith('!');
 
 export const isRoomAlias = (id: string): boolean => validMxId(id) && id.startsWith('#');
 
@@ -50,7 +50,11 @@ export const getCanonicalAliasOrRoomId = (mx: MatrixClient, roomId: string): str
   const room = mx.getRoom(roomId);
   if (!room) return roomId;
   if (getStateEvent(room, StateEvent.RoomTombstone) !== undefined) return roomId;
-  return room.getCanonicalAlias() || roomId;
+  const alias = room.getCanonicalAlias();
+  if (alias && getCanonicalAliasRoomId(mx, alias) === roomId) {
+    return alias;
+  }
+  return roomId;
 };
 
 export const getImageInfo = (img: HTMLImageElement, fileOrBlob: File | Blob): IImageInfo => {
