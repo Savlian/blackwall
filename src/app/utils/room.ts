@@ -294,6 +294,11 @@ export const getDirectRoomAvatarUrl = (
   useAuthentication = false
 ): string | undefined => {
   const mxcUrl = room.getAvatarFallbackMember()?.getMxcAvatarUrl();
+
+  if (!mxcUrl) {
+    return getRoomAvatarUrl(mx, room, size, useAuthentication);
+  }
+
   return mxcUrl
     ? mx.mxcUrlToHttp(mxcUrl, size, size, 'crop', undefined, false, useAuthentication) ?? undefined
     : undefined;
