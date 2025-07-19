@@ -299,9 +299,9 @@ export const getDirectRoomAvatarUrl = (
     return getRoomAvatarUrl(mx, room, size, useAuthentication);
   }
 
-  return mxcUrl
-    ? mx.mxcUrlToHttp(mxcUrl, size, size, 'crop', undefined, false, useAuthentication) ?? undefined
-    : undefined;
+  return (
+    mx.mxcUrlToHttp(mxcUrl, size, size, 'crop', undefined, false, useAuthentication) ?? undefined
+  );
 };
 
 export const trimReplyFromBody = (body: string): string => {
