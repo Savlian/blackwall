@@ -18,14 +18,14 @@ import {
 } from 'folds';
 import FocusTrap from 'focus-trap-react';
 import { MatrixError } from 'matrix-js-sdk';
-import { RoomCreateEventContent, RoomTombstoneEventContent } from 'matrix-js-sdk/lib/types';
+import { RoomTombstoneEventContent } from 'matrix-js-sdk/lib/types';
 import { SequenceCard } from '../../../components/sequence-card';
 import { SequenceCardStyle } from '../../room-settings/styles.css';
 import { SettingTile } from '../../../components/setting-tile';
 import { useRoom } from '../../../hooks/useRoom';
 import { AsyncStatus, useAsyncCallback } from '../../../hooks/useAsyncCallback';
 import { IPowerLevels, powerLevelAPI } from '../../../hooks/usePowerLevels';
-import { StateEvent } from '../../../../types/matrix/room';
+import { IRoomCreateContent, StateEvent } from '../../../../types/matrix/room';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { useStateEvent } from '../../../hooks/useStateEvent';
 import { useRoomNavigate } from '../../../hooks/useRoomNavigate';
@@ -43,8 +43,8 @@ export function RoomUpgrade({ powerLevels, requestClose }: RoomUpgradeProps) {
   const createContent = useStateEvent(
     room,
     StateEvent.RoomCreate
-  )?.getContent<RoomCreateEventContent>();
-  const roomVersion = createContent?.room_version ?? 1;
+  )?.getContent<IRoomCreateContent>();
+  const roomVersion = createContent?.room_version ?? '1';
   const predecessorRoomId = createContent?.predecessor?.room_id;
 
   const capabilities = useCapabilities();

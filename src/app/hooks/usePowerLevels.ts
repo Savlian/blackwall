@@ -5,7 +5,7 @@ import { useStateEvent } from './useStateEvent';
 import { StateEvent } from '../../types/matrix/room';
 import { useStateEventCallback } from './useStateEventCallback';
 import { useMatrixClient } from './useMatrixClient';
-import { getStateEvent } from '../utils/room';
+import { getRoomCreators, getStateEvent } from '../utils/room';
 
 export type PowerLevelActions = 'invite' | 'redact' | 'kick' | 'ban' | 'historical';
 export type PowerLevelNotificationsAction = 'room';
@@ -23,6 +23,7 @@ export type IPowerLevels = {
   events?: Record<string, number>;
   users?: Record<string, number>;
   notifications?: Record<string, number>;
+  'in.cinny.creators'?: string[];
 };
 
 const DEFAULT_POWER_LEVELS: Required<IPowerLevels> = {
@@ -39,6 +40,7 @@ const DEFAULT_POWER_LEVELS: Required<IPowerLevels> = {
   notifications: {
     room: 50,
   },
+  'in.cinny.creators': [],
 };
 
 const fillMissingPowers = (powerLevels: IPowerLevels): IPowerLevels =>
@@ -57,18 +59,23 @@ const fillMissingPowers = (powerLevels: IPowerLevels): IPowerLevels =>
     return draftPl;
   });
 
-const getPowersLevelFromMatrixEvent = (mEvent?: MatrixEvent): IPowerLevels => {
-  const pl = mEvent?.getContent<IPowerLevels>();
-  if (!pl) return DEFAULT_POWER_LEVELS;
+const getPowersLevelFromMatrixEvent = (mEvent?: MatrixEvent, creators?: string[]): IPowerLevels => {
+  const plContent = mEvent?.getContent<IPowerLevels>();
 
-  return fillMissingPowers(pl);
+  const powerLevels = !plContent ? DEFAULT_POWER_LEVELS : fillMissingPowers(plContent);
+
+  return produce(powerLevels, (draftPl) => {
+    // eslint-disable-next-line no-param-reassign
+    draftPl['in.cinny.creators'] = creators;
+    return draftPl;
+  });
 };
 
 export function usePowerLevels(room: Room): IPowerLevels {
   const powerLevelsEvent = useStateEvent(room, StateEvent.RoomPowerLevels);
   const powerLevels: IPowerLevels = useMemo(
-    () => getPowersLevelFromMatrixEvent(powerLevelsEvent),
-    [powerLevelsEvent]
+    () => getPowersLevelFromMatrixEvent(powerLevelsEvent, getRoomCreators(room)),
+    [room, powerLevelsEvent]
   );
 
   return powerLevels;
@@ -91,7 +98,7 @@ export const useRoomsPowerLevels = (rooms: Room[]): Map<string, IPowerLevels> =>
 
     rooms.forEach((room) => {
       const mEvent = getStateEvent(room, StateEvent.RoomPowerLevels, '');
-      rToPl.set(room.roomId, getPowersLevelFromMatrixEvent(mEvent));
+      rToPl.set(room.roomId, getPowersLevelFromMatrixEvent(mEvent, getRoomCreators(room)));
     });
 
     return rToPl;
@@ -155,7 +162,12 @@ export type ReadPowerLevelAPI = {
 
 export const readPowerLevel: ReadPowerLevelAPI = {
   user: (powerLevels, userId) => {
-    const { users_default: usersDefault, users } = powerLevels;
+    const { users_default: usersDefault, users, 'in.cinny.creators': creators } = powerLevels;
+
+    if (userId && Array.isArray(creators) && creators.includes(userId)) {
+      return Infinity;
+    }
+
     if (userId && users && typeof users[userId] === 'number') {
       return users[userId];
     }
