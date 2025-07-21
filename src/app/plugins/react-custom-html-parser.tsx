@@ -272,13 +272,7 @@ export function CodeBlock(children: ChildNode[], opts: HTMLReactParserOptions) {
           </IconButton>
         )}
       </div>
-      <Scroll
-        direction={collapsed ? 'Both' : 'Horizontal'}
-        variant="Secondary"
-        size="300"
-        visibility="Hover"
-        hideTrack
-      >
+      <Scroll direction="Both" variant="Secondary" size="300" visibility="Hover" hideTrack>
         <div id="code-block-content" className={css.CodeBlockInternal({ collapsed })}>
           {domToReact(children, opts)}
         </div>
