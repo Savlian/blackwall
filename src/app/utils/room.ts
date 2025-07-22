@@ -516,10 +516,7 @@ export const guessPerfectParent = (
   return perfectParent;
 };
 
-export const getRoomCreators = (room: Room): string[] | undefined => {
-  const createEvent = getStateEvent(room, StateEvent.RoomCreate);
-  if (!createEvent) return undefined;
-
+export const getRoomCreators = (createEvent: MatrixEvent): string[] | undefined => {
   const createContent = createEvent.getContent<IRoomCreateContent>();
   const roomVersion = createContent.room_version;
 
@@ -530,15 +527,11 @@ export const getRoomCreators = (room: Room): string[] | undefined => {
 
   const creators: Set<string> = new Set();
 
-  if (createEvent?.event.sender) {
-    creators.add(createEvent?.event.sender);
+  if (createEvent.event.sender) {
+    creators.add(createEvent.event.sender);
   }
 
-  if (
-    createContent &&
-    'additional_creators' in createContent &&
-    Array.isArray(createContent.additional_creators)
-  ) {
+  if ('additional_creators' in createContent && Array.isArray(createContent.additional_creators)) {
     createContent.additional_creators.forEach((creator) => {
       if (typeof creator === 'string') {
         creators.add(creator);

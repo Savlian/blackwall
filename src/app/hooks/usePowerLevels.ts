@@ -73,10 +73,13 @@ const getPowersLevelFromMatrixEvent = (mEvent?: MatrixEvent, creators?: string[]
 
 export function usePowerLevels(room: Room): IPowerLevels {
   const powerLevelsEvent = useStateEvent(room, StateEvent.RoomPowerLevels);
-  const powerLevels: IPowerLevels = useMemo(
-    () => getPowersLevelFromMatrixEvent(powerLevelsEvent, getRoomCreators(room)),
-    [room, powerLevelsEvent]
-  );
+  const powerLevels: IPowerLevels = useMemo(() => {
+    const createEvent = getStateEvent(room, StateEvent.RoomCreate);
+    return getPowersLevelFromMatrixEvent(
+      powerLevelsEvent,
+      createEvent ? getRoomCreators(createEvent) : undefined
+    );
+  }, [room, powerLevelsEvent]);
 
   return powerLevels;
 }
@@ -98,7 +101,14 @@ export const useRoomsPowerLevels = (rooms: Room[]): Map<string, IPowerLevels> =>
 
     rooms.forEach((room) => {
       const mEvent = getStateEvent(room, StateEvent.RoomPowerLevels, '');
-      rToPl.set(room.roomId, getPowersLevelFromMatrixEvent(mEvent, getRoomCreators(room)));
+      const createEvent = getStateEvent(room, StateEvent.RoomCreate);
+      rToPl.set(
+        room.roomId,
+        getPowersLevelFromMatrixEvent(
+          mEvent,
+          createEvent ? getRoomCreators(createEvent) : undefined
+        )
+      );
     });
 
     return rToPl;
