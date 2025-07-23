@@ -1016,6 +1016,27 @@ export const Message = as<'div', MessageProps>(
                               Reply
                             </Text>
                           </MenuItem>
+                          {!isThreadedMessage && (
+                            <MenuItem
+                              size="300"
+                              after={<Icon src={Icons.ThreadPlus} size="100" />}
+                              radii="300"
+                              data-event-id={mEvent.getId()}
+                              onClick={(evt: any) => {
+                                onReplyClick(evt, true);
+                                closeMenu();
+                              }}
+                            >
+                              <Text
+                                className={css.MessageMenuItemText}
+                                as="span"
+                                size="T300"
+                                truncate
+                              >
+                                Reply in thread
+                              </Text>
+                            </MenuItem>
+                          )}
                           {canEditEvent(mx, mEvent) && onEditId && (
                             <MenuItem
                               size="300"
