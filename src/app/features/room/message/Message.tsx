@@ -1033,7 +1033,7 @@ export const Message = as<'div', MessageProps>(
                                 size="T300"
                                 truncate
                               >
-                                Reply in thread
+                                Reply in Thread
                               </Text>
                             </MenuItem>
                           )}
