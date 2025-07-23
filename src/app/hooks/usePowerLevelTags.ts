@@ -23,20 +23,21 @@ const powerSortFn = (a: number, b: number) => b - a;
 const sortPowers = (powers: number[]): number[] => powers.sort(powerSortFn);
 
 export const getPowers = (tags: PowerLevelTags): number[] => {
-  const powers: number[] = Object.keys(tags).map((p) => {
-    const power = parseInt(p, 10);
-    if (Number.isNaN(power)) {
-      return Infinity;
-    }
-    return power;
-  });
+  const powers: number[] = Object.keys(tags)
+    .map((p) => {
+      const power = parseInt(p, 10);
+      if (Number.isNaN(power)) {
+        return undefined;
+      }
+      return power;
+    })
+    .filter((power) => typeof power === 'number');
 
   return sortPowers(powers);
 };
 
 export const getUsedPowers = (powerLevels: IPowerLevels): Set<number> => {
   const powers: Set<number> = new Set();
-  powers.add(Infinity);
 
   const findAndAddPower = (data: Record<string, unknown>) => {
     Object.keys(data).forEach((key) => {
@@ -58,16 +59,12 @@ export const getUsedPowers = (powerLevels: IPowerLevels): Set<number> => {
 };
 
 const DEFAULT_TAGS: PowerLevelTags = {
-  Infinity: {
-    name: 'Creator',
-    color: '#ff6a00',
-  },
   9001: {
     name: 'Goku',
     color: '#ff6a00',
   },
   150: {
-    name: 'Super Admin',
+    name: 'Founder',
     color: '#ff6a7f',
   },
   101: {

@@ -83,9 +83,6 @@ export function PermissionGroups({ powerLevels, permissionGroups }: PermissionGr
           applyPermissionPower(draftPowerLevels, location, power)
         );
 
-        // eslint-disable-next-line no-param-reassign
-        delete draftPowerLevels['in.cinny.creators'];
-
         return draftPowerLevels;
       });
       await mx.sendStateEvent(room.roomId, StateEvent.RoomPowerLevels as any, editedPowerLevels);
