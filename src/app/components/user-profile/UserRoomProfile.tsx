@@ -1,4 +1,5 @@
 import {
+  Avatar,
   Box,
   Button,
   Chip,
@@ -10,8 +11,10 @@ import {
   MenuItem,
   PopOut,
   RectCords,
+  Scroll,
   Spinner,
   Text,
+  toRem,
 } from 'folds';
 import React, { MouseEventHandler, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -19,7 +22,13 @@ import FocusTrap from 'focus-trap-react';
 import { isKeyHotkey } from 'is-hotkey';
 import { UserHero, UserHeroName } from './UserHero';
 import { getMxIdServer, mxcUrlToHttp } from '../../utils/matrix';
-import { getMemberAvatarMxc, getMemberDisplayName } from '../../utils/room';
+import {
+  getDirectRoomAvatarUrl,
+  getMemberAvatarMxc,
+  getMemberDisplayName,
+  getRoomAvatarUrl,
+  joinRuleToIconSrc,
+} from '../../utils/room';
 import { useMatrixClient } from '../../hooks/useMatrixClient';
 import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
 import { PowerColorBadge, PowerIcon } from '../power';
@@ -36,6 +45,12 @@ import { useOpenRoomSettings } from '../../state/hooks/roomSettings';
 import { RoomSettingsPage } from '../../state/roomSettings';
 import { useRoom } from '../../hooks/useRoom';
 import { useSpaceOptionally } from '../../hooks/useSpace';
+import { useAllJoinedRoomsSet, useGetRoom } from '../../hooks/useGetRoom';
+import { useRoomNavigate } from '../../hooks/useRoomNavigate';
+import { factoryRoomIdByAtoZ } from '../../utils/sort';
+import { useDirectRooms } from '../../pages/client/direct/useDirectRooms';
+import { RoomAvatar, RoomIcon } from '../room-avatar';
+import { nameInitials } from '../../utils/common';
 
 function ServerChip({ server }: { server: string }) {
   const mx = useMatrixClient();
@@ -249,27 +264,141 @@ function MutualRoomsChip({ userId }: { userId: string }) {
   const mx = useMatrixClient();
   const mutualRoomSupported = useMutualRoomsSupport();
   const mutualRoomsState = useMutualRooms(userId);
+  const { navigateRoom, navigateSpace } = useRoomNavigate();
+  const closeUserRoomProfile = useCloseUserRoomProfile();
+  const directs = useDirectRooms();
+  const useAuthentication = useMediaAuthentication();
+
+  const allJoinedRooms = useAllJoinedRoomsSet();
+  const getRoom = useGetRoom(allJoinedRooms);
+
+  const [cords, setCords] = useState<RectCords>();
+
+  const open: MouseEventHandler<HTMLButtonElement> = (evt) => {
+    setCords(evt.currentTarget.getBoundingClientRect());
+  };
+
+  const close = () => setCords(undefined);
 
   if (
     userId === mx.getSafeUserId() ||
     !mutualRoomSupported ||
     mutualRoomsState.status === AsyncStatus.Error
-  )
+  ) {
     return null;
+  }
 
   return (
-    <Chip
-      variant="SurfaceVariant"
-      radii="Pill"
-      before={mutualRoomsState.status === AsyncStatus.Loading && <Spinner size="50" />}
-      disabled={mutualRoomsState.status !== AsyncStatus.Success}
+    <PopOut
+      anchor={cords}
+      position="Bottom"
+      align="Start"
+      offset={4}
+      content={
+        mutualRoomsState.status === AsyncStatus.Success ? (
+          <FocusTrap
+            focusTrapOptions={{
+              initialFocus: false,
+              onDeactivate: close,
+              clickOutsideDeactivates: true,
+              escapeDeactivates: stopPropagation,
+              isKeyForward: (evt: KeyboardEvent) => isKeyHotkey('arrowdown', evt),
+              isKeyBackward: (evt: KeyboardEvent) => isKeyHotkey('arrowup', evt),
+            }}
+          >
+            <Menu
+              style={{
+                display: 'flex',
+                maxWidth: toRem(200),
+                maxHeight: '80vh',
+              }}
+            >
+              <Box grow="Yes">
+                <Scroll size="300" hideTrack>
+                  <Box
+                    direction="Column"
+                    gap="100"
+                    style={{
+                      padding: config.space.S200,
+                      paddingRight: 0,
+                    }}
+                  >
+                    {mutualRoomsState.data
+                      .sort(factoryRoomIdByAtoZ(mx))
+                      .map((roomId) => getRoom(roomId))
+                      .map((room) => {
+                        if (!room) return null;
+                        const { roomId } = room;
+                        const dm = directs.includes(roomId);
+
+                        return (
+                          <MenuItem
+                            key={roomId}
+                            variant="Surface"
+                            fill="None"
+                            size="300"
+                            radii="300"
+                            style={{ paddingLeft: config.space.S100 }}
+                            onClick={() => {
+                              if (room.isSpaceRoom()) {
+                                navigateSpace(roomId);
+                              } else {
+                                navigateRoom(roomId);
+                              }
+                              closeUserRoomProfile();
+                            }}
+                            before={
+                              <Avatar size="200" radii={dm ? '400' : '300'}>
+                                {dm || room.isSpaceRoom() ? (
+                                  <RoomAvatar
+                                    roomId={room.roomId}
+                                    src={
+                                      dm
+                                        ? getDirectRoomAvatarUrl(mx, room, 96, useAuthentication)
+                                        : getRoomAvatarUrl(mx, room, 96, useAuthentication)
+                                    }
+                                    alt={room.name}
+                                    renderFallback={() => (
+                                      <Text as="span" size="H6">
+                                        {nameInitials(room.name)}
+                                      </Text>
+                                    )}
+                                  />
+                                ) : (
+                                  <RoomIcon size="100" joinRule={room.getJoinRule()} />
+                                )}
+                              </Avatar>
+                            }
+                          >
+                            <Text size="B300" truncate>
+                              {room.name}
+                            </Text>
+                          </MenuItem>
+                        );
+                      })}
+                  </Box>
+                </Scroll>
+              </Box>
+            </Menu>
+          </FocusTrap>
+        ) : null
+      }
     >
-      <Text size="B300">
-        {mutualRoomsState.status === AsyncStatus.Success &&
-          `${mutualRoomsState.data.length} Mutual Rooms`}
-        {mutualRoomsState.status === AsyncStatus.Loading && 'Mutual Rooms'}
-      </Text>
-    </Chip>
+      <Chip
+        variant="SurfaceVariant"
+        radii="Pill"
+        before={mutualRoomsState.status === AsyncStatus.Loading && <Spinner size="50" />}
+        disabled={mutualRoomsState.status !== AsyncStatus.Success}
+        onClick={open}
+        aria-pressed={!!cords}
+      >
+        <Text size="B300">
+          {mutualRoomsState.status === AsyncStatus.Success &&
+            `${mutualRoomsState.data.length} Mutual Rooms`}
+          {mutualRoomsState.status === AsyncStatus.Loading && 'Mutual Rooms'}
+        </Text>
+      </Chip>
+    </PopOut>
   );
 }
 
