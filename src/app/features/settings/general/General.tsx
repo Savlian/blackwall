@@ -13,6 +13,7 @@ import {
   Button,
   Chip,
   config,
+  Header,
   Icon,
   IconButton,
   Icons,
@@ -345,11 +346,175 @@ function Appearance() {
   );
 }
 
+type DateHintProps = {
+  hasChanges: boolean;
+  handleReset: () => void;
+};
+function DateHint({ hasChanges, handleReset }: DateHintProps) {
+  const [anchor, setAnchor] = useState<RectCords>();
+  const categoryPadding = { padding: config.space.S200, paddingTop: 0 };
+
+  const handleOpenMenu: MouseEventHandler<HTMLElement> = (evt) => {
+    setAnchor(evt.currentTarget.getBoundingClientRect());
+  };
+  return (
+    <PopOut
+      anchor={anchor}
+      position="Top"
+      align="End"
+      content={
+        <FocusTrap
+          focusTrapOptions={{
+            initialFocus: false,
+            onDeactivate: () => setAnchor(undefined),
+            clickOutsideDeactivates: true,
+            escapeDeactivates: stopPropagation,
+          }}
+        >
+          <Menu>
+            <Header size="300" style={{ padding: `0 ${config.space.S200}` }}>
+              <Text size="L400">Formatting</Text>
+            </Header>
+
+            <Box style={categoryPadding} direction="Column">
+              <Header size="300">
+                <Text size="L400">Year</Text>
+              </Header>
+              <Box direction="Column" tabIndex={0} gap="100">
+                <Text size="T300">
+                  YY
+                  <Text as="span" size="Inherit" priority="300">
+                    {': '}
+                    Two-digit year
+                  </Text>{' '}
+                </Text>
+                <Text size="T300">
+                  YYYY
+                  <Text as="span" size="Inherit" priority="300">
+                    {': '}Four-digit year
+                  </Text>
+                </Text>
+              </Box>
+            </Box>
+
+            <Box style={categoryPadding} direction="Column">
+              <Header size="300">
+                <Text size="L400">Month</Text>
+              </Header>
+              <Box direction="Column" tabIndex={0} gap="100">
+                <Text size="T300">
+                  M
+                  <Text as="span" size="Inherit" priority="300">
+                    {': '}The month
+                  </Text>
+                </Text>
+                <Text size="T300">
+                  MM
+                  <Text as="span" size="Inherit" priority="300">
+                    {': '}Two-digit month
+                  </Text>{' '}
+                </Text>
+                <Text size="T300">
+                  MMM
+                  <Text as="span" size="Inherit" priority="300">
+                    {': '}Short month name
+                  </Text>
+                </Text>
+                <Text size="T300">
+                  MMMM
+                  <Text as="span" size="Inherit" priority="300">
+                    {': '}Full month name
+                  </Text>
+                </Text>
+              </Box>
+            </Box>
+
+            <Box style={categoryPadding} direction="Column">
+              <Header size="300">
+                <Text size="L400">Day of the Month</Text>
+              </Header>
+              <Box direction="Column" tabIndex={0} gap="100">
+                <Text size="T300">
+                  D
+                  <Text as="span" size="Inherit" priority="300">
+                    {': '}Day of the month
+                  </Text>
+                </Text>
+                <Text size="T300">
+                  DD
+                  <Text as="span" size="Inherit" priority="300">
+                    {': '}Two-digit day of the month
+                  </Text>
+                </Text>
+              </Box>
+            </Box>
+            <Box style={categoryPadding} direction="Column">
+              <Header size="300">
+                <Text size="L400">Day of the Week</Text>
+              </Header>
+              <Box direction="Column" tabIndex={0} gap="100">
+                <Text size="T300">
+                  d
+                  <Text as="span" size="Inherit" priority="300">
+                    {': '}Day of the week (Sunday = 0)
+                  </Text>
+                </Text>
+                <Text size="T300">
+                  dd
+                  <Text as="span" size="Inherit" priority="300">
+                    {': '}Two-letter day name
+                  </Text>
+                </Text>
+                <Text size="T300">
+                  ddd
+                  <Text as="span" size="Inherit" priority="300">
+                    {': '}Short day name
+                  </Text>
+                </Text>
+                <Text size="T300">
+                  dddd
+                  <Text as="span" size="Inherit" priority="300">
+                    {': '}Full day name
+                  </Text>
+                </Text>
+              </Box>
+            </Box>
+          </Menu>
+        </FocusTrap>
+      }
+    >
+      {hasChanges ? (
+        <IconButton
+          tabIndex={-1}
+          onClick={handleReset}
+          type="reset"
+          variant="Secondary"
+          size="300"
+          radii="300"
+        >
+          <Icon src={Icons.Cross} size="100" />
+        </IconButton>
+      ) : (
+        <IconButton
+          tabIndex={-1}
+          onClick={handleOpenMenu}
+          type="button"
+          variant="Secondary"
+          size="300"
+          radii="300"
+          aria-pressed={!!anchor}
+        >
+          <Icon style={{ opacity: config.opacity.P300 }} size="100" src={Icons.Info} />
+        </IconButton>
+      )}
+    </PopOut>
+  );
+}
+
 type CustomDateFormatProps = {
   value: string;
   onChange: (format: string) => void;
 };
-
 function CustomDateFormat({ value, onChange }: CustomDateFormatProps) {
   const [dateFormatCustom, setDateFormatCustom] = useState(value);
 
@@ -379,21 +544,7 @@ function CustomDateFormat({ value, onChange }: CustomDateFormatProps) {
 
   const hasChanges = dateFormatCustom !== value;
   return (
-    <SettingTile
-      description={
-        <Text size="T200">
-          View formatting syntax on{' '}
-          <a
-            href="https://day.js.org/docs/en/display/format"
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            Day.js
-          </a>
-          .
-        </Text>
-      }
-    >
+    <SettingTile>
       <Box as="form" onSubmit={handleSubmit} gap="200">
         <Box grow="Yes" direction="Column">
           <Input
@@ -406,19 +557,7 @@ function CustomDateFormat({ value, onChange }: CustomDateFormatProps) {
             variant="Secondary"
             radii="300"
             style={{ paddingRight: config.space.S200 }}
-            after={
-              hasChanges && (
-                <IconButton
-                  type="reset"
-                  onClick={handleReset}
-                  size="300"
-                  radii="300"
-                  variant="Secondary"
-                >
-                  <Icon src={Icons.Cross} size="100" />
-                </IconButton>
-              )
-            }
+            after={<DateHint hasChanges={hasChanges} handleReset={handleReset} />}
           />
         </Box>
         <Button
@@ -441,7 +580,6 @@ type PresetDateFormatProps = {
   value: string;
   onChange: (format: string) => void;
 };
-
 function PresetDateFormat({ value, onChange }: PresetDateFormatProps) {
   const [menuCords, setMenuCords] = useState<RectCords>();
   const dateFormatItems = useDateFormatItems();
