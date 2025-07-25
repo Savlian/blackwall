@@ -201,7 +201,7 @@ const getSpaceJoinedHierarchy = (
   /**
    * Recursively checks if the given space or any of its descendants contain non-space rooms.
    *
-   * @param roomId - The space ID to check.
+   * @param spaceId - The space ID to check.
    * @returns True if the space or any descendant contains non-space rooms.
    */
   const containsRoom = (spaceId: string) => {
