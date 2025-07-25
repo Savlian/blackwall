@@ -371,112 +371,114 @@ function DateHint({ hasChanges, handleReset }: DateHintProps) {
             escapeDeactivates: stopPropagation,
           }}
         >
-          <Menu>
+          <Menu style={{ maxHeight: '85vh', overflowY: 'auto' }}>
             <Header size="300" style={{ padding: `0 ${config.space.S200}` }}>
               <Text size="L400">Formatting</Text>
             </Header>
 
-            <Box style={categoryPadding} direction="Column">
-              <Header size="300">
-                <Text size="L400">Year</Text>
-              </Header>
-              <Box direction="Column" tabIndex={0} gap="100">
-                <Text size="T300">
-                  YY
-                  <Text as="span" size="Inherit" priority="300">
-                    {': '}
-                    Two-digit year
-                  </Text>{' '}
-                </Text>
-                <Text size="T300">
-                  YYYY
-                  <Text as="span" size="Inherit" priority="300">
-                    {': '}Four-digit year
+            <Box direction="Column">
+              <Box style={categoryPadding} direction="Column">
+                <Header size="300">
+                  <Text size="L400">Year</Text>
+                </Header>
+                <Box direction="Column" tabIndex={0} gap="100">
+                  <Text size="T300">
+                    YY
+                    <Text as="span" size="Inherit" priority="300">
+                      {': '}
+                      Two-digit year
+                    </Text>{' '}
                   </Text>
-                </Text>
+                  <Text size="T300">
+                    YYYY
+                    <Text as="span" size="Inherit" priority="300">
+                      {': '}Four-digit year
+                    </Text>
+                  </Text>
+                </Box>
               </Box>
-            </Box>
 
-            <Box style={categoryPadding} direction="Column">
-              <Header size="300">
-                <Text size="L400">Month</Text>
-              </Header>
-              <Box direction="Column" tabIndex={0} gap="100">
-                <Text size="T300">
-                  M
-                  <Text as="span" size="Inherit" priority="300">
-                    {': '}The month
+              <Box style={categoryPadding} direction="Column">
+                <Header size="300">
+                  <Text size="L400">Month</Text>
+                </Header>
+                <Box direction="Column" tabIndex={0} gap="100">
+                  <Text size="T300">
+                    M
+                    <Text as="span" size="Inherit" priority="300">
+                      {': '}The month
+                    </Text>
                   </Text>
-                </Text>
-                <Text size="T300">
-                  MM
-                  <Text as="span" size="Inherit" priority="300">
-                    {': '}Two-digit month
-                  </Text>{' '}
-                </Text>
-                <Text size="T300">
-                  MMM
-                  <Text as="span" size="Inherit" priority="300">
-                    {': '}Short month name
+                  <Text size="T300">
+                    MM
+                    <Text as="span" size="Inherit" priority="300">
+                      {': '}Two-digit month
+                    </Text>{' '}
                   </Text>
-                </Text>
-                <Text size="T300">
-                  MMMM
-                  <Text as="span" size="Inherit" priority="300">
-                    {': '}Full month name
+                  <Text size="T300">
+                    MMM
+                    <Text as="span" size="Inherit" priority="300">
+                      {': '}Short month name
+                    </Text>
                   </Text>
-                </Text>
+                  <Text size="T300">
+                    MMMM
+                    <Text as="span" size="Inherit" priority="300">
+                      {': '}Full month name
+                    </Text>
+                  </Text>
+                </Box>
               </Box>
-            </Box>
 
-            <Box style={categoryPadding} direction="Column">
-              <Header size="300">
-                <Text size="L400">Day of the Month</Text>
-              </Header>
-              <Box direction="Column" tabIndex={0} gap="100">
-                <Text size="T300">
-                  D
-                  <Text as="span" size="Inherit" priority="300">
-                    {': '}Day of the month
+              <Box style={categoryPadding} direction="Column">
+                <Header size="300">
+                  <Text size="L400">Day of the Month</Text>
+                </Header>
+                <Box direction="Column" tabIndex={0} gap="100">
+                  <Text size="T300">
+                    D
+                    <Text as="span" size="Inherit" priority="300">
+                      {': '}Day of the month
+                    </Text>
                   </Text>
-                </Text>
-                <Text size="T300">
-                  DD
-                  <Text as="span" size="Inherit" priority="300">
-                    {': '}Two-digit day of the month
+                  <Text size="T300">
+                    DD
+                    <Text as="span" size="Inherit" priority="300">
+                      {': '}Two-digit day of the month
+                    </Text>
                   </Text>
-                </Text>
+                </Box>
               </Box>
-            </Box>
-            <Box style={categoryPadding} direction="Column">
-              <Header size="300">
-                <Text size="L400">Day of the Week</Text>
-              </Header>
-              <Box direction="Column" tabIndex={0} gap="100">
-                <Text size="T300">
-                  d
-                  <Text as="span" size="Inherit" priority="300">
-                    {': '}Day of the week (Sunday = 0)
+              <Box style={categoryPadding} direction="Column">
+                <Header size="300">
+                  <Text size="L400">Day of the Week</Text>
+                </Header>
+                <Box direction="Column" tabIndex={0} gap="100">
+                  <Text size="T300">
+                    d
+                    <Text as="span" size="Inherit" priority="300">
+                      {': '}Day of the week (Sunday = 0)
+                    </Text>
                   </Text>
-                </Text>
-                <Text size="T300">
-                  dd
-                  <Text as="span" size="Inherit" priority="300">
-                    {': '}Two-letter day name
+                  <Text size="T300">
+                    dd
+                    <Text as="span" size="Inherit" priority="300">
+                      {': '}Two-letter day name
+                    </Text>
                   </Text>
-                </Text>
-                <Text size="T300">
-                  ddd
-                  <Text as="span" size="Inherit" priority="300">
-                    {': '}Short day name
+                  <Text size="T300">
+                    ddd
+                    <Text as="span" size="Inherit" priority="300">
+                      {': '}Short day name
+                    </Text>
                   </Text>
-                </Text>
-                <Text size="T300">
-                  dddd
-                  <Text as="span" size="Inherit" priority="300">
-                    {': '}Full day name
+                  <Text size="T300">
+                    dddd
+                    <Text as="span" size="Inherit" priority="300">
+                      {': '}Full day name
+                    </Text>
                   </Text>
-                </Text>
+                </Box>
               </Box>
             </Box>
           </Menu>
