@@ -290,7 +290,7 @@ function SelectRoomButton({ roomList, selectedRooms, onChange }: SelectRoomButto
                 </Box>
               </Scroll>
               <Line variant="Surface" size="300" />
-              <Box shrink="No" direction="Column" gap="100" style={{ padding: config.space.S200 }}>
+              <Box shrink="No" direction="Column" gap="200" style={{ padding: config.space.S200 }}>
                 <Button size="300" variant="Secondary" radii="300" onClick={handleSave}>
                   {localSelected && localSelected.length > 0 ? (
                     <Text size="B300">Save ({localSelected.length})</Text>
