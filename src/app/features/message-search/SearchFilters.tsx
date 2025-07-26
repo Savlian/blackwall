@@ -74,8 +74,7 @@ function OrderButton({ order, onChange }: OrderButtonProps) {
             <Header size="300" variant="Surface" style={{ padding: `0 ${config.space.S300}` }}>
               <Text size="L400">Sort by</Text>
             </Header>
-            <Line variant="Surface" size="300" />
-            <div style={{ padding: config.space.S100 }}>
+            <div style={{ padding: config.space.S200, paddingTop: 0 }}>
               <MenuItem
                 onClick={() => setOrder()}
                 variant="Surface"
