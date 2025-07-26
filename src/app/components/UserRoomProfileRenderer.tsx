@@ -23,7 +23,7 @@ function UserRoomProfileContextMenu({ state }: { state: UserRoomProfileState }) 
   return (
     <PopOut
       anchor={cords}
-      position="Right"
+      position="Top"
       align="Start"
       content={
         <FocusTrap

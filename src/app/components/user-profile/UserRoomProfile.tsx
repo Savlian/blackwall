@@ -1,5 +1,4 @@
 import {
-  Avatar,
   Box,
   Button,
   Chip,
@@ -11,141 +10,32 @@ import {
   MenuItem,
   PopOut,
   RectCords,
-  Scroll,
-  Spinner,
   Text,
-  toRem,
 } from 'folds';
 import React, { MouseEventHandler, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import FocusTrap from 'focus-trap-react';
 import { isKeyHotkey } from 'is-hotkey';
 import { UserHero, UserHeroName } from './UserHero';
 import { getMxIdServer, mxcUrlToHttp } from '../../utils/matrix';
-import {
-  getDirectRoomAvatarUrl,
-  getMemberAvatarMxc,
-  getMemberDisplayName,
-  getRoomAvatarUrl,
-  joinRuleToIconSrc,
-} from '../../utils/room';
+import { getMemberAvatarMxc, getMemberDisplayName } from '../../utils/room';
 import { useMatrixClient } from '../../hooks/useMatrixClient';
 import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
 import { PowerColorBadge, PowerIcon } from '../power';
 import { usePowerLevels, usePowerLevelsAPI } from '../../hooks/usePowerLevels';
 import { getPowers, getTagIconSrc, usePowerLevelTags } from '../../hooks/usePowerLevelTags';
-import { useMutualRooms, useMutualRoomsSupport } from '../../hooks/useMutualRooms';
-import { AsyncStatus } from '../../hooks/useAsyncCallback';
 import { stopPropagation } from '../../utils/keyboard';
-import { getExploreServerPath } from '../../pages/pathUtils';
-import { useCloseUserRoomProfile } from '../../state/hooks/userRoomProfile';
-import { copyToClipboard } from '../../../util/common';
 import { StateEvent } from '../../../types/matrix/room';
 import { useOpenRoomSettings } from '../../state/hooks/roomSettings';
 import { RoomSettingsPage } from '../../state/roomSettings';
 import { useRoom } from '../../hooks/useRoom';
 import { useSpaceOptionally } from '../../hooks/useSpace';
-import { useAllJoinedRoomsSet, useGetRoom } from '../../hooks/useGetRoom';
-import { useRoomNavigate } from '../../hooks/useRoomNavigate';
-import { factoryRoomIdByAtoZ } from '../../utils/sort';
-import { useDirectRooms } from '../../pages/client/direct/useDirectRooms';
-import { RoomAvatar, RoomIcon } from '../room-avatar';
-import { nameInitials } from '../../utils/common';
-
-function ServerChip({ server }: { server: string }) {
-  const mx = useMatrixClient();
-  const myServer = getMxIdServer(mx.getSafeUserId());
-  const navigate = useNavigate();
-  const closeProfile = useCloseUserRoomProfile();
-
-  const [cords, setCords] = useState<RectCords>();
-
-  const open: MouseEventHandler<HTMLButtonElement> = (evt) => {
-    setCords(evt.currentTarget.getBoundingClientRect());
-  };
-
-  const close = () => setCords(undefined);
-
-  return (
-    <PopOut
-      anchor={cords}
-      position="Bottom"
-      align="Start"
-      offset={4}
-      content={
-        <FocusTrap
-          focusTrapOptions={{
-            initialFocus: false,
-            onDeactivate: close,
-            clickOutsideDeactivates: true,
-            escapeDeactivates: stopPropagation,
-            isKeyForward: (evt: KeyboardEvent) => isKeyHotkey('arrowdown', evt),
-            isKeyBackward: (evt: KeyboardEvent) => isKeyHotkey('arrowup', evt),
-          }}
-        >
-          <Menu>
-            <div style={{ padding: config.space.S100 }}>
-              <MenuItem
-                variant="Surface"
-                fill="None"
-                size="300"
-                radii="300"
-                onClick={() => {
-                  copyToClipboard(server);
-                  close();
-                }}
-              >
-                <Text size="B300">Copy Server</Text>
-              </MenuItem>
-              <MenuItem
-                variant="Surface"
-                fill="None"
-                size="300"
-                radii="300"
-                onClick={() => {
-                  navigate(getExploreServerPath(server));
-                  closeProfile();
-                }}
-              >
-                <Text size="B300">Explore Community</Text>
-              </MenuItem>
-            </div>
-            <Line size="300" />
-            <div style={{ padding: config.space.S100 }}>
-              <MenuItem
-                variant={myServer === server ? 'Surface' : 'Critical'}
-                fill="None"
-                size="300"
-                radii="300"
-                onClick={() => window.open(`https://${server}`, '_blank')}
-              >
-                <Text size="B300">Open in Browser</Text>
-              </MenuItem>
-            </div>
-          </Menu>
-        </FocusTrap>
-      }
-    >
-      <Chip
-        variant={myServer === server ? 'SurfaceVariant' : 'Warning'}
-        radii="Pill"
-        before={
-          cords ? (
-            <Icon size="50" src={Icons.ChevronBottom} />
-          ) : (
-            <Icon size="50" src={Icons.Server} />
-          )
-        }
-        onClick={open}
-        aria-pressed={!!cords}
-      >
-        <Text size="B300" truncate>
-          {server}
-        </Text>
-      </Chip>
-    </PopOut>
-  );
-}
+import { useUserPresence } from '../../hooks/useUserPresence';
+import { SequenceCard } from '../sequence-card';
+import { MutualRoomsChip, ServerChip } from './UserChips';
+import { CutoutCard } from '../cutout-card';
+import { SettingTile } from '../setting-tile';
+import { useOpenSpaceSettings } from '../../state/hooks/spaceSettings';
+import { SpaceSettingsPage } from '../../state/spaceSettings';
 
 function PowerChip({ userId }: { userId: string }) {
   const mx = useMatrixClient();
@@ -153,6 +43,7 @@ function PowerChip({ userId }: { userId: string }) {
   const space = useSpaceOptionally();
   const useAuthentication = useMediaAuthentication();
   const openRoomSettings = useOpenRoomSettings();
+  const openSpaceSettings = useOpenSpaceSettings();
 
   const powerLevels = usePowerLevels(room);
   const { getPowerLevel, canSendStateEvent } = usePowerLevelsAPI(powerLevels);
@@ -227,7 +118,16 @@ function PowerChip({ userId }: { userId: string }) {
                 size="300"
                 radii="300"
                 onClick={() => {
-                  openRoomSettings(room.roomId, space?.roomId, RoomSettingsPage.PermissionsPage);
+                  console.log(room.roomId, space?.roomId);
+                  if (room.isSpaceRoom()) {
+                    openSpaceSettings(
+                      room.roomId,
+                      space?.roomId,
+                      SpaceSettingsPage.PermissionsPage
+                    );
+                  } else {
+                    openRoomSettings(room.roomId, space?.roomId, RoomSettingsPage.PermissionsPage);
+                  }
                   close();
                 }}
               >
@@ -260,145 +160,66 @@ function PowerChip({ userId }: { userId: string }) {
   );
 }
 
-function MutualRoomsChip({ userId }: { userId: string }) {
-  const mx = useMatrixClient();
-  const mutualRoomSupported = useMutualRoomsSupport();
-  const mutualRoomsState = useMutualRooms(userId);
-  const { navigateRoom, navigateSpace } = useRoomNavigate();
-  const closeUserRoomProfile = useCloseUserRoomProfile();
-  const directs = useDirectRooms();
-  const useAuthentication = useMediaAuthentication();
+type UserBanAlertProps = {
+  userId: string;
+  reason?: string;
+};
+function UserBanAlert({ userId, reason }: UserBanAlertProps) {
+  return (
+    <CutoutCard style={{ padding: config.space.S200 }} variant="Critical">
+      <SettingTile
+        after={
+          <Button size="300" variant="Critical" radii="300">
+            <Text size="B300">Unban</Text>
+          </Button>
+        }
+      >
+        <Box direction="Column">
+          <Text size="L400">Banned User</Text>
+          <Text size="T200">This user has been banned!{reason ? ` Reason: ${reason}` : ''}</Text>
+        </Box>
+      </SettingTile>
+    </CutoutCard>
+  );
+}
 
-  const allJoinedRooms = useAllJoinedRoomsSet();
-  const getRoom = useGetRoom(allJoinedRooms);
-
-  const [cords, setCords] = useState<RectCords>();
-
-  const open: MouseEventHandler<HTMLButtonElement> = (evt) => {
-    setCords(evt.currentTarget.getBoundingClientRect());
-  };
-
-  const close = () => setCords(undefined);
-
-  if (
-    userId === mx.getSafeUserId() ||
-    !mutualRoomSupported ||
-    mutualRoomsState.status === AsyncStatus.Error
-  ) {
-    return null;
-  }
+type UserModerationProps = {
+  userId: string;
+  canKick: boolean;
+  canBan: boolean;
+};
+function UserModeration({ userId, canKick, canBan }: UserModerationProps) {
+  const room = useRoom();
 
   return (
-    <PopOut
-      anchor={cords}
-      position="Bottom"
-      align="Start"
-      offset={4}
-      content={
-        mutualRoomsState.status === AsyncStatus.Success ? (
-          <FocusTrap
-            focusTrapOptions={{
-              initialFocus: false,
-              onDeactivate: close,
-              clickOutsideDeactivates: true,
-              escapeDeactivates: stopPropagation,
-              isKeyForward: (evt: KeyboardEvent) => isKeyHotkey('arrowdown', evt),
-              isKeyBackward: (evt: KeyboardEvent) => isKeyHotkey('arrowup', evt),
-            }}
-          >
-            <Menu
-              style={{
-                display: 'flex',
-                maxWidth: toRem(200),
-                maxHeight: '80vh',
-              }}
-            >
-              <Box grow="Yes">
-                <Scroll size="300" hideTrack>
-                  <Box
-                    direction="Column"
-                    gap="100"
-                    style={{
-                      padding: config.space.S200,
-                      paddingRight: 0,
-                    }}
-                  >
-                    {mutualRoomsState.data
-                      .sort(factoryRoomIdByAtoZ(mx))
-                      .map((roomId) => getRoom(roomId))
-                      .map((room) => {
-                        if (!room) return null;
-                        const { roomId } = room;
-                        const dm = directs.includes(roomId);
-
-                        return (
-                          <MenuItem
-                            key={roomId}
-                            variant="Surface"
-                            fill="None"
-                            size="300"
-                            radii="300"
-                            style={{ paddingLeft: config.space.S100 }}
-                            onClick={() => {
-                              if (room.isSpaceRoom()) {
-                                navigateSpace(roomId);
-                              } else {
-                                navigateRoom(roomId);
-                              }
-                              closeUserRoomProfile();
-                            }}
-                            before={
-                              <Avatar size="200" radii={dm ? '400' : '300'}>
-                                {dm || room.isSpaceRoom() ? (
-                                  <RoomAvatar
-                                    roomId={room.roomId}
-                                    src={
-                                      dm
-                                        ? getDirectRoomAvatarUrl(mx, room, 96, useAuthentication)
-                                        : getRoomAvatarUrl(mx, room, 96, useAuthentication)
-                                    }
-                                    alt={room.name}
-                                    renderFallback={() => (
-                                      <Text as="span" size="H6">
-                                        {nameInitials(room.name)}
-                                      </Text>
-                                    )}
-                                  />
-                                ) : (
-                                  <RoomIcon size="100" joinRule={room.getJoinRule()} />
-                                )}
-                              </Avatar>
-                            }
-                          >
-                            <Text size="B300" truncate>
-                              {room.name}
-                            </Text>
-                          </MenuItem>
-                        );
-                      })}
-                  </Box>
-                </Scroll>
-              </Box>
-            </Menu>
-          </FocusTrap>
-        ) : null
-      }
-    >
-      <Chip
+    <Box direction="Column" gap="100">
+      <Text size="L400">Moderation</Text>
+      <SequenceCard
         variant="SurfaceVariant"
-        radii="Pill"
-        before={mutualRoomsState.status === AsyncStatus.Loading && <Spinner size="50" />}
-        disabled={mutualRoomsState.status !== AsyncStatus.Success}
-        onClick={open}
-        aria-pressed={!!cords}
+        style={{ padding: config.space.S100 }}
+        direction="Column"
       >
-        <Text size="B300">
-          {mutualRoomsState.status === AsyncStatus.Success &&
-            `${mutualRoomsState.data.length} Mutual Rooms`}
-          {mutualRoomsState.status === AsyncStatus.Loading && 'Mutual Rooms'}
-        </Text>
-      </Chip>
-    </PopOut>
+        <MenuItem
+          size="400"
+          radii="300"
+          variant="SurfaceVariant"
+          before={<Icon size="100" src={Icons.ArrowGoLeft} />}
+          disabled={!canKick}
+        >
+          <Text size="T300">Kick</Text>
+        </MenuItem>
+        <MenuItem
+          size="400"
+          radii="300"
+          variant="SurfaceVariant"
+          fill="None"
+          before={<Icon size="100" src={Icons.NoEntry} />}
+          disabled={!canBan}
+        >
+          <Text size="T300">Ban</Text>
+        </MenuItem>
+      </SequenceCard>
+    </Box>
   );
 }
 
@@ -409,22 +230,42 @@ export function UserRoomProfile({ userId }: UserRoomProfileProps) {
   const mx = useMatrixClient();
   const useAuthentication = useMediaAuthentication();
   const room = useRoom();
+  const powerlevels = usePowerLevels(room);
+  const { getPowerLevel, canDoAction } = usePowerLevelsAPI(powerlevels);
+  const myPowerLevel = getPowerLevel(mx.getSafeUserId());
+  const userPowerLevel = getPowerLevel(userId);
+  const canKick = canDoAction('kick', myPowerLevel) && myPowerLevel > userPowerLevel;
+  const canBan = canDoAction('ban', myPowerLevel) && myPowerLevel > userPowerLevel;
+
+  const member = room.getMember(userId);
 
   const server = getMxIdServer(userId);
   const displayName = getMemberDisplayName(room, userId);
   const avatarMxc = getMemberAvatarMxc(room, userId);
   const avatarUrl = (avatarMxc && mxcUrlToHttp(mx, avatarMxc, useAuthentication)) ?? undefined;
 
+  const presence = useUserPresence(userId);
+
   return (
     <Box direction="Column">
-      <UserHero userId={userId} avatarUrl={avatarUrl} />
+      <UserHero
+        userId={userId}
+        avatarUrl={avatarUrl}
+        presence={presence && presence.lastActiveTs !== 0 ? presence : undefined}
+      />
       <Box direction="Column" gap="500" style={{ padding: config.space.S400 }}>
         <Box direction="Column" gap="400">
           <Box gap="400" alignItems="Start">
             <UserHeroName displayName={displayName} userId={userId} />
             <Box shrink="No">
-              <Button size="300" variant="Secondary" fill="Solid" radii="300">
-                <Text size="B300">View Profile</Text>
+              <Button
+                size="300"
+                variant="Secondary"
+                fill="Solid"
+                radii="300"
+                before={<Icon size="50" src={Icons.User} filled />}
+              >
+                <Text size="B300">Profile</Text>
               </Button>
             </Box>
           </Box>
@@ -434,6 +275,10 @@ export function UserRoomProfile({ userId }: UserRoomProfileProps) {
             <MutualRoomsChip userId={userId} />
           </Box>
         </Box>
+        {member?.membership === 'ban' && <UserBanAlert userId={userId} />}
+        {(canKick || canBan) && (
+          <UserModeration userId={userId} canKick={canKick} canBan={canBan} />
+        )}
       </Box>
     </Box>
   );

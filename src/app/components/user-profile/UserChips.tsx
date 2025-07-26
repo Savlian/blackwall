@@ -1,0 +1,277 @@
+import React, { MouseEventHandler, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import FocusTrap from 'focus-trap-react';
+import { isKeyHotkey } from 'is-hotkey';
+import {
+  PopOut,
+  Menu,
+  MenuItem,
+  config,
+  Text,
+  Line,
+  Chip,
+  Icon,
+  Icons,
+  RectCords,
+  Spinner,
+  toRem,
+  Box,
+  Scroll,
+  Avatar,
+} from 'folds';
+import { useMatrixClient } from '../../hooks/useMatrixClient';
+import { getMxIdServer } from '../../utils/matrix';
+import { useCloseUserRoomProfile } from '../../state/hooks/userRoomProfile';
+import { stopPropagation } from '../../utils/keyboard';
+import { copyToClipboard } from '../../utils/dom';
+import { getExploreServerPath } from '../../pages/pathUtils';
+import { AsyncStatus } from '../../hooks/useAsyncCallback';
+import { factoryRoomIdByAtoZ } from '../../utils/sort';
+import { useMutualRooms, useMutualRoomsSupport } from '../../hooks/useMutualRooms';
+import { useRoomNavigate } from '../../hooks/useRoomNavigate';
+import { useDirectRooms } from '../../pages/client/direct/useDirectRooms';
+import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
+import { useAllJoinedRoomsSet, useGetRoom } from '../../hooks/useGetRoom';
+import { RoomAvatar, RoomIcon } from '../room-avatar';
+import { getDirectRoomAvatarUrl, getRoomAvatarUrl } from '../../utils/room';
+import { nameInitials } from '../../utils/common';
+
+export function ServerChip({ server }: { server: string }) {
+  const mx = useMatrixClient();
+  const myServer = getMxIdServer(mx.getSafeUserId());
+  const navigate = useNavigate();
+  const closeProfile = useCloseUserRoomProfile();
+
+  const [cords, setCords] = useState<RectCords>();
+
+  const open: MouseEventHandler<HTMLButtonElement> = (evt) => {
+    setCords(evt.currentTarget.getBoundingClientRect());
+  };
+
+  const close = () => setCords(undefined);
+
+  return (
+    <PopOut
+      anchor={cords}
+      position="Bottom"
+      align="Start"
+      offset={4}
+      content={
+        <FocusTrap
+          focusTrapOptions={{
+            initialFocus: false,
+            onDeactivate: close,
+            clickOutsideDeactivates: true,
+            escapeDeactivates: stopPropagation,
+            isKeyForward: (evt: KeyboardEvent) => isKeyHotkey('arrowdown', evt),
+            isKeyBackward: (evt: KeyboardEvent) => isKeyHotkey('arrowup', evt),
+          }}
+        >
+          <Menu>
+            <div style={{ padding: config.space.S100 }}>
+              <MenuItem
+                variant="Surface"
+                fill="None"
+                size="300"
+                radii="300"
+                onClick={() => {
+                  copyToClipboard(server);
+                  close();
+                }}
+              >
+                <Text size="B300">Copy Server</Text>
+              </MenuItem>
+              <MenuItem
+                variant="Surface"
+                fill="None"
+                size="300"
+                radii="300"
+                onClick={() => {
+                  navigate(getExploreServerPath(server));
+                  closeProfile();
+                }}
+              >
+                <Text size="B300">Explore Community</Text>
+              </MenuItem>
+            </div>
+            <Line size="300" />
+            <div style={{ padding: config.space.S100 }}>
+              <MenuItem
+                variant={myServer === server ? 'Surface' : 'Critical'}
+                fill="None"
+                size="300"
+                radii="300"
+                onClick={() => {
+                  window.open(`https://${server}`, '_blank');
+                  close();
+                }}
+              >
+                <Text size="B300">Open in Browser</Text>
+              </MenuItem>
+            </div>
+          </Menu>
+        </FocusTrap>
+      }
+    >
+      <Chip
+        variant={myServer === server ? 'SurfaceVariant' : 'Warning'}
+        radii="Pill"
+        before={
+          cords ? (
+            <Icon size="50" src={Icons.ChevronBottom} />
+          ) : (
+            <Icon size="50" src={Icons.Server} />
+          )
+        }
+        onClick={open}
+        aria-pressed={!!cords}
+      >
+        <Text size="B300" truncate>
+          {server}
+        </Text>
+      </Chip>
+    </PopOut>
+  );
+}
+
+export function MutualRoomsChip({ userId }: { userId: string }) {
+  const mx = useMatrixClient();
+  const mutualRoomSupported = useMutualRoomsSupport();
+  const mutualRoomsState = useMutualRooms(userId);
+  const { navigateRoom, navigateSpace } = useRoomNavigate();
+  const closeUserRoomProfile = useCloseUserRoomProfile();
+  const directs = useDirectRooms();
+  const useAuthentication = useMediaAuthentication();
+
+  const allJoinedRooms = useAllJoinedRoomsSet();
+  const getRoom = useGetRoom(allJoinedRooms);
+
+  const [cords, setCords] = useState<RectCords>();
+
+  const open: MouseEventHandler<HTMLButtonElement> = (evt) => {
+    setCords(evt.currentTarget.getBoundingClientRect());
+  };
+
+  const close = () => setCords(undefined);
+
+  if (
+    userId === mx.getSafeUserId() ||
+    !mutualRoomSupported ||
+    mutualRoomsState.status === AsyncStatus.Error
+  ) {
+    return null;
+  }
+
+  return (
+    <PopOut
+      anchor={cords}
+      position="Bottom"
+      align="Start"
+      offset={4}
+      content={
+        mutualRoomsState.status === AsyncStatus.Success ? (
+          <FocusTrap
+            focusTrapOptions={{
+              initialFocus: false,
+              onDeactivate: close,
+              clickOutsideDeactivates: true,
+              escapeDeactivates: stopPropagation,
+              isKeyForward: (evt: KeyboardEvent) => isKeyHotkey('arrowdown', evt),
+              isKeyBackward: (evt: KeyboardEvent) => isKeyHotkey('arrowup', evt),
+            }}
+          >
+            <Menu
+              style={{
+                display: 'flex',
+                maxWidth: toRem(200),
+                maxHeight: '80vh',
+              }}
+            >
+              <Box grow="Yes">
+                <Scroll size="300" hideTrack>
+                  <Box
+                    direction="Column"
+                    gap="100"
+                    style={{
+                      padding: config.space.S200,
+                      paddingRight: 0,
+                    }}
+                  >
+                    {mutualRoomsState.data
+                      .sort(factoryRoomIdByAtoZ(mx))
+                      .map((roomId) => getRoom(roomId))
+                      .map((room) => {
+                        if (!room) return null;
+                        const { roomId } = room;
+                        const dm = directs.includes(roomId);
+
+                        return (
+                          <MenuItem
+                            key={roomId}
+                            variant="Surface"
+                            fill="None"
+                            size="300"
+                            radii="300"
+                            style={{ paddingLeft: config.space.S100 }}
+                            onClick={() => {
+                              if (room.isSpaceRoom()) {
+                                navigateSpace(roomId);
+                              } else {
+                                navigateRoom(roomId);
+                              }
+                              closeUserRoomProfile();
+                            }}
+                            before={
+                              <Avatar size="200" radii={dm ? '400' : '300'}>
+                                {dm || room.isSpaceRoom() ? (
+                                  <RoomAvatar
+                                    roomId={room.roomId}
+                                    src={
+                                      dm
+                                        ? getDirectRoomAvatarUrl(mx, room, 96, useAuthentication)
+                                        : getRoomAvatarUrl(mx, room, 96, useAuthentication)
+                                    }
+                                    alt={room.name}
+                                    renderFallback={() => (
+                                      <Text as="span" size="H6">
+                                        {nameInitials(room.name)}
+                                      </Text>
+                                    )}
+                                  />
+                                ) : (
+                                  <RoomIcon size="100" joinRule={room.getJoinRule()} />
+                                )}
+                              </Avatar>
+                            }
+                          >
+                            <Text size="B300" truncate>
+                              {room.name}
+                            </Text>
+                          </MenuItem>
+                        );
+                      })}
+                  </Box>
+                </Scroll>
+              </Box>
+            </Menu>
+          </FocusTrap>
+        ) : null
+      }
+    >
+      <Chip
+        variant="SurfaceVariant"
+        radii="Pill"
+        before={mutualRoomsState.status === AsyncStatus.Loading && <Spinner size="50" />}
+        disabled={mutualRoomsState.status !== AsyncStatus.Success}
+        onClick={open}
+        aria-pressed={!!cords}
+      >
+        <Text size="B300">
+          {mutualRoomsState.status === AsyncStatus.Success &&
+            `${mutualRoomsState.data.length} Mutual Rooms`}
+          {mutualRoomsState.status === AsyncStatus.Loading && 'Mutual Rooms'}
+        </Text>
+      </Chip>
+    </PopOut>
+  );
+}

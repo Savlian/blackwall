@@ -55,7 +55,7 @@ import { useMemberSort, useMemberSortMenu } from '../../hooks/useMemberSort';
 import { usePowerLevelsAPI, usePowerLevelsContext } from '../../hooks/usePowerLevels';
 import { MembershipFilterMenu } from '../../components/MembershipFilterMenu';
 import { MemberSortMenu } from '../../components/MemberSortMenu';
-import { useOpenUserRoomProfile } from '../../state/hooks/userRoomProfile';
+import { useOpenUserRoomProfile, useUserRoomProfileState } from '../../state/hooks/userRoomProfile';
 import { useSpaceOptionally } from '../../hooks/useSpace';
 
 const SEARCH_OPTIONS: UseAsyncSearchOptions = {
@@ -85,6 +85,7 @@ export function MembersDrawer({ room, members }: MembersDrawerProps) {
   const setPeopleDrawer = useSetSetting(settingsAtom, 'isPeopleDrawer');
   const openUserRoomProfile = useOpenUserRoomProfile();
   const space = useSpaceOptionally();
+  const openProfileUserId = useUserRoomProfileState()?.userId;
 
   const membershipFilterMenu = useMembershipFilterMenu();
   const sortFilterMenu = useMemberSortMenu();
@@ -354,6 +355,7 @@ export function MembersDrawer({ room, members }: MembersDrawerProps) {
                         padding: `0 ${config.space.S200}`,
                         transform: `translateY(${vItem.start}px)`,
                       }}
+                      aria-pressed={openProfileUserId === member.userId}
                       data-index={vItem.index}
                       data-user-id={member.userId}
                       ref={virtualizer.measureElement}

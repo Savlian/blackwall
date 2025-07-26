@@ -30,12 +30,13 @@ export const UserHeroAvatarContainer = style({
   position: 'relative',
   height: toRem(29),
 });
-export const UserHeroAvatar = style({
+export const UserAvatarContainer = style({
   position: 'absolute',
   left: config.space.S400,
   top: 0,
   transform: 'translateY(-50%)',
-  background: color.Surface.Container,
-
-  outline: `${config.borderWidth.B500} solid ${color.Surface.Container}`,
+  backgroundColor: color.Surface.Container,
+});
+export const UserHeroAvatar = style({
+  outline: `${config.borderWidth.B600} solid ${color.Surface.Container}`,
 });
