@@ -262,7 +262,7 @@ export function CodeBlock({
       <Header variant="Surface" size="400" className={css.CodeBlockHeader}>
         <Box grow="Yes">
           <Text size="L400" truncate>
-            {language ?? 'Text'}
+            {language ?? 'Code'}
           </Text>
         </Box>
         <Box shrink="No">
