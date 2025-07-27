@@ -16,7 +16,7 @@ import {
 } from 'html-react-parser';
 import { MatrixClient } from 'matrix-js-sdk';
 import classNames from 'classnames';
-import { Box, Chip, Header, Icon, IconButton, Icons, Scroll, Text, toRem } from 'folds';
+import { Box, Chip, config, Header, Icon, IconButton, Icons, Scroll, Text, toRem } from 'folds';
 import { IntermediateRepresentation, Opts as LinkifyOpts, OptFn } from 'linkifyjs';
 import Linkify from 'linkify-react';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -265,21 +265,34 @@ export function CodeBlock({
             {language ?? 'Code'}
           </Text>
         </Box>
-        <Box shrink="No">
+        <Box shrink="No" gap="200">
           <Chip
-            variant="Surface"
-            radii="300"
+            variant={copied ? 'Success' : 'Surface'}
+            fill="None"
+            radii="Pill"
             onClick={handleCopy}
             before={copied && <Icon size="50" src={Icons.Check} />}
           >
             <Text size="B300">{copied ? 'Copied' : 'Copy'}</Text>
           </Chip>
+          {largeCodeBlock && (
+            <IconButton
+              size="300"
+              variant="SurfaceVariant"
+              outlined
+              radii="300"
+              onClick={toggleExpand}
+              aria-label={expanded ? 'Collapse' : 'Expand'}
+            >
+              <Icon size="50" src={expanded ? Icons.ChevronTop : Icons.ChevronBottom} />
+            </IconButton>
+          )}
         </Box>
       </Header>
       <Scroll
         style={{
           maxHeight: largeCodeBlock && !expanded ? toRem(300) : undefined,
-          paddingBottom: largeCodeBlock ? toRem(48) : undefined,
+          paddingBottom: largeCodeBlock ? config.space.S400 : undefined,
         }}
         direction="Both"
         variant="SurfaceVariant"
@@ -291,20 +304,7 @@ export function CodeBlock({
           {domToReact(children, opts)}
         </div>
       </Scroll>
-      {largeCodeBlock && (
-        <Box className={css.CodeBlockBottomBar} justifyContent="End">
-          <IconButton
-            style={{ pointerEvents: 'all' }}
-            variant="Secondary"
-            radii="300"
-            outlined
-            onClick={toggleExpand}
-            aria-label={expanded ? 'Collapse' : 'Expand'}
-          >
-            <Icon size="50" src={expanded ? Icons.ChevronTop : Icons.ChevronBottom} />
-          </IconButton>
-        </Box>
-      )}
+      {largeCodeBlock && !expanded && <Box className={css.CodeBlockBottomShadow} />}
     </Text>
   );
 }

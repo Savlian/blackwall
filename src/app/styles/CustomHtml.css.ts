@@ -95,6 +95,7 @@ export const CodeBlock = style([
 export const CodeBlockHeader = style({
   padding: `0 ${config.space.S200} 0 ${config.space.S300}`,
   borderBottomWidth: config.borderWidth.B300,
+  gap: config.space.S200,
 });
 export const CodeBlockInternal = style([
   CodeFont,
@@ -104,14 +105,14 @@ export const CodeBlockInternal = style([
   },
 ]);
 
-export const CodeBlockBottomBar = style({
+export const CodeBlockBottomShadow = style({
   position: 'absolute',
   bottom: 0,
   left: 0,
   right: 0,
   pointerEvents: 'none',
 
-  padding: config.space.S200,
+  height: config.space.S400,
   background: `linear-gradient(to top, #00000022, #00000000)`,
 });
 
