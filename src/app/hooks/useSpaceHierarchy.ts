@@ -204,7 +204,7 @@ const getSpaceJoinedHierarchy = (
    * @param spaceId - The space ID to check.
    * @returns True if the space or any descendant contains non-space rooms.
    */
-  const containsRoom = (spaceId: string) => {
+  const getContainsRoom = (spaceId: string) => {
     const space = getRoom(spaceId);
     if (!space) return false;
 
@@ -217,7 +217,7 @@ const getSpaceJoinedHierarchy = (
       if (!room) return false;
 
       if (!room.isSpaceRoom()) return true;
-      return containsRoom(childId);
+      return getContainsRoom(childId);
     });
   };
 
@@ -236,7 +236,7 @@ const getSpaceJoinedHierarchy = (
       return true;
     });
 
-    if (!containsRoom(spaceItem.roomId)) return [];
+    if (!getContainsRoom(spaceItem.roomId)) return [];
 
     const childItems: HierarchyItemRoom[] = [];
     joinedRoomEvents.forEach((childEvent) => {
