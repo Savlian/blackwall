@@ -258,7 +258,7 @@ export function CodeBlock({
   };
 
   return (
-    <Text as="pre" className={css.CodeBlock}>
+    <Text size="T300" as="pre" className={css.CodeBlock}>
       <Header variant="Surface" size="400" className={css.CodeBlockHeader}>
         <Box grow="Yes">
           <Text size="L400" truncate>
@@ -433,9 +433,9 @@ export const getReactCustomHtmlParser = (
             }
           } else {
             return (
-              <code className={css.Code} {...props}>
+              <Text as="code" size="T300" className={css.Code} {...props}>
                 {domToReact(children, opts)}
-              </code>
+              </Text>
             );
           }
         }
