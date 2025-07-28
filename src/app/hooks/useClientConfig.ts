@@ -5,6 +5,20 @@ export type HashRouterConfig = {
   basename?: string;
 };
 
+export type SlidingSyncListConfig = {
+  ranges: number[][];
+  sort?: string[];
+  timeline_limit?: number;
+  required_state?: string[][];
+  filters?: Record<string, any>;
+};
+
+export type SlidingSyncConfig = {
+  enabled?: boolean;
+  proxyUrl?: string | null;
+  defaultLists?: Record<string, SlidingSyncListConfig>;
+};
+
 export type ClientConfig = {
   defaultHomeserver?: number;
   homeserverList?: string[];
@@ -18,6 +32,7 @@ export type ClientConfig = {
   };
 
   hashRouter?: HashRouterConfig;
+  slidingSync?: SlidingSyncConfig;
 };
 
 const ClientConfigContext = createContext<ClientConfig | null>(null);

@@ -38,6 +38,7 @@ import { useSyncState } from '../../hooks/useSyncState';
 import { stopPropagation } from '../../utils/keyboard';
 import { SyncStatus } from './SyncStatus';
 import { AuthMetadataProvider } from '../../hooks/useAuthMetadata';
+import { useClientConfig } from '../../hooks/useClientConfig';
 
 function ClientRootLoading() {
   return (
@@ -147,13 +148,14 @@ type ClientRootProps = {
 export function ClientRoot({ children }: ClientRootProps) {
   const [loading, setLoading] = useState(true);
   const { baseUrl } = getSecret();
+  const clientConfig = useClientConfig();
 
   const [loadState, loadMatrix] = useAsyncCallback<MatrixClient, Error, []>(
-    useCallback(() => initClient(getSecret() as any), [])
+    useCallback(() => initClient(getSecret() as any, clientConfig), [clientConfig])
   );
   const mx = loadState.status === AsyncStatus.Success ? loadState.data : undefined;
   const [startState, startMatrix] = useAsyncCallback<void, Error, [MatrixClient]>(
-    useCallback((m) => startClient(m), [])
+    useCallback((m) => startClient(m, clientConfig), [clientConfig])
   );
 
   useLogoutListener(mx);

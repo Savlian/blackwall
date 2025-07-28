@@ -7,6 +7,73 @@
   font-display: swap;
 }
 
+// Purple theme gradient enhancements
+.purple-theme {
+  // Gradient buttons for folds components
+  .Button[data-variant='Primary'] {
+    background: linear-gradient(135deg, #6B46FF, #9D5EFF) !important;
+    box-shadow: 0 4px 15px rgba(107, 70, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+      transition: left 0.5s ease;
+    }
+    
+    &:hover {
+      background: linear-gradient(135deg, #5A3AE5, #8B4FE6) !important;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(107, 70, 255, 0.4);
+      
+      &::before {
+        left: 100%;
+      }
+    }
+    
+    &:active {
+      transform: translateY(0);
+      background: linear-gradient(135deg, #4A2FD4, #7A40CC) !important;
+    }
+  }
+  
+  // Enhanced cards and surfaces with subtle gradients
+  .SequenceCard,
+  .InfoCard,
+  .RoomCard {
+    background: linear-gradient(135deg, rgba(107, 70, 255, 0.05), rgba(157, 94, 255, 0.02));
+    border: 1px solid rgba(107, 70, 255, 0.1);
+    
+    &:hover {
+      background: linear-gradient(135deg, rgba(107, 70, 255, 0.1), rgba(157, 94, 255, 0.05));
+      border: 1px solid rgba(107, 70, 255, 0.2);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 25px rgba(107, 70, 255, 0.15);
+    }
+  }
+  
+  // Navigation items with purple accents
+  .NavItem[data-selected='true'] {
+    background: linear-gradient(135deg, rgba(107, 70, 255, 0.15), rgba(157, 94, 255, 0.08)) !important;
+    border-left: 3px solid #6B46FF;
+  }
+  
+  // Room input with gradient border focus
+  .RoomInput {
+    &:focus-within {
+      border: 1px solid #6B46FF;
+      box-shadow: 0 0 0 3px rgba(107, 70, 255, 0.1);
+    }
+  }
+}
+
 :root {
   /* background color | --bg-[background type]: value */
   --bg-surface: #ffffff;
@@ -193,8 +260,8 @@
   --fluid-slide-up: cubic-bezier(0.13, 0.56, 0.25, 0.99);
 
   --font-emoji: 'Twemoji_DISABLED';
-  --font-primary: 'InterVariable', var(--font-emoji), sans-serif;
-  --font-secondary: 'InterVariable', var(--font-emoji), sans-serif;
+  --font-primary: 'SF Pro Display', var(--font-emoji), sans-serif;
+  --font-secondary: 'SF Pro Display', var(--font-emoji), sans-serif;
 }
 
 .silver-theme {
@@ -326,7 +393,7 @@
   --fw-medium: 450;
   --fw-bold: 550;
 
-  --font-secondary: 'InterVariable', var(--font-emoji), sans-serif;
+  --font-secondary: 'SF Pro Display', var(--font-emoji), sans-serif;
 }
 
 .butter-theme {

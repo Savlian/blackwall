@@ -45,6 +45,7 @@ import { stopPropagation } from '../../../utils/keyboard';
 import { useMessageLayoutItems } from '../../../hooks/useMessageLayout';
 import { useMessageSpacingItems } from '../../../hooks/useMessageSpacing';
 import { SequenceCardStyle } from '../styles.css';
+import { useClientConfig } from '../../../hooks/useClientConfig';
 
 type ThemeSelectorProps = {
   themeNames: Record<string, string>;
@@ -612,6 +613,50 @@ function Messages() {
   );
 }
 
+function Synchronization() {
+  const clientConfig = useClientConfig();
+  
+  const isEnabled = clientConfig.slidingSync?.enabled;
+
+  return (
+    <Box direction="Column" gap="100">
+      <Text size="L400">Synchronization</Text>
+      <SequenceCard className={SequenceCardStyle} variant="SurfaceVariant" direction="Column">
+        <SettingTile
+          title="Sliding Sync"
+          description="High-performance synchronization protocol using native Matrix support."
+          after={
+            <Chip
+              variant={isEnabled ? "Success" : "Secondary"}
+              radii="Pill"
+            >
+              <Text size="B300">{isEnabled ? 'Enabled (Native)' : 'Disabled'}</Text>
+            </Chip>
+          }
+        />
+      </SequenceCard>
+      
+      {isEnabled && (
+        <SequenceCard className={SequenceCardStyle} variant="SurfaceVariant" direction="Column">
+          <SettingTile
+            title="Implementation"
+            description={clientConfig.slidingSync?.proxyUrl ? `Proxy: ${clientConfig.slidingSync.proxyUrl}` : 'Native sliding sync (MSC4186)'}
+          />
+        </SequenceCard>
+      )}
+
+      {!isEnabled && (
+        <SequenceCard className={SequenceCardStyle} variant="SurfaceVariant" direction="Column">
+          <SettingTile
+            title="Configuration"
+            description="Sliding sync is disabled. Edit config.json and set slidingSync.enabled to true to enable native sliding sync."
+          />
+        </SequenceCard>
+      )}
+    </Box>
+  );
+}
+
 type GeneralProps = {
   requestClose: () => void;
 };
@@ -639,6 +684,7 @@ export function General({ requestClose }: GeneralProps) {
               <Appearance />
               <Editor />
               <Messages />
+              <Synchronization />
             </Box>
           </PageContent>
         </Scroll>

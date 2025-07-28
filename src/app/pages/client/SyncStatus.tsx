@@ -3,6 +3,7 @@ import React, { useCallback, useState } from 'react';
 import { Box, config, Line, Text } from 'folds';
 import { useSyncState } from '../../hooks/useSyncState';
 import { ContainerColor } from '../../styles/ContainerColor.css';
+import { useSlidingSyncEnabled, useSlidingSyncState, useSlidingSyncError } from '../../state/sliding-sync';
 
 type StateData = {
   current: SyncState | null;
@@ -18,6 +19,10 @@ export function SyncStatus({ mx }: SyncStatusProps) {
     previous: undefined,
   });
 
+  const slidingSyncEnabled = useSlidingSyncEnabled();
+  const slidingSyncState = useSlidingSyncState();
+  const slidingSyncError = useSlidingSyncError();
+
   useSyncState(
     mx,
     useCallback((current, previous) => {
@@ -30,6 +35,45 @@ export function SyncStatus({ mx }: SyncStatusProps) {
     }, [])
   );
 
+  // Handle sliding sync status if enabled
+  if (slidingSyncEnabled) {
+    if (slidingSyncError) {
+      return (
+        <Box direction="Column" shrink="No">
+          <Box
+            className={ContainerColor({ variant: 'Critical' })}
+            style={{ padding: `${config.space.S100} 0` }}
+            alignItems="Center"
+            justifyContent="Center"
+          >
+            <Text size="L400">Sliding Sync Error!</Text>
+          </Box>
+          <Line variant="Critical" size="300" />
+        </Box>
+      );
+    }
+
+    if (slidingSyncState === 'SYNCING') {
+      return (
+        <Box direction="Column" shrink="No">
+          <Box
+            className={ContainerColor({ variant: 'Primary' })}
+            style={{ padding: `${config.space.S100} 0` }}
+            alignItems="Center"
+            justifyContent="Center"
+          >
+            <Text size="L400">Sliding Sync Active...</Text>
+          </Box>
+          <Line variant="Primary" size="300" />
+        </Box>
+      );
+    }
+
+    // Don't show traditional sync status when sliding sync is active
+    return null;
+  }
+
+  // Traditional sync status handling
   if (
     (stateData.current === SyncState.Prepared ||
       stateData.current === SyncState.Syncing ||

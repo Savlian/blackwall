@@ -34,5 +34,38 @@
   "hashRouter": {
     "enabled": false,
     "basename": "/"
+  },
+
+  "slidingSync": {
+    "enabled": true,
+    "proxyUrl": "https://syncv3.matrix.org",
+    "defaultLists": {
+      "allRooms": {
+        "ranges": [[0, 49]],
+        "sort": ["by_recency", "by_name"],
+        "timeline_limit": 1,
+        "required_state": [
+          ["m.room.name", ""],
+          ["m.room.avatar", ""],
+          ["m.room.canonical_alias", ""],
+          ["m.room.topic", ""],
+          ["m.room.encryption", ""],
+          ["m.room.member", "$ME"]
+        ]
+      },
+      "directMessages": {
+        "ranges": [[0, 49]],
+        "sort": ["by_recency"],
+        "timeline_limit": 1,
+        "filters": {
+          "is_dm": true
+        },
+        "required_state": [
+          ["m.room.name", ""],
+          ["m.room.avatar", ""],
+          ["m.room.member", "$ME"]
+        ]
+      }
+    }
   }
 }

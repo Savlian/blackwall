@@ -29,6 +29,8 @@ import { Notifications } from './notifications';
 import { Devices } from './devices';
 import { EmojisStickers } from './emojis-stickers';
 import { DeveloperTools } from './developer-tools';
+// Temporarily disabled for debugging
+// import { SlidingSyncSettings } from './sliding-sync';
 import { About } from './about';
 import { UseStateProvider } from '../../components/UseStateProvider';
 import { stopPropagation } from '../../utils/keyboard';
@@ -40,6 +42,7 @@ export enum SettingsPages {
   NotificationPage,
   DevicesPage,
   EmojisStickersPage,
+  SlidingSyncPage,
   DeveloperToolsPage,
   AboutPage,
 }

@@ -79,3 +79,38 @@
   @include state.focus(var(--bs-danger-outline));
   @include state.active(var(--bg-danger-active));
 }
+
+// Purple theme gradient button enhancement
+.purple-theme .btn-primary {
+  background: linear-gradient(135deg, #6B46FF, #9D5EFF);
+  box-shadow: 0 4px 15px rgba(107, 70, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transition: left 0.5s ease;
+  }
+  
+  &:hover {
+    background: linear-gradient(135deg, #5A3AE5, #8B4FE6);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(107, 70, 255, 0.4);
+    
+    &::before {
+      left: 100%;
+    }
+  }
+  
+  &:active {
+    transform: translateY(0);
+    background: linear-gradient(135deg, #4A2FD4, #7A40CC);
+  }
+}
