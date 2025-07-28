@@ -28,7 +28,7 @@ export function SettingsTab() {
 
   return (
     <SidebarItem active={settings}>
-      <SidebarItemTooltip tooltip={displayName}>
+      <SidebarItemTooltip tooltip="Settings">
         {(triggerRef) => (
           <SidebarAvatar as="button" ref={triggerRef} onClick={openSettings}>
             <UserAvatar
