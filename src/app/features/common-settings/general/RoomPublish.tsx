@@ -53,7 +53,7 @@ export function RoomPublish({ powerLevels }: RoomPublishProps) {
               <Switch
                 value={visibilityState.data}
                 onChange={toggleVisibility}
-                disabled={!(canEditCanonical && validRule)}
+                disabled={!canEditCanonical || !validRule}
               />
             )}
           </Box>
