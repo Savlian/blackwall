@@ -208,9 +208,10 @@ const getSpaceJoinedHierarchy = (
     const space = getRoom(spaceId);
     if (!space) return false;
 
-    const childEvents = getStateEvents(space, StateEvent.SpaceChild).filter(isValidChild);
+    const childEvents = getStateEvents(space, StateEvent.SpaceChild);
 
     return childEvents.some((childEvent): boolean => {
+      if (!isValidChild(childEvent)) return false;
       const childId = childEvent.getStateKey();
       if (!childId || !isRoomId(childId)) return false;
       const room = getRoom(childId);

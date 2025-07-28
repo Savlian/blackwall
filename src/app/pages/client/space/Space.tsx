@@ -2,6 +2,7 @@ import React, {
   MouseEventHandler,
   forwardRef,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -315,6 +316,13 @@ export function Space() {
     [mx, allJoinedRooms]
   );
 
+  const closedCategoriesCache = useRef(new Map());
+  const ancestorsCollapsedCache = useRef(new Map());
+  useEffect(() => {
+    closedCategoriesCache.current.clear();
+    ancestorsCollapsedCache.current.clear();
+  }, [closedCategories, roomToParents, getRoom]);
+
   /**
    * Recursively checks if a given parentId (or all its ancestors) is in a closed category.
    *
@@ -325,20 +333,30 @@ export function Space() {
    */
   const getInClosedCategories = useCallback(
     (spaceId: string, parentId: string, previousId?: string): boolean => {
+      const categoryId = makeNavCategoryId(spaceId, parentId);
+      if (closedCategoriesCache.current.has(categoryId)) {
+        return closedCategoriesCache.current.get(categoryId);
+      }
+
       // Ignore root space being collapsed if in a subspace,
       // this is due to many spaces dumping all rooms in the top-level space.
       if (parentId === spaceId) {
         if (previousId) {
-          if (getRoom(previousId)?.isSpaceRoom()) return false;
+          if (getRoom(previousId)?.isSpaceRoom()) {
+            closedCategoriesCache.current.set(categoryId, false);
+            return false;
+          }
         }
       }
 
-      if (closedCategories.has(makeNavCategoryId(spaceId, parentId))) {
+      if (closedCategories.has(categoryId)) {
+        closedCategoriesCache.current.set(categoryId, true);
         return true;
       }
 
       const parentParentIds = roomToParents.get(parentId);
       if (!parentParentIds || parentParentIds.size === 0) {
+        closedCategoriesCache.current.set(categoryId, false);
         return false;
       }
 
@@ -349,6 +367,7 @@ export function Space() {
         }
       });
 
+      closedCategoriesCache.current.set(categoryId, !anyOpen);
       return !anyOpen;
     },
     [closedCategories, getRoom, roomToParents]
@@ -391,8 +410,14 @@ export function Space() {
    * @returns True if every parent category is collapsed; false otherwise.
    */
   const getAllAncestorsCollapsed = (spaceId: string, roomId: string): boolean => {
+    const categoryId = makeNavCategoryId(spaceId, roomId);
+    if (ancestorsCollapsedCache.current.has(categoryId)) {
+      return ancestorsCollapsedCache.current.get(categoryId);
+    }
+
     const parentIds = roomToParents.get(roomId);
     if (!parentIds || parentIds.size === 0) {
+      ancestorsCollapsedCache.current.set(categoryId, false);
       return false;
     }
 
@@ -402,6 +427,8 @@ export function Space() {
         allCollapsed = false;
       }
     });
+
+    ancestorsCollapsedCache.current.set(categoryId, allCollapsed);
     return allCollapsed;
   };
 

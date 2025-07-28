@@ -1,4 +1,4 @@
-import React, { MouseEventHandler, useCallback, useMemo, useRef, useState } from 'react';
+import React, { MouseEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Chip, Icon, IconButton, Icons, Line, Scroll, Spinner, Text, config } from 'folds';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useAtom, useAtomValue } from 'jotai';
@@ -199,6 +199,11 @@ export function Lobby() {
     [mx]
   );
 
+  const closedCategoriesCache = useRef(new Map());
+  useEffect(() => {
+    closedCategoriesCache.current.clear();
+  }, [closedCategories, roomToParents, getRoom]);
+
   /**
    * Recursively checks if a given parentId (or all its ancestors) is in a closed category.
    *
@@ -209,19 +214,29 @@ export function Lobby() {
    */
   const getInClosedCategories = useCallback(
     (spaceId: string, parentId: string, previousId?: string): boolean => {
+      const categoryId = makeLobbyCategoryId(spaceId, parentId);
+      if (closedCategoriesCache.current.has(categoryId)) {
+        return closedCategoriesCache.current.get(categoryId);
+      }
+
       // Ignore root space being collapsed if in a subspace,
       // this is due to many spaces dumping all rooms in the top-level space.
       if (parentId === spaceId) {
         if (previousId) {
-          if (getRoom(previousId)?.isSpaceRoom() || spaceRooms.has(previousId)) return false;
+          if (getRoom(previousId)?.isSpaceRoom() || spaceRooms.has(previousId)) {
+            closedCategoriesCache.current.set(categoryId, false);
+            return false;
+          }
         }
       }
-      if (closedCategories.has(makeLobbyCategoryId(spaceId, parentId))) {
+      if (closedCategories.has(categoryId)) {
+        closedCategoriesCache.current.set(categoryId, true);
         return true;
       }
 
       const parentParentIds = roomToParents.get(parentId);
       if (!parentParentIds || parentParentIds.size === 0) {
+        closedCategoriesCache.current.set(categoryId, false);
         return false;
       }
 
@@ -232,6 +247,7 @@ export function Lobby() {
         }
       });
 
+      closedCategoriesCache.current.set(categoryId, !anyOpen);
       return !anyOpen;
     },
     [closedCategories, getRoom, roomToParents, spaceRooms]
