@@ -1,5 +1,5 @@
 import React, { useCallback, useRef } from 'react';
-import { Box, Text, config } from 'folds'; // Assuming 'folds' is a UI library
+import { Box, Text, config, toRem } from 'folds';
 import { EventType, Room } from 'matrix-js-sdk';
 import { ReactEditor } from 'slate-react';
 import { isKeyHotkey } from 'is-hotkey';
@@ -15,7 +15,6 @@ import { RoomTombstone } from './RoomTombstone';
 import { RoomInput } from './RoomInput';
 import { RoomViewFollowing, RoomViewFollowingPlaceholder } from './RoomViewFollowing';
 import { Page } from '../../components/page';
-import { RoomViewHeader } from './RoomViewHeader';
 import { useKeyDown } from '../../hooks/useKeyDown';
 import { editableActiveElement } from '../../utils/dom';
 import navigation from '../../../client/state/navigation';
@@ -23,6 +22,8 @@ import { settingsAtom } from '../../state/settings';
 import { useSetting } from '../../state/hooks/settings';
 import { useAccessibleTagColors, usePowerLevelTags } from '../../hooks/usePowerLevelTags';
 import { useTheme } from '../../hooks/useTheme';
+import { useCallState } from '../../pages/client/call/CallProvider';
+import { ScreenSize, useScreenSizeContext } from '../../hooks/useScreenSize';
 
 const FN_KEYS_REGEX = /^F\d+$/;
 
@@ -64,6 +65,8 @@ export function RoomView({ room, eventId }: { room: Room; eventId?: string }) {
   const roomInputRef = useRef<HTMLDivElement>(null);
   const roomViewRef = useRef<HTMLDivElement>(null);
   const [hideActivity] = useSetting(settingsAtom, 'hideActivity');
+  const screenSize = useScreenSizeContext();
+  const { isChatOpen } = useCallState();
   const { roomId } = room;
   const editor = useEditor();
   const mx = useMatrixClient();
@@ -98,55 +101,64 @@ export function RoomView({ room, eventId }: { room: Room; eventId?: string }) {
   );
 
   return (
-    <Page ref={roomViewRef}>
-      {!room.isCallRoom() && <RoomViewHeader />}
-      <Box grow="Yes" direction="Column" style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
-        <RoomTimeline
-          key={roomId}
-          room={room}
-          eventId={eventId}
-          roomInputRef={roomInputRef}
-          editor={editor}
-          getPowerLevelTag={getPowerLevelTag}
-          accessibleTagColors={accessibleTagColors}
-        />
-        <RoomViewTyping room={room} />
-      </Box>
-      <Box shrink="No" direction="Column">
-        <div style={{ padding: `0 ${config.space.S400}` }}>
-          {' '}
-          {tombstoneEvent ? (
-            <RoomTombstone
-              roomId={roomId}
-              body={tombstoneEvent.getContent().body}
-              replacementRoomId={tombstoneEvent.getContent().replacement_room}
-            />
-          ) : (
-            <>
-              {canMessage ? (
-                <RoomInput
-                  room={room}
-                  editor={editor}
-                  roomId={roomId}
-                  fileDropContainerRef={roomViewRef}
-                  ref={roomInputRef}
-                  getPowerLevelTag={getPowerLevelTag}
-                  accessibleTagColors={accessibleTagColors}
-                />
-              ) : (
-                <RoomInputPlaceholder
-                  style={{ padding: config.space.S200 }}
-                  alignItems="Center"
-                  justifyContent="Center"
-                >
-                  <Text align="Center">You do not have permission to post in this room</Text>
-                </RoomInputPlaceholder>
-              )}
-            </>
-          )}
-        </div>
-        {hideActivity ? <RoomViewFollowingPlaceholder /> : <RoomViewFollowing room={room} />}
-      </Box>
-    </Page>
+    (!room.isCallRoom() || isChatOpen) && (
+      <Page
+        ref={roomViewRef}
+        style={
+          room.isCallRoom() && screenSize === ScreenSize.Desktop
+            ? { maxWidth: toRem(399), minWidth: toRem(399) }
+            : {}
+        }
+      >
+        <Box grow="Yes" direction="Column">
+          <RoomTimeline
+            key={roomId}
+            room={room}
+            eventId={eventId}
+            roomInputRef={roomInputRef}
+            editor={editor}
+            getPowerLevelTag={getPowerLevelTag}
+            accessibleTagColors={accessibleTagColors}
+          />
+          <RoomViewTyping room={room} />
+        </Box>
+        <Box shrink="No" direction="Column">
+          <div style={{ padding: `0 ${config.space.S400}` }}>
+            {' '}
+            {tombstoneEvent ? (
+              <RoomTombstone
+                roomId={roomId}
+                body={tombstoneEvent.getContent().body}
+                replacementRoomId={tombstoneEvent.getContent().replacement_room}
+              />
+            ) : (
+              /* eslint-disable-next-line react/jsx-no-useless-fragment */
+              <>
+                {canMessage ? (
+                  <RoomInput
+                    room={room}
+                    editor={editor}
+                    roomId={roomId}
+                    fileDropContainerRef={roomViewRef}
+                    ref={roomInputRef}
+                    getPowerLevelTag={getPowerLevelTag}
+                    accessibleTagColors={accessibleTagColors}
+                  />
+                ) : (
+                  <RoomInputPlaceholder
+                    style={{ padding: config.space.S200 }}
+                    alignItems="Center"
+                    justifyContent="Center"
+                  >
+                    <Text align="Center">You do not have permission to post in this room</Text>
+                  </RoomInputPlaceholder>
+                )}
+              </>
+            )}
+          </div>
+          {hideActivity ? <RoomViewFollowingPlaceholder /> : <RoomViewFollowing room={room} />}
+        </Box>
+      </Page>
+    )
   );
 }
