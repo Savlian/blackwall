@@ -75,6 +75,7 @@ import {
   useRoomsNotificationPreferencesContext,
 } from '../../../hooks/useRoomsNotificationPreferences';
 import { useOpenSpaceSettings } from '../../../state/hooks/spaceSettings';
+import { useRoomNavigate } from '../../../hooks/useRoomNavigate';
 
 type SpaceMenuProps = {
   room: Room;
@@ -83,11 +84,13 @@ type SpaceMenuProps = {
 const SpaceMenu = forwardRef<HTMLDivElement, SpaceMenuProps>(({ room, requestClose }, ref) => {
   const mx = useMatrixClient();
   const [hideActivity] = useSetting(settingsAtom, 'hideActivity');
+  const [developerTools] = useSetting(settingsAtom, 'developerTools');
   const roomToParents = useAtomValue(roomToParentsAtom);
   const powerLevels = usePowerLevels(room);
   const { getPowerLevel, canDoAction } = usePowerLevelsAPI(powerLevels);
   const canInvite = canDoAction('invite', getPowerLevel(mx.getUserId() ?? ''));
   const openSpaceSettings = useOpenSpaceSettings();
+  const { navigateRoom } = useRoomNavigate();
 
   const allChild = useSpaceChildren(
     allRoomsAtom,
@@ -118,9 +121,14 @@ const SpaceMenu = forwardRef<HTMLDivElement, SpaceMenuProps>(({ room, requestClo
     requestClose();
   };
 
+  const handleOpenTimeline = () => {
+    navigateRoom(room.roomId);
+    requestClose();
+  };
+
   return (
-    <Menu ref={ref} style={{ maxWidth: toRem(160), width: '100vw' }}>
-      <Box direction="Column" gap="100" style={{ padding: config.space.S100 }}>
+    <Menu ref={ref} style={{ minWidth: toRem(200) }}>
+      <Box direction="Column" gap="100" style={{ padding: config.space.S200 }}>
         <MenuItem
           onClick={handleMarkAsRead}
           size="300"
@@ -134,7 +142,7 @@ const SpaceMenu = forwardRef<HTMLDivElement, SpaceMenuProps>(({ room, requestClo
         </MenuItem>
       </Box>
       <Line variant="Surface" size="300" />
-      <Box direction="Column" gap="100" style={{ padding: config.space.S100 }}>
+      <Box direction="Column" gap="100" style={{ padding: config.space.S200 }}>
         <MenuItem
           onClick={handleInvite}
           variant="Primary"
@@ -168,9 +176,21 @@ const SpaceMenu = forwardRef<HTMLDivElement, SpaceMenuProps>(({ room, requestClo
             Space Settings
           </Text>
         </MenuItem>
+        {developerTools && (
+          <MenuItem
+            onClick={handleOpenTimeline}
+            size="300"
+            after={<Icon size="100" src={Icons.Terminal} />}
+            radii="300"
+          >
+            <Text style={{ flexGrow: 1 }} as="span" size="T300" truncate>
+              Event Timeline
+            </Text>
+          </MenuItem>
+        )}
       </Box>
       <Line variant="Surface" size="300" />
-      <Box direction="Column" gap="100" style={{ padding: config.space.S100 }}>
+      <Box direction="Column" gap="100" style={{ padding: config.space.S200 }}>
         <UseStateProvider initial={false}>
           {(promptLeave, setPromptLeave) => (
             <>

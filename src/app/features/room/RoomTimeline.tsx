@@ -448,6 +448,10 @@ export function RoomTimeline({
   const [encUrlPreview] = useSetting(settingsAtom, 'encUrlPreview');
   const showUrlPreview = room.hasEncryptionStateEvent() ? encUrlPreview : urlPreview;
   const [showHiddenEvents] = useSetting(settingsAtom, 'showHiddenEvents');
+  const [showDeveloperTools] = useSetting(settingsAtom, 'developerTools');
+
+  const [hour24Clock] = useSetting(settingsAtom, 'hour24Clock');
+  const [dateFormatString] = useSetting(settingsAtom, 'dateFormatString');
 
   const ignoredUsersList = useIgnoredUsers();
   const ignoredUsersSet = useMemo(() => new Set(ignoredUsersList), [ignoredUsersList]);
@@ -932,7 +936,7 @@ export function RoomTimeline({
   );
 
   const handleReplyClick: MouseEventHandler<HTMLButtonElement> = useCallback(
-    (evt) => {
+    (evt, startThread = false) => {
       const replyId = evt.currentTarget.getAttribute('data-event-id');
       if (!replyId) {
         console.warn('Button should have "data-event-id" attribute!');
@@ -943,7 +947,9 @@ export function RoomTimeline({
       const editedReply = getEditedEvent(replyId, replyEvt, room.getUnfilteredTimelineSet());
       const content: IContent = editedReply?.getContent()['m.new_content'] ?? replyEvt.getContent();
       const { body, formatted_body: formattedBody } = content;
-      const { 'm.relates_to': relation } = replyEvt.getWireContent();
+      const { 'm.relates_to': relation } = startThread
+        ? { 'm.relates_to': { rel_type: 'm.thread', event_id: replyId } }
+        : replyEvt.getWireContent();
       const senderId = replyEvt.getSender();
       if (senderId && typeof body === 'string') {
         setReplyDraft({
@@ -1065,9 +1071,12 @@ export function RoomTimeline({
               )
             }
             hideReadReceipts={hideActivity}
+            showDeveloperTools={showDeveloperTools}
             powerLevelTag={getPowerLevelTag(senderPowerLevel)}
             accessibleTagColors={accessibleTagColors}
             legacyUsernameColor={legacyUsernameColor || direct}
+            hour24Clock={hour24Clock}
+            dateFormatString={dateFormatString}
           >
             {mEvent.isRedacted() ? (
               <RedactedContent reason={mEvent.getUnsigned().redacted_because?.content.reason} />
@@ -1146,9 +1155,12 @@ export function RoomTimeline({
               )
             }
             hideReadReceipts={hideActivity}
+            showDeveloperTools={showDeveloperTools}
             powerLevelTag={getPowerLevelTag(senderPowerLevel)}
             accessibleTagColors={accessibleTagColors}
             legacyUsernameColor={legacyUsernameColor || direct}
+            hour24Clock={hour24Clock}
+            dateFormatString={dateFormatString}
           >
             <EncryptedContent mEvent={mEvent}>
               {() => {
@@ -1247,9 +1259,12 @@ export function RoomTimeline({
               )
             }
             hideReadReceipts={hideActivity}
+            showDeveloperTools={showDeveloperTools}
             powerLevelTag={getPowerLevelTag(senderPowerLevel)}
             accessibleTagColors={accessibleTagColors}
             legacyUsernameColor={legacyUsernameColor || direct}
+            hour24Clock={hour24Clock}
+            dateFormatString={dateFormatString}
           >
             {mEvent.isRedacted() ? (
               <RedactedContent reason={mEvent.getUnsigned().redacted_because?.content.reason} />
@@ -1278,7 +1293,12 @@ export function RoomTimeline({
         const parsed = parseMemberEvent(mEvent);
 
         const timeJSX = (
-          <Time ts={mEvent.getTs()} compact={messageLayout === MessageLayout.Compact} />
+          <Time
+            ts={mEvent.getTs()}
+            compact={messageLayout === MessageLayout.Compact}
+            hour24Clock={hour24Clock}
+            dateFormatString={dateFormatString}
+          />
         );
 
         return (
@@ -1292,6 +1312,7 @@ export function RoomTimeline({
             messageSpacing={messageSpacing}
             canDelete={canRedact || mEvent.getSender() === mx.getUserId()}
             hideReadReceipts={hideActivity}
+            showDeveloperTools={showDeveloperTools}
           >
             <EventContent
               messageLayout={messageLayout}
@@ -1314,7 +1335,12 @@ export function RoomTimeline({
         const senderName = getMemberDisplayName(room, senderId) || getMxIdLocalPart(senderId);
 
         const timeJSX = (
-          <Time ts={mEvent.getTs()} compact={messageLayout === MessageLayout.Compact} />
+          <Time
+            ts={mEvent.getTs()}
+            compact={messageLayout === MessageLayout.Compact}
+            hour24Clock={hour24Clock}
+            dateFormatString={dateFormatString}
+          />
         );
 
         return (
@@ -1328,6 +1354,7 @@ export function RoomTimeline({
             messageSpacing={messageSpacing}
             canDelete={canRedact || mEvent.getSender() === mx.getUserId()}
             hideReadReceipts={hideActivity}
+            showDeveloperTools={showDeveloperTools}
           >
             <EventContent
               messageLayout={messageLayout}
@@ -1351,7 +1378,12 @@ export function RoomTimeline({
         const senderName = getMemberDisplayName(room, senderId) || getMxIdLocalPart(senderId);
 
         const timeJSX = (
-          <Time ts={mEvent.getTs()} compact={messageLayout === MessageLayout.Compact} />
+          <Time
+            ts={mEvent.getTs()}
+            compact={messageLayout === MessageLayout.Compact}
+            hour24Clock={hour24Clock}
+            dateFormatString={dateFormatString}
+          />
         );
 
         return (
@@ -1365,6 +1397,7 @@ export function RoomTimeline({
             messageSpacing={messageSpacing}
             canDelete={canRedact || mEvent.getSender() === mx.getUserId()}
             hideReadReceipts={hideActivity}
+            showDeveloperTools={showDeveloperTools}
           >
             <EventContent
               messageLayout={messageLayout}
@@ -1388,7 +1421,12 @@ export function RoomTimeline({
         const senderName = getMemberDisplayName(room, senderId) || getMxIdLocalPart(senderId);
 
         const timeJSX = (
-          <Time ts={mEvent.getTs()} compact={messageLayout === MessageLayout.Compact} />
+          <Time
+            ts={mEvent.getTs()}
+            compact={messageLayout === MessageLayout.Compact}
+            hour24Clock={hour24Clock}
+            dateFormatString={dateFormatString}
+          />
         );
 
         return (
@@ -1402,6 +1440,7 @@ export function RoomTimeline({
             messageSpacing={messageSpacing}
             canDelete={canRedact || mEvent.getSender() === mx.getUserId()}
             hideReadReceipts={hideActivity}
+            showDeveloperTools={showDeveloperTools}
           >
             <EventContent
               messageLayout={messageLayout}
@@ -1427,7 +1466,12 @@ export function RoomTimeline({
       const senderName = getMemberDisplayName(room, senderId) || getMxIdLocalPart(senderId);
 
       const timeJSX = (
-        <Time ts={mEvent.getTs()} compact={messageLayout === MessageLayout.Compact} />
+        <Time
+          ts={mEvent.getTs()}
+          compact={messageLayout === MessageLayout.Compact}
+          hour24Clock={hour24Clock}
+          dateFormatString={dateFormatString}
+        />
       );
 
       return (
@@ -1441,6 +1485,7 @@ export function RoomTimeline({
           messageSpacing={messageSpacing}
           canDelete={canRedact || mEvent.getSender() === mx.getUserId()}
           hideReadReceipts={hideActivity}
+          showDeveloperTools={showDeveloperTools}
         >
           <EventContent
             messageLayout={messageLayout}
@@ -1471,7 +1516,12 @@ export function RoomTimeline({
       const senderName = getMemberDisplayName(room, senderId) || getMxIdLocalPart(senderId);
 
       const timeJSX = (
-        <Time ts={mEvent.getTs()} compact={messageLayout === MessageLayout.Compact} />
+        <Time
+          ts={mEvent.getTs()}
+          compact={messageLayout === MessageLayout.Compact}
+          hour24Clock={hour24Clock}
+          dateFormatString={dateFormatString}
+        />
       );
 
       return (
@@ -1485,6 +1535,7 @@ export function RoomTimeline({
           messageSpacing={messageSpacing}
           canDelete={canRedact || mEvent.getSender() === mx.getUserId()}
           hideReadReceipts={hideActivity}
+          showDeveloperTools={showDeveloperTools}
         >
           <EventContent
             messageLayout={messageLayout}

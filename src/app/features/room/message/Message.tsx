@@ -22,6 +22,7 @@ import {
   as,
   color,
   config,
+  toRem,
 } from 'folds';
 import React, {
   FormEventHandler,
@@ -94,10 +95,10 @@ export const MessageQuickReactions = as<'div', MessageQuickReactionsProps>(
     return (
       <>
         <Box
-          style={{ padding: config.space.S200 }}
+          style={{ padding: config.space.S300 }}
           alignItems="Center"
           justifyContent="Center"
-          gap="200"
+          gap="300"
           {...props}
           ref={ref}
         >
@@ -669,15 +670,21 @@ export type MessageProps = {
   messageSpacing: MessageSpacing;
   onUserClick: MouseEventHandler<HTMLButtonElement>;
   onUsernameClick: MouseEventHandler<HTMLButtonElement>;
-  onReplyClick: MouseEventHandler<HTMLButtonElement>;
+  onReplyClick: (
+    ev: Parameters<MouseEventHandler<HTMLButtonElement>>[0],
+    startThread?: boolean
+  ) => void;
   onEditId?: (eventId?: string) => void;
   onReactionToggle: (targetEventId: string, key: string, shortcode?: string) => void;
   reply?: ReactNode;
   reactions?: ReactNode;
   hideReadReceipts?: boolean;
+  showDeveloperTools?: boolean;
   powerLevelTag?: PowerLevelTag;
   accessibleTagColors?: Map<string, string>;
   legacyUsernameColor?: boolean;
+  hour24Clock: boolean;
+  dateFormatString: string;
 };
 export const Message = as<'div', MessageProps>(
   (
@@ -703,9 +710,12 @@ export const Message = as<'div', MessageProps>(
       reply,
       reactions,
       hideReadReceipts,
+      showDeveloperTools,
       powerLevelTag,
       accessibleTagColors,
       legacyUsernameColor,
+      hour24Clock,
+      dateFormatString,
       children,
       ...props
     },
@@ -770,7 +780,12 @@ export const Message = as<'div', MessageProps>(
               </Text>
             </>
           )}
-          <Time ts={mEvent.getTs()} compact={messageLayout === MessageLayout.Compact} />
+          <Time
+            ts={mEvent.getTs()}
+            compact={messageLayout === MessageLayout.Compact}
+            hour24Clock={hour24Clock}
+            dateFormatString={dateFormatString}
+          />
         </Box>
       </Box>
     );
@@ -857,6 +872,8 @@ export const Message = as<'div', MessageProps>(
       }, 100);
     };
 
+    const isThreadedMessage = mEvent.threadRootId !== undefined;
+
     return (
       <MessageBase
         className={classNames(css.MessageBase, className)}
@@ -919,6 +936,17 @@ export const Message = as<'div', MessageProps>(
                 >
                   <Icon src={Icons.ReplyArrow} size="100" />
                 </IconButton>
+                {!isThreadedMessage && (
+                  <IconButton
+                    onClick={(ev) => onReplyClick(ev, true)}
+                    data-event-id={mEvent.getId()}
+                    variant="SurfaceVariant"
+                    size="300"
+                    radii="300"
+                  >
+                    <Icon src={Icons.ThreadPlus} size="100" />
+                  </IconButton>
+                )}
                 {canEditEvent(mx, mEvent) && onEditId && (
                   <IconButton
                     onClick={() => onEditId(mEvent.getId())}
@@ -945,7 +973,7 @@ export const Message = as<'div', MessageProps>(
                         escapeDeactivates: stopPropagation,
                       }}
                     >
-                      <Menu>
+                      <Menu style={{ minWidth: toRem(200) }}>
                         {canSendReaction && (
                           <MessageQuickReactions
                             onReaction={(key, shortcode) => {
@@ -998,6 +1026,27 @@ export const Message = as<'div', MessageProps>(
                               Reply
                             </Text>
                           </MenuItem>
+                          {!isThreadedMessage && (
+                            <MenuItem
+                              size="300"
+                              after={<Icon src={Icons.ThreadPlus} size="100" />}
+                              radii="300"
+                              data-event-id={mEvent.getId()}
+                              onClick={(evt: any) => {
+                                onReplyClick(evt, true);
+                                closeMenu();
+                              }}
+                            >
+                              <Text
+                                className={css.MessageMenuItemText}
+                                as="span"
+                                size="T300"
+                                truncate
+                              >
+                                Reply in Thread
+                              </Text>
+                            </MenuItem>
+                          )}
                           {canEditEvent(mx, mEvent) && onEditId && (
                             <MenuItem
                               size="300"
@@ -1026,7 +1075,13 @@ export const Message = as<'div', MessageProps>(
                               onClose={closeMenu}
                             />
                           )}
-                          <MessageSourceCodeItem room={room} mEvent={mEvent} onClose={closeMenu} />
+                          {showDeveloperTools && (
+                            <MessageSourceCodeItem
+                              room={room}
+                              mEvent={mEvent}
+                              onClose={closeMenu}
+                            />
+                          )}
                           <MessageCopyLinkItem room={room} mEvent={mEvent} onClose={closeMenu} />
                           {canPinEvent && (
                             <MessagePinItem room={room} mEvent={mEvent} onClose={closeMenu} />
@@ -1101,6 +1156,7 @@ export type EventProps = {
   canDelete?: boolean;
   messageSpacing: MessageSpacing;
   hideReadReceipts?: boolean;
+  showDeveloperTools?: boolean;
 };
 export const Event = as<'div', EventProps>(
   (
@@ -1112,7 +1168,9 @@ export const Event = as<'div', EventProps>(
       canDelete,
       messageSpacing,
       hideReadReceipts,
+      showDeveloperTools,
       children,
+      style,
       ...props
     },
     ref
@@ -1179,7 +1237,7 @@ export const Event = as<'div', EventProps>(
                         escapeDeactivates: stopPropagation,
                       }}
                     >
-                      <Menu {...props} ref={ref}>
+                      <Menu style={{ minWidth: toRem(200), ...style }} {...props} ref={ref}>
                         <Box direction="Column" gap="100" className={css.MessageMenuGroup}>
                           {!hideReadReceipts && (
                             <MessageReadReceiptItem
@@ -1188,7 +1246,13 @@ export const Event = as<'div', EventProps>(
                               onClose={closeMenu}
                             />
                           )}
-                          <MessageSourceCodeItem room={room} mEvent={mEvent} onClose={closeMenu} />
+                          {showDeveloperTools && (
+                            <MessageSourceCodeItem
+                              room={room}
+                              mEvent={mEvent}
+                              onClose={closeMenu}
+                            />
+                          )}
                           <MessageCopyLinkItem room={room} mEvent={mEvent} onClose={closeMenu} />
                         </Box>
                         {((!mEvent.isRedacted() && canDelete && !stateEvent) ||
