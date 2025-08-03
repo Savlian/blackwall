@@ -61,6 +61,8 @@ import { AutoRestoreBackupOnVerification } from '../components/BackupRestore';
 import { RoomSettingsRenderer } from '../features/room-settings';
 import { ClientRoomsNotificationPreferences } from './client/ClientRoomsNotificationPreferences';
 import { SpaceSettingsRenderer } from '../features/space-settings';
+import { CreateRoomModalRenderer } from '../features/create-room';
+import { HomeCreateRoom } from './client/home/CreateRoom';
 
 export const createRouter = (clientConfig: ClientConfig, screenSize: ScreenSize) => {
   const { hashRouter } = clientConfig;
@@ -125,6 +127,7 @@ export const createRouter = (clientConfig: ClientConfig, screenSize: ScreenSize)
                       >
                         <Outlet />
                       </ClientLayout>
+                      <CreateRoomModalRenderer />
                       <RoomSettingsRenderer />
                       <SpaceSettingsRenderer />
                       <ReceiveSelfDeviceVerification />
@@ -152,7 +155,7 @@ export const createRouter = (clientConfig: ClientConfig, screenSize: ScreenSize)
           }
         >
           {mobile ? null : <Route index element={<WelcomePage />} />}
-          <Route path={_CREATE_PATH} element={<p>create</p>} />
+          <Route path={_CREATE_PATH} element={<HomeCreateRoom />} />
           <Route path={_JOIN_PATH} element={<p>join</p>} />
           <Route path={_SEARCH_PATH} element={<HomeSearch />} />
           <Route

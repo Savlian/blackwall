@@ -34,6 +34,7 @@ import { openCreateRoom, openSpaceAddExisting } from '../../../client/action/nav
 import { stopPropagation } from '../../utils/keyboard';
 import { mxcUrlToHttp } from '../../utils/matrix';
 import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
+import { useOpenCreateRoomModal } from '../../state/hooks/createRoomModal';
 
 function SpaceProfileLoading() {
   return (
@@ -240,13 +241,14 @@ function RootSpaceProfile({ closed, categoryId, handleClose }: RootSpaceProfileP
 
 function AddRoomButton({ item }: { item: HierarchyItem }) {
   const [cords, setCords] = useState<RectCords>();
+  const openCreateRoomModal = useOpenCreateRoomModal();
 
   const handleAddRoom: MouseEventHandler<HTMLButtonElement> = (evt) => {
     setCords(evt.currentTarget.getBoundingClientRect());
   };
 
   const handleCreateRoom = () => {
-    openCreateRoom(false, item.roomId as any);
+    openCreateRoomModal(item.roomId);
     setCords(undefined);
   };
 

@@ -37,6 +37,10 @@ export const SequenceCard = recipe({
         borderBottomLeftRadius: 0,
         borderBottomRightRadius: 0,
       },
+
+      'button&': {
+        cursor: 'pointer',
+      },
     },
   },
   variants: {
