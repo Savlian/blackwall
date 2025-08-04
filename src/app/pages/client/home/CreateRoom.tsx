@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { Box, Icon, Icons, Scroll, IconButton } from 'folds';
 import {
   Page,
@@ -14,7 +14,6 @@ import { CreateRoomForm } from '../../../features/create-room';
 import { useRoomNavigate } from '../../../hooks/useRoomNavigate';
 
 export function HomeCreateRoom() {
-  const scrollRef = useRef<HTMLDivElement>(null);
   const screenSize = useScreenSizeContext();
 
   const { navigateRoom } = useRoomNavigate();
@@ -34,8 +33,8 @@ export function HomeCreateRoom() {
           </Box>
         </PageHeader>
       )}
-      <Box style={{ position: 'relative' }} grow="Yes">
-        <Scroll ref={scrollRef} hideTrack visibility="Hover">
+      <Box grow="Yes">
+        <Scroll hideTrack visibility="Hover">
           <PageContent>
             <PageContentCenter>
               <PageHeroSection>

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Box, Text, Icon, Icons, config } from 'folds';
-import { SettingTile } from './setting-tile';
-import { SequenceCard } from './sequence-card';
+import { Box, Text, Icon, Icons, config, IconSrc } from 'folds';
+import { SequenceCard } from '../sequence-card';
+import { SettingTile } from '../setting-tile';
 
 export enum CreateRoomKind {
   Private = 'private',
@@ -13,12 +13,14 @@ type CreateRoomKindSelectorProps = {
   onSelect: (value: CreateRoomKind) => void;
   canRestrict?: boolean;
   disabled?: boolean;
+  getIcon: (kind: CreateRoomKind) => IconSrc;
 };
 export function CreateRoomKindSelector({
   value,
   onSelect,
   canRestrict,
   disabled,
+  getIcon,
 }: CreateRoomKindSelectorProps) {
   return (
     <Box shrink="No" direction="Column" gap="100">
@@ -35,7 +37,7 @@ export function CreateRoomKindSelector({
           disabled={disabled}
         >
           <SettingTile
-            before={<Icon size="400" src={Icons.Hash} />}
+            before={<Icon size="400" src={getIcon(CreateRoomKind.Restricted)} />}
             after={value === CreateRoomKind.Restricted && <Icon src={Icons.Check} />}
           >
             <Text size="H6">Restricted</Text>
@@ -57,7 +59,7 @@ export function CreateRoomKindSelector({
         disabled={disabled}
       >
         <SettingTile
-          before={<Icon size="400" src={Icons.HashLock} />}
+          before={<Icon size="400" src={getIcon(CreateRoomKind.Private)} />}
           after={value === CreateRoomKind.Private && <Icon src={Icons.Check} />}
         >
           <Text size="H6">Private</Text>
@@ -78,7 +80,7 @@ export function CreateRoomKindSelector({
         disabled={disabled}
       >
         <SettingTile
-          before={<Icon size="400" src={Icons.HashGlobe} />}
+          before={<Icon size="400" src={getIcon(CreateRoomKind.Public)} />}
           after={value === CreateRoomKind.Public && <Icon src={Icons.Check} />}
         >
           <Text size="H6">Public</Text>

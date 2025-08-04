@@ -1,21 +1,5 @@
-import React, {
-  FormEventHandler,
-  KeyboardEventHandler,
-  MouseEventHandler,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
-import {
-  ICreateRoomOpts,
-  ICreateRoomStateEvent,
-  JoinRule,
-  MatrixClient,
-  MatrixError,
-  RestrictedAllowType,
-  Room,
-} from 'matrix-js-sdk';
+import React, { FormEventHandler, useCallback, useState } from 'react';
+import { MatrixError, Room } from 'matrix-js-sdk';
 import {
   Box,
   Button,
@@ -25,333 +9,28 @@ import {
   Icon,
   Icons,
   Input,
-  Menu,
-  PopOut,
-  RectCords,
   Spinner,
   Switch,
   Text,
   TextArea,
-  toRem,
 } from 'folds';
-import FocusTrap from 'focus-trap-react';
-import { RoomJoinRulesEventContent } from 'matrix-js-sdk/lib/types';
-import { isKeyHotkey } from 'is-hotkey';
 import { SettingTile } from '../../components/setting-tile';
 import { SequenceCard } from '../../components/sequence-card';
-import {
-  getMxIdServer,
-  knockRestrictedSupported,
-  knockSupported,
-  restrictedSupported,
-} from '../../utils/matrix';
+import { knockRestrictedSupported, knockSupported, restrictedSupported } from '../../utils/matrix';
 import { useMatrixClient } from '../../hooks/useMatrixClient';
 import { millisecondsToMinutes, replaceSpaceWithDash } from '../../utils/common';
-import { AsyncState, AsyncStatus, useAsync, useAsyncCallback } from '../../hooks/useAsyncCallback';
-import { useDebounce } from '../../hooks/useDebounce';
+import { AsyncStatus, useAsyncCallback } from '../../hooks/useAsyncCallback';
 import { useCapabilities } from '../../hooks/useCapabilities';
-import { stopPropagation } from '../../utils/keyboard';
-import { getViaServers } from '../../plugins/via-servers';
-import { StateEvent } from '../../../types/matrix/room';
-import { getIdServer } from '../../../util/matrixUtil';
 import { useAlive } from '../../hooks/useAlive';
 import { ErrorCode } from '../../cs-errorcode';
-import { CreateRoomKind, CreateRoomKindSelector } from '../../components/CreateRoomKindSelector';
-
-export function AliasInput({ disabled }: { disabled?: boolean }) {
-  const mx = useMatrixClient();
-  const aliasInputRef = useRef<HTMLInputElement>(null);
-  const [aliasAvail, setAliasAvail] = useState<AsyncState<boolean, Error>>({
-    status: AsyncStatus.Idle,
-  });
-
-  useEffect(() => {
-    if (aliasAvail.status === AsyncStatus.Success && aliasInputRef.current?.value === '') {
-      setAliasAvail({ status: AsyncStatus.Idle });
-    }
-  }, [aliasAvail]);
-
-  const checkAliasAvail = useAsync(
-    useCallback(
-      async (aliasLocalPart: string) => {
-        const roomAlias = `#${aliasLocalPart}:${getMxIdServer(mx.getSafeUserId())}`;
-        try {
-          const result = await mx.getRoomIdForAlias(roomAlias);
-          return typeof result.room_id !== 'string';
-        } catch (e) {
-          if (e instanceof MatrixError && e.httpStatus === 404) {
-            return true;
-          }
-          throw e;
-        }
-      },
-      [mx]
-    ),
-    setAliasAvail
-  );
-  const aliasAvailable: boolean | undefined =
-    aliasAvail.status === AsyncStatus.Success ? aliasAvail.data : undefined;
-
-  const debounceCheckAliasAvail = useDebounce(checkAliasAvail, { wait: 500 });
-
-  const handleAliasChange: FormEventHandler<HTMLInputElement> = (evt) => {
-    const aliasInput = evt.currentTarget;
-    const aliasLocalPart = replaceSpaceWithDash(aliasInput.value);
-    if (aliasLocalPart) {
-      aliasInput.value = aliasLocalPart;
-      debounceCheckAliasAvail(aliasLocalPart);
-    } else {
-      setAliasAvail({ status: AsyncStatus.Idle });
-    }
-  };
-
-  const handleAliasKeyDown: KeyboardEventHandler<HTMLInputElement> = (evt) => {
-    if (isKeyHotkey('enter', evt)) {
-      evt.preventDefault();
-
-      const aliasInput = evt.currentTarget;
-      const aliasLocalPart = replaceSpaceWithDash(aliasInput.value);
-      if (aliasLocalPart) {
-        checkAliasAvail(aliasLocalPart);
-      } else {
-        setAliasAvail({ status: AsyncStatus.Idle });
-      }
-    }
-  };
-
-  return (
-    <Box shrink="No" direction="Column" gap="100">
-      <Text size="L400">Address (Optional)</Text>
-      <Text size="T200" priority="300">
-        Pick an unique address to make your room discoverable to public.
-      </Text>
-      <Input
-        ref={aliasInputRef}
-        onChange={handleAliasChange}
-        before={
-          aliasAvail.status === AsyncStatus.Loading ? (
-            <Spinner size="100" variant="Secondary" />
-          ) : (
-            <Icon size="100" src={Icons.Hash} />
-          )
-        }
-        after={
-          <Text style={{ maxWidth: toRem(150) }} truncate>
-            :{getMxIdServer(mx.getSafeUserId())}
-          </Text>
-        }
-        onKeyDown={handleAliasKeyDown}
-        name="aliasInput"
-        size="500"
-        variant={aliasAvailable === true ? 'Success' : 'SurfaceVariant'}
-        radii="400"
-        disabled={disabled}
-      />
-      {aliasAvailable === false && (
-        <Box style={{ color: color.Critical.Main }} alignItems="Center" gap="100">
-          <Icon src={Icons.Warning} filled size="50" />
-          <Text size="T200">
-            <b>This address is already taken. Please select a different one.</b>
-          </Text>
-        </Box>
-      )}
-    </Box>
-  );
-}
-
-export function RoomVersionSelector({
-  versions,
-  value,
-  onChange,
-  disabled,
-}: {
-  versions: string[];
-  value: string;
-  onChange: (value: string) => void;
-  disabled?: boolean;
-}) {
-  const [menuCords, setMenuCords] = useState<RectCords>();
-
-  const handleMenu: MouseEventHandler<HTMLButtonElement> = (evt) => {
-    setMenuCords(evt.currentTarget.getBoundingClientRect());
-  };
-
-  const handleSelect = (version: string) => {
-    setMenuCords(undefined);
-    onChange(version);
-  };
-
-  return (
-    <SequenceCard
-      style={{ padding: config.space.S300 }}
-      variant="SurfaceVariant"
-      direction="Column"
-      gap="500"
-    >
-      <SettingTile
-        title="Room Version"
-        after={
-          <PopOut
-            anchor={menuCords}
-            offset={5}
-            position="Bottom"
-            align="End"
-            content={
-              <FocusTrap
-                focusTrapOptions={{
-                  initialFocus: false,
-                  onDeactivate: () => setMenuCords(undefined),
-                  clickOutsideDeactivates: true,
-                  isKeyForward: (evt: KeyboardEvent) =>
-                    evt.key === 'ArrowDown' || evt.key === 'ArrowRight',
-                  isKeyBackward: (evt: KeyboardEvent) =>
-                    evt.key === 'ArrowUp' || evt.key === 'ArrowLeft',
-                  escapeDeactivates: stopPropagation,
-                }}
-              >
-                <Menu>
-                  <Box
-                    direction="Column"
-                    gap="200"
-                    style={{ padding: config.space.S200, maxWidth: toRem(300) }}
-                  >
-                    <Text size="L400">Room Versions</Text>
-                    <Box wrap="Wrap" gap="100">
-                      {versions.map((version) => (
-                        <Chip
-                          key={version}
-                          variant={value === version ? 'Primary' : 'SurfaceVariant'}
-                          aria-pressed={value === version}
-                          outlined={value === version}
-                          radii="300"
-                          onClick={() => handleSelect(version)}
-                          type="button"
-                        >
-                          <Text truncate size="T300">
-                            {version}
-                          </Text>
-                        </Chip>
-                      ))}
-                    </Box>
-                  </Box>
-                </Menu>
-              </FocusTrap>
-            }
-          >
-            <Button
-              type="button"
-              onClick={handleMenu}
-              size="300"
-              variant="Secondary"
-              fill="Soft"
-              radii="300"
-              aria-pressed={!!menuCords}
-              before={<Icon size="50" src={menuCords ? Icons.ChevronTop : Icons.ChevronBottom} />}
-              disabled={disabled}
-            >
-              <Text size="B300">{value}</Text>
-            </Button>
-          </PopOut>
-        }
-      />
-    </SequenceCard>
-  );
-}
-
-type CreateRoomData = {
-  version: string;
-  parent?: Room;
-  kind: CreateRoomKind;
-  name: string;
-  topic?: string;
-  aliasLocalPart?: string;
-  encryption: boolean;
-  knock: boolean;
-  allowFederation: boolean;
-};
-const createRoom = async (mx: MatrixClient, data: CreateRoomData): Promise<string> => {
-  const creationContent = {
-    'm.federate': data.allowFederation,
-  };
-
-  const initialState: ICreateRoomStateEvent[] = [];
-
-  if (data.encryption) {
-    initialState.push({
-      type: 'm.room.encryption',
-      state_key: '',
-      content: {
-        algorithm: 'm.megolm.v1.aes-sha2',
-      },
-    });
-  }
-
-  if (data.parent) {
-    initialState.push({
-      type: StateEvent.SpaceParent,
-      state_key: data.parent.roomId,
-      content: {
-        canonical: true,
-        via: getViaServers(data.parent),
-      },
-    });
-  }
-
-  const getJoinRuleContent = (): RoomJoinRulesEventContent => {
-    if (data.kind === CreateRoomKind.Public) {
-      return {
-        join_rule: JoinRule.Public,
-      };
-    }
-
-    if (data.kind === CreateRoomKind.Restricted && data.parent) {
-      return {
-        join_rule: data.knock ? ('knock_restricted' as JoinRule) : JoinRule.Restricted,
-        allow: [
-          {
-            type: RestrictedAllowType.RoomMembership,
-            room_id: data.parent.roomId,
-          },
-        ],
-      };
-    }
-
-    return {
-      join_rule: data.knock ? JoinRule.Knock : JoinRule.Invite,
-    };
-  };
-
-  initialState.push({
-    type: StateEvent.RoomJoinRules,
-    content: getJoinRuleContent(),
-  });
-
-  const options: ICreateRoomOpts = {
-    room_version: data.version,
-    name: data.name,
-    topic: data.topic,
-    room_alias_name: data.aliasLocalPart,
-    creation_content: creationContent,
-    initial_state: initialState,
-  };
-
-  const result = await mx.createRoom(options);
-
-  if (data.parent) {
-    await mx.sendStateEvent(
-      data.parent.roomId,
-      StateEvent.SpaceChild as any,
-      {
-        auto_join: false,
-        suggested: false,
-        via: [getIdServer(mx.getUserId())],
-      },
-      result.room_id
-    );
-  }
-
-  return result.room_id;
-};
+import {
+  createRoom,
+  CreateRoomAliasInput,
+  CreateRoomData,
+  CreateRoomKind,
+  CreateRoomKindSelector,
+  RoomVersionSelector,
+} from '../../components/create-room';
 
 const getCreateRoomKindToIcon = (kind: CreateRoomKind) => {
   if (kind === CreateRoomKind.Private) return Icons.HashLock;
@@ -369,8 +48,9 @@ export function CreateRoomForm({ defaultKind, space, onCreate }: CreateRoomFormP
   const alive = useAlive();
 
   const capabilities = useCapabilities();
-  const roomVersion = capabilities['m.room_versions'];
-  const [selectedRoomVersion, selectRoomVersion] = useState(roomVersion?.default ?? '1');
+  const roomVersions = capabilities['m.room_versions'];
+  const [selectedRoomVersion, selectRoomVersion] = useState(roomVersions?.default ?? '1');
+
   const allowRestricted = space && restrictedSupported(selectedRoomVersion);
 
   const [kind, setKind] = useState(
@@ -448,6 +128,7 @@ export function CreateRoomForm({ defaultKind, space, onCreate }: CreateRoomFormP
           onSelect={setKind}
           canRestrict={allowRestricted}
           disabled={disabled}
+          getIcon={getCreateRoomKindToIcon}
         />
       </Box>
       <Box shrink="No" direction="Column" gap="100">
@@ -460,6 +141,7 @@ export function CreateRoomForm({ defaultKind, space, onCreate }: CreateRoomFormP
           size="500"
           variant="SurfaceVariant"
           radii="400"
+          autoComplete="off"
           disabled={disabled}
         />
       </Box>
@@ -474,7 +156,7 @@ export function CreateRoomForm({ defaultKind, space, onCreate }: CreateRoomFormP
         />
       </Box>
 
-      {kind === CreateRoomKind.Public && <AliasInput />}
+      {kind === CreateRoomKind.Public && <CreateRoomAliasInput disabled={disabled} />}
 
       <Box shrink="No" direction="Column" gap="100">
         <Box gap="200" alignItems="End">
@@ -556,7 +238,7 @@ export function CreateRoomForm({ defaultKind, space, onCreate }: CreateRoomFormP
         </SequenceCard>
         {advance && (
           <RoomVersionSelector
-            versions={roomVersion?.available ? Object.keys(roomVersion.available) : ['1']}
+            versions={roomVersions?.available ? Object.keys(roomVersions.available) : ['1']}
             value={selectedRoomVersion}
             onChange={handleRoomVersionChange}
             disabled={disabled}
