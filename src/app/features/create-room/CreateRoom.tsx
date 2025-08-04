@@ -76,27 +76,6 @@ export function CreateRoomKindSelector({
 }: CreateRoomKindSelectorProps) {
   return (
     <Box shrink="No" direction="Column" gap="100">
-      <SequenceCard
-        style={{ padding: config.space.S300 }}
-        variant={value === CreateRoomKind.Private ? 'Primary' : 'SurfaceVariant'}
-        direction="Column"
-        gap="100"
-        as="button"
-        type="button"
-        aria-pressed={value === CreateRoomKind.Private}
-        onClick={() => onSelect(CreateRoomKind.Private)}
-        disabled={disabled}
-      >
-        <SettingTile
-          before={<Icon size="400" src={Icons.HashLock} />}
-          after={value === CreateRoomKind.Private && <Icon src={Icons.Check} />}
-        >
-          <Text size="H6">Private</Text>
-          <Text size="T300" priority="300">
-            Only people with invite can join.
-          </Text>
-        </SettingTile>
-      </SequenceCard>
       {canRestrict && (
         <SequenceCard
           style={{ padding: config.space.S300 }}
@@ -122,6 +101,27 @@ export function CreateRoomKindSelector({
       )}
       <SequenceCard
         style={{ padding: config.space.S300 }}
+        variant={value === CreateRoomKind.Private ? 'Primary' : 'SurfaceVariant'}
+        direction="Column"
+        gap="100"
+        as="button"
+        type="button"
+        aria-pressed={value === CreateRoomKind.Private}
+        onClick={() => onSelect(CreateRoomKind.Private)}
+        disabled={disabled}
+      >
+        <SettingTile
+          before={<Icon size="400" src={Icons.HashLock} />}
+          after={value === CreateRoomKind.Private && <Icon src={Icons.Check} />}
+        >
+          <Text size="H6">Private</Text>
+          <Text size="T300" priority="300">
+            Only people with invite can join.
+          </Text>
+        </SettingTile>
+      </SequenceCard>
+      <SequenceCard
+        style={{ padding: config.space.S300 }}
         variant={value === CreateRoomKind.Public ? 'Primary' : 'SurfaceVariant'}
         direction="Column"
         gap="100"
@@ -137,7 +137,7 @@ export function CreateRoomKindSelector({
         >
           <Text size="H6">Public</Text>
           <Text size="T300" priority="300">
-            Anyone with the room address can join.
+            Anyone with the address can join.
           </Text>
         </SettingTile>
       </SequenceCard>
@@ -458,14 +458,16 @@ export function CreateRoomForm({ defaultKind, space, onCreate }: CreateRoomFormP
   const capabilities = useCapabilities();
   const roomVersion = capabilities['m.room_versions'];
   const [selectedRoomVersion, selectRoomVersion] = useState(roomVersion?.default ?? '1');
+  const allowRestricted = space && restrictedSupported(selectedRoomVersion);
 
-  const [kind, setKind] = useState(defaultKind ?? CreateRoomKind.Private);
+  const [kind, setKind] = useState(
+    defaultKind ?? allowRestricted ? CreateRoomKind.Restricted : CreateRoomKind.Private
+  );
   const [federation, setFederation] = useState(true);
   const [encryption, setEncryption] = useState(false);
   const [knock, setKnock] = useState(false);
   const [advance, setAdvance] = useState(false);
 
-  const allowRestricted = space && restrictedSupported(selectedRoomVersion);
   const allowKnock = kind === CreateRoomKind.Private && knockSupported(selectedRoomVersion);
   const allowKnockRestricted =
     kind === CreateRoomKind.Restricted && knockRestrictedSupported(selectedRoomVersion);
