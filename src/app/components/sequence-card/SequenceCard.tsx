@@ -9,12 +9,25 @@ export const SequenceCard = as<
   ComponentProps<typeof Box> & ContainerColorVariants & css.SequenceCardVariants
 >(
   (
-    { as: AsSequenceCard = 'div', className, variant, firstChild, lastChild, outlined, ...props },
+    {
+      as: AsSequenceCard = 'div',
+      className,
+      variant,
+      radii,
+      firstChild,
+      lastChild,
+      outlined,
+      ...props
+    },
     ref
   ) => (
     <Box
       as={AsSequenceCard}
-      className={classNames(css.SequenceCard({ outlined }), ContainerColor({ variant }), className)}
+      className={classNames(
+        css.SequenceCard({ radii, outlined }),
+        ContainerColor({ variant }),
+        className
+      )}
       data-first-child={firstChild}
       data-last-child={lastChild}
       {...props}
