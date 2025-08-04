@@ -5,6 +5,7 @@ import { TUploadAtom, UploadStatus, UploadSuccess, useBindUploadAtom } from '../
 import { useMatrixClient } from '../../hooks/useMatrixClient';
 import { TUploadContent } from '../../utils/matrix';
 import { getFileTypeIcon } from '../../utils/common';
+import { useMediaConfig } from '../../hooks/useMediaConfig';
 
 type CompactUploadCardRendererProps = {
   isEncrypted?: boolean;
@@ -19,10 +20,16 @@ export function CompactUploadCardRenderer({
   onComplete,
 }: CompactUploadCardRendererProps) {
   const mx = useMatrixClient();
+  const mediaConfig = useMediaConfig();
+  const allowSize = mediaConfig['m.upload.size'] || Infinity;
+
   const { upload, startUpload, cancelUpload } = useBindUploadAtom(mx, uploadAtom, isEncrypted);
   const { file } = upload;
+  const fileSizeExceeded = file.size >= allowSize;
 
-  if (upload.status === UploadStatus.Idle) startUpload();
+  if (upload.status === UploadStatus.Idle && !fileSizeExceeded) {
+    startUpload();
+  }
 
   const removeUpload = () => {
     cancelUpload();
@@ -76,7 +83,7 @@ export function CompactUploadCardRenderer({
         </>
       ) : (
         <>
-          {upload.status === UploadStatus.Idle && (
+          {upload.status === UploadStatus.Idle && !fileSizeExceeded && (
             <CompactUploadCardProgress sentBytes={0} totalBytes={file.size} />
           )}
           {upload.status === UploadStatus.Loading && (
@@ -85,6 +92,14 @@ export function CompactUploadCardRenderer({
           {upload.status === UploadStatus.Error && (
             <UploadCardError>
               <Text size="T200">{upload.error.message}</Text>
+            </UploadCardError>
+          )}
+          {upload.status === UploadStatus.Idle && fileSizeExceeded && (
+            <UploadCardError>
+              <Text size="T200">
+                The file size exceeds the limit. Maximum allowed size is {bytesToSize(allowSize)},
+                but the uploaded file is {bytesToSize(file.size)}.
+              </Text>
             </UploadCardError>
           )}
         </>
