@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Box,
+  config,
   Header,
   Icon,
   IconButton,
@@ -21,7 +22,6 @@ import {
   useCreateRoomModalState,
 } from '../../state/hooks/createRoomModal';
 import { CreateRoomModalState } from '../../state/createRoomModal';
-import * as css from './styles.css';
 import { stopPropagation } from '../../utils/keyboard';
 
 type CreateRoomModalProps = {
@@ -47,9 +47,16 @@ function CreateRoomModal({ state }: CreateRoomModalProps) {
               escapeDeactivates: stopPropagation,
             }}
           >
-            <Modal className={css.CreateRoomModal} size="300" flexHeight>
+            <Modal size="300" flexHeight>
               <Box direction="Column">
-                <Header size="500" className={css.CreateRoomModalHeader}>
+                <Header
+                  size="500"
+                  style={{
+                    padding: config.space.S200,
+                    paddingLeft: config.space.S400,
+                    borderBottomWidth: config.borderWidth.B300,
+                  }}
+                >
                   <Box grow="Yes">
                     <Text size="H4">New Room</Text>
                   </Box>
@@ -60,7 +67,14 @@ function CreateRoomModal({ state }: CreateRoomModalProps) {
                   </Box>
                 </Header>
                 <Scroll size="300" hideTrack>
-                  <Box className={css.CreateRoomModalContent} direction="Column" gap="500">
+                  <Box
+                    style={{
+                      padding: config.space.S400,
+                      paddingRight: config.space.S200,
+                    }}
+                    direction="Column"
+                    gap="500"
+                  >
                     <CreateRoomForm space={space} onCreate={closeDialog} />
                   </Box>
                 </Scroll>
