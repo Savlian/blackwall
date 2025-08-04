@@ -12,6 +12,7 @@ import { IPowerLevels, powerLevelAPI } from '../../../hooks/usePowerLevels';
 import { StateEvent } from '../../../../types/matrix/room';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { useStateEvent } from '../../../hooks/useStateEvent';
+import { ExtendedJoinRules } from '../../../components/JoinRulesSwitcher';
 
 type RoomPublishProps = {
   powerLevels: IPowerLevels;
@@ -27,7 +28,7 @@ export function RoomPublish({ powerLevels }: RoomPublishProps) {
   );
   const joinRuleEvent = useStateEvent(room, StateEvent.RoomJoinRules);
   const content = joinRuleEvent?.getContent<RoomJoinRulesEventContent>();
-  const rule: JoinRule = content?.join_rule ?? JoinRule.Invite;
+  const rule: ExtendedJoinRules = (content?.join_rule as ExtendedJoinRules) ?? JoinRule.Invite;
 
   const { visibilityState, setVisibility } = useRoomDirectoryVisibility(room.roomId);
 
@@ -35,7 +36,8 @@ export function RoomPublish({ powerLevels }: RoomPublishProps) {
 
   const loading =
     visibilityState.status === AsyncStatus.Loading || toggleState.status === AsyncStatus.Loading;
-  const validRule = rule === JoinRule.Public || rule === JoinRule.Knock;
+  const validRule =
+    rule === JoinRule.Public || rule === JoinRule.Knock || rule === 'knock_restricted';
 
   return (
     <SequenceCard
