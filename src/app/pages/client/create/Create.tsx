@@ -8,8 +8,11 @@ import {
   PageHeroSection,
 } from '../../../components/page';
 import { CreateSpaceForm } from '../../../features/create-space';
+import { useRoomNavigate } from '../../../hooks/useRoomNavigate';
 
 export function Create() {
+  const { navigateSpace } = useRoomNavigate();
+
   return (
     <Page>
       <Box grow="Yes">
@@ -23,7 +26,7 @@ export function Create() {
                     title="Create Space"
                     subTitle="Build a space for your community."
                   />
-                  <CreateSpaceForm />
+                  <CreateSpaceForm onCreate={navigateSpace} />
                 </Box>
               </PageHeroSection>
             </PageContentCenter>

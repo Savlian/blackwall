@@ -65,6 +65,7 @@ import { SpaceSettingsRenderer } from '../features/space-settings';
 import { CreateRoomModalRenderer } from '../features/create-room';
 import { HomeCreateRoom } from './client/home/CreateRoom';
 import { Create } from './client/create';
+import { CreateSpaceModalRenderer } from '../features/create-space';
 
 export const createRouter = (clientConfig: ClientConfig, screenSize: ScreenSize) => {
   const { hashRouter } = clientConfig;
@@ -130,6 +131,7 @@ export const createRouter = (clientConfig: ClientConfig, screenSize: ScreenSize)
                         <Outlet />
                       </ClientLayout>
                       <CreateRoomModalRenderer />
+                      <CreateSpaceModalRenderer />
                       <RoomSettingsRenderer />
                       <SpaceSettingsRenderer />
                       <ReceiveSelfDeviceVerification />
