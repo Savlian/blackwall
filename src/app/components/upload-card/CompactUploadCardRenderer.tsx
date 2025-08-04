@@ -4,7 +4,7 @@ import { UploadCard, UploadCardError, CompactUploadCardProgress } from './Upload
 import { TUploadAtom, UploadStatus, UploadSuccess, useBindUploadAtom } from '../../state/upload';
 import { useMatrixClient } from '../../hooks/useMatrixClient';
 import { TUploadContent } from '../../utils/matrix';
-import { getFileTypeIcon } from '../../utils/common';
+import { bytesToSize, getFileTypeIcon } from '../../utils/common';
 import { useMediaConfig } from '../../hooks/useMediaConfig';
 
 type CompactUploadCardRendererProps = {
@@ -97,8 +97,9 @@ export function CompactUploadCardRenderer({
           {upload.status === UploadStatus.Idle && fileSizeExceeded && (
             <UploadCardError>
               <Text size="T200">
-                The file size exceeds the limit. Maximum allowed size is {bytesToSize(allowSize)},
-                but the uploaded file is {bytesToSize(file.size)}.
+                The file size exceeds the limit. Maximum allowed size is{' '}
+                <b>{bytesToSize(allowSize)}</b>, but the uploaded file is{' '}
+                <b>{bytesToSize(file.size)}</b>.
               </Text>
             </UploadCardError>
           )}

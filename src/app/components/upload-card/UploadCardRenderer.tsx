@@ -152,8 +152,9 @@ export function UploadCardRenderer({
           {upload.status === UploadStatus.Idle && fileSizeExceeded && (
             <UploadCardError>
               <Text size="T200">
-                The file size exceeds the limit. Maximum allowed size is {bytesToSize(allowSize)},
-                but the uploaded file is {bytesToSize(file.size)}.
+                The file size exceeds the limit. Maximum allowed size is{' '}
+                <b>{bytesToSize(allowSize)}</b>, but the uploaded file is{' '}
+                <b>{bytesToSize(file.size)}</b>.
               </Text>
             </UploadCardError>
           )}
