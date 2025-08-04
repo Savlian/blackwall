@@ -1,0 +1,35 @@
+import React from 'react';
+import { Box, Icon, Icons, Scroll } from 'folds';
+import {
+  Page,
+  PageContent,
+  PageContentCenter,
+  PageHero,
+  PageHeroSection,
+} from '../../../components/page';
+import { CreateSpaceForm } from '../../../features/create-space';
+
+export function Create() {
+  return (
+    <Page>
+      <Box grow="Yes">
+        <Scroll hideTrack visibility="Hover">
+          <PageContent>
+            <PageContentCenter>
+              <PageHeroSection>
+                <Box direction="Column" gap="700">
+                  <PageHero
+                    icon={<Icon size="600" src={Icons.Space} />}
+                    title="Create Space"
+                    subTitle="Build a space for your community."
+                  />
+                  <CreateSpaceForm />
+                </Box>
+              </PageHeroSection>
+            </PageContentCenter>
+          </PageContent>
+        </Scroll>
+      </Box>
+    </Page>
+  );
+}
