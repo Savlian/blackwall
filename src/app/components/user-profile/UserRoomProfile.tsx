@@ -257,7 +257,7 @@ export function UserRoomProfile({ userId }: UserRoomProfileProps) {
         <Box direction="Column" gap="400">
           <Box gap="400" alignItems="Start">
             <UserHeroName displayName={displayName} userId={userId} />
-            <Box shrink="No">
+            {/* <Box shrink="No">
               <Button
                 size="300"
                 variant="Secondary"
@@ -267,7 +267,7 @@ export function UserRoomProfile({ userId }: UserRoomProfileProps) {
               >
                 <Text size="B300">Profile</Text>
               </Button>
-            </Box>
+            </Box> */}
           </Box>
           <Box alignItems="Center" gap="200" wrap="Wrap">
             {server && <ServerChip server={server} />}
