@@ -1,7 +1,8 @@
-import React, { MouseEventHandler, useState } from 'react';
+import React, { MouseEventHandler, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FocusTrap from 'focus-trap-react';
 import { isKeyHotkey } from 'is-hotkey';
+import { Room } from 'matrix-js-sdk';
 import {
   PopOut,
   Menu,
@@ -134,6 +135,12 @@ export function ServerChip({ server }: { server: string }) {
   );
 }
 
+type MutualRoomsData = {
+  rooms: Room[];
+  spaces: Room[];
+  directs: Room[];
+};
+
 export function MutualRoomsChip({ userId }: { userId: string }) {
   const mx = useMatrixClient();
   const mutualRoomSupported = useMutualRoomsSupport();
@@ -154,6 +161,33 @@ export function MutualRoomsChip({ userId }: { userId: string }) {
 
   const close = () => setCords(undefined);
 
+  const mutual: MutualRoomsData = useMemo(() => {
+    const data: MutualRoomsData = {
+      rooms: [],
+      spaces: [],
+      directs: [],
+    };
+
+    if (mutualRoomsState.status === AsyncStatus.Success) {
+      const mutualRooms = mutualRoomsState.data
+        .sort(factoryRoomIdByAtoZ(mx))
+        .map(getRoom)
+        .filter((room) => !!room);
+      mutualRooms.forEach((room) => {
+        if (room.isSpaceRoom()) {
+          data.spaces.push(room);
+          return;
+        }
+        if (directs.includes(room.roomId)) {
+          data.directs.push(room);
+          return;
+        }
+        data.rooms.push(room);
+      });
+    }
+    return data;
+  }, [mutualRoomsState, getRoom, directs, mx]);
+
   if (
     userId === mx.getSafeUserId() ||
     !mutualRoomSupported ||
@@ -161,6 +195,56 @@ export function MutualRoomsChip({ userId }: { userId: string }) {
   ) {
     return null;
   }
+
+  const renderItem = (room: Room) => {
+    const { roomId } = room;
+    const dm = directs.includes(roomId);
+
+    return (
+      <MenuItem
+        key={roomId}
+        variant="Surface"
+        fill="None"
+        size="300"
+        radii="300"
+        style={{ paddingLeft: config.space.S100 }}
+        onClick={() => {
+          if (room.isSpaceRoom()) {
+            navigateSpace(roomId);
+          } else {
+            navigateRoom(roomId);
+          }
+          closeUserRoomProfile();
+        }}
+        before={
+          <Avatar size="200" radii={dm ? '400' : '300'}>
+            {dm || room.isSpaceRoom() ? (
+              <RoomAvatar
+                roomId={room.roomId}
+                src={
+                  dm
+                    ? getDirectRoomAvatarUrl(mx, room, 96, useAuthentication)
+                    : getRoomAvatarUrl(mx, room, 96, useAuthentication)
+                }
+                alt={room.name}
+                renderFallback={() => (
+                  <Text as="span" size="H6">
+                    {nameInitials(room.name)}
+                  </Text>
+                )}
+              />
+            ) : (
+              <RoomIcon size="100" joinRule={room.getJoinRule()} />
+            )}
+          </Avatar>
+        }
+      >
+        <Text size="B300" truncate>
+          {room.name}
+        </Text>
+      </MenuItem>
+    );
+  };
 
   return (
     <PopOut
@@ -191,65 +275,33 @@ export function MutualRoomsChip({ userId }: { userId: string }) {
                 <Scroll size="300" hideTrack>
                   <Box
                     direction="Column"
-                    gap="100"
-                    style={{
-                      padding: config.space.S200,
-                      paddingRight: 0,
-                    }}
+                    gap="400"
+                    style={{ padding: config.space.S200, paddingRight: 0 }}
                   >
-                    {mutualRoomsState.data
-                      .sort(factoryRoomIdByAtoZ(mx))
-                      .map((roomId) => getRoom(roomId))
-                      .map((room) => {
-                        if (!room) return null;
-                        const { roomId } = room;
-                        const dm = directs.includes(roomId);
-
-                        return (
-                          <MenuItem
-                            key={roomId}
-                            variant="Surface"
-                            fill="None"
-                            size="300"
-                            radii="300"
-                            style={{ paddingLeft: config.space.S100 }}
-                            onClick={() => {
-                              if (room.isSpaceRoom()) {
-                                navigateSpace(roomId);
-                              } else {
-                                navigateRoom(roomId);
-                              }
-                              closeUserRoomProfile();
-                            }}
-                            before={
-                              <Avatar size="200" radii={dm ? '400' : '300'}>
-                                {dm || room.isSpaceRoom() ? (
-                                  <RoomAvatar
-                                    roomId={room.roomId}
-                                    src={
-                                      dm
-                                        ? getDirectRoomAvatarUrl(mx, room, 96, useAuthentication)
-                                        : getRoomAvatarUrl(mx, room, 96, useAuthentication)
-                                    }
-                                    alt={room.name}
-                                    renderFallback={() => (
-                                      <Text as="span" size="H6">
-                                        {nameInitials(room.name)}
-                                      </Text>
-                                    )}
-                                  />
-                                ) : (
-                                  <RoomIcon size="100" joinRule={room.getJoinRule()} />
-                                )}
-                              </Avatar>
-                            }
-                          >
-                            <Text size="B300" truncate>
-                              {room.name}
-                            </Text>
-                          </MenuItem>
-                        );
-                      })}
+                    {mutual.spaces.length > 0 && (
+                      <Box direction="Column" gap="100">
+                        <Text style={{ paddingLeft: config.space.S100 }} size="L400">
+                          Spaces
+                        </Text>
+                        {mutual.spaces.map(renderItem)}
+                      </Box>
+                    )}
+                    {mutual.rooms.length > 0 && (
+                      <Box direction="Column" gap="100">
+                        <Text style={{ paddingLeft: config.space.S100 }} size="L400">
+                          Rooms
+                        </Text>
+                        {mutual.rooms.map(renderItem)}
+                      </Box>
+                    )}
+                    {mutual.directs.length > 0 && (
+                      <Box direction="Column" gap="100">
+                        <Text style={{ paddingLeft: config.space.S100 }} size="L400">
+                          Direct Messages
+                        </Text>
+                        {mutual.directs.map(renderItem)}
+                      </Box>
+                    )}
                   </Box>
                 </Scroll>
               </Box>
@@ -262,7 +314,9 @@ export function MutualRoomsChip({ userId }: { userId: string }) {
         variant="SurfaceVariant"
         radii="Pill"
         before={mutualRoomsState.status === AsyncStatus.Loading && <Spinner size="50" />}
-        disabled={mutualRoomsState.status !== AsyncStatus.Success}
+        disabled={
+          mutualRoomsState.status !== AsyncStatus.Success || mutualRoomsState.data.length === 0
+        }
         onClick={open}
         aria-pressed={!!cords}
       >
