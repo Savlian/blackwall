@@ -2,6 +2,7 @@ import {
   Box,
   Button,
   Chip,
+  color,
   config,
   Icon,
   Icons,
@@ -10,13 +11,14 @@ import {
   MenuItem,
   PopOut,
   RectCords,
+  Spinner,
   Text,
 } from 'folds';
-import React, { MouseEventHandler, useState } from 'react';
+import React, { MouseEventHandler, useCallback, useState } from 'react';
 import FocusTrap from 'focus-trap-react';
 import { isKeyHotkey } from 'is-hotkey';
 import { UserHero, UserHeroName } from './UserHero';
-import { getMxIdServer, mxcUrlToHttp } from '../../utils/matrix';
+import { getDMRoomFor, getMxIdServer, mxcUrlToHttp } from '../../utils/matrix';
 import { getMemberAvatarMxc, getMemberDisplayName } from '../../utils/room';
 import { useMatrixClient } from '../../hooks/useMatrixClient';
 import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
@@ -36,6 +38,12 @@ import { CutoutCard } from '../cutout-card';
 import { SettingTile } from '../setting-tile';
 import { useOpenSpaceSettings } from '../../state/hooks/spaceSettings';
 import { SpaceSettingsPage } from '../../state/spaceSettings';
+import { AsyncStatus, useAsyncCallback } from '../../hooks/useAsyncCallback';
+import { createDM } from '../../../client/action/room';
+import { hasDevices } from '../../../util/matrixUtil';
+import { useRoomNavigate } from '../../hooks/useRoomNavigate';
+import { useAlive } from '../../hooks/useAlive';
+import { useCloseUserRoomProfile } from '../../state/hooks/userRoomProfile';
 
 function PowerChip({ userId }: { userId: string }) {
   const mx = useMatrixClient();
@@ -229,6 +237,10 @@ type UserRoomProfileProps = {
 export function UserRoomProfile({ userId }: UserRoomProfileProps) {
   const mx = useMatrixClient();
   const useAuthentication = useMediaAuthentication();
+  const { navigateRoom } = useRoomNavigate();
+  const alive = useAlive();
+  const closeUserRoomProfile = useCloseUserRoomProfile();
+
   const room = useRoom();
   const powerlevels = usePowerLevels(room);
   const { getPowerLevel, canDoAction } = usePowerLevelsAPI(powerlevels);
@@ -246,6 +258,28 @@ export function UserRoomProfile({ userId }: UserRoomProfileProps) {
 
   const presence = useUserPresence(userId);
 
+  const [directMessageState, directMessage] = useAsyncCallback<string, Error, []>(
+    useCallback(async () => {
+      const result = await createDM(mx, userId, await hasDevices(mx, userId));
+      return result.room_id as string;
+    }, [userId, mx])
+  );
+
+  const handleMessage = () => {
+    const dmRoomId = getDMRoomFor(mx, userId)?.roomId;
+    if (dmRoomId) {
+      navigateRoom(dmRoomId);
+      closeUserRoomProfile();
+      return;
+    }
+    directMessage().then((rId) => {
+      if (alive()) {
+        navigateRoom(rId);
+        closeUserRoomProfile();
+      }
+    });
+  };
+
   return (
     <Box direction="Column">
       <UserHero
@@ -257,18 +291,31 @@ export function UserRoomProfile({ userId }: UserRoomProfileProps) {
         <Box direction="Column" gap="400">
           <Box gap="400" alignItems="Start">
             <UserHeroName displayName={displayName} userId={userId} />
-            {/* <Box shrink="No">
+            <Box shrink="No">
               <Button
                 size="300"
-                variant="Secondary"
+                variant="Primary"
                 fill="Solid"
                 radii="300"
-                before={<Icon size="50" src={Icons.User} filled />}
+                disabled={directMessageState.status === AsyncStatus.Loading}
+                before={
+                  directMessageState.status === AsyncStatus.Loading ? (
+                    <Spinner size="50" variant="Primary" fill="Solid" />
+                  ) : (
+                    <Icon size="50" src={Icons.Message} filled />
+                  )
+                }
+                onClick={handleMessage}
               >
-                <Text size="B300">Profile</Text>
+                <Text size="B300">Message</Text>
               </Button>
-            </Box> */}
+            </Box>
           </Box>
+          {directMessageState.status === AsyncStatus.Error && (
+            <Text style={{ color: color.Critical.Main }}>
+              <b>{directMessageState.error.message}</b>
+            </Text>
+          )}
           <Box alignItems="Center" gap="200" wrap="Wrap">
             {server && <ServerChip server={server} />}
             <PowerChip userId={userId} />
