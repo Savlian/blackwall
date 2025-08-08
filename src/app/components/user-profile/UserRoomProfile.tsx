@@ -1,4 +1,4 @@
-import { Box, Button, color, config, Icon, Icons, MenuItem, Spinner, Text } from 'folds';
+import { Box, Button, color, config, Icon, Icons, Spinner, Text } from 'folds';
 import React, { useCallback } from 'react';
 import { UserHero, UserHeroName } from './UserHero';
 import { getDMRoomFor, getMxIdServer, mxcUrlToHttp } from '../../utils/matrix';
@@ -8,10 +8,7 @@ import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
 import { usePowerLevels, usePowerLevelsAPI } from '../../hooks/usePowerLevels';
 import { useRoom } from '../../hooks/useRoom';
 import { useUserPresence } from '../../hooks/useUserPresence';
-import { SequenceCard } from '../sequence-card';
 import { MutualRoomsChip, ServerChip } from './UserChips';
-import { CutoutCard } from '../cutout-card';
-import { SettingTile } from '../setting-tile';
 import { AsyncStatus, useAsyncCallback } from '../../hooks/useAsyncCallback';
 import { createDM } from '../../../client/action/room';
 import { hasDevices } from '../../../util/matrixUtil';
@@ -19,69 +16,7 @@ import { useRoomNavigate } from '../../hooks/useRoomNavigate';
 import { useAlive } from '../../hooks/useAlive';
 import { useCloseUserRoomProfile } from '../../state/hooks/userRoomProfile';
 import { PowerChip } from './PowerChip';
-
-type UserBanAlertProps = {
-  userId: string;
-  reason?: string;
-};
-function UserBanAlert({ userId, reason }: UserBanAlertProps) {
-  return (
-    <CutoutCard style={{ padding: config.space.S200 }} variant="Critical">
-      <SettingTile
-        after={
-          <Button size="300" variant="Critical" radii="300">
-            <Text size="B300">Unban</Text>
-          </Button>
-        }
-      >
-        <Box direction="Column">
-          <Text size="L400">Banned User</Text>
-          <Text size="T200">This user has been banned!{reason ? ` Reason: ${reason}` : ''}</Text>
-        </Box>
-      </SettingTile>
-    </CutoutCard>
-  );
-}
-
-type UserModerationProps = {
-  userId: string;
-  canKick: boolean;
-  canBan: boolean;
-};
-function UserModeration({ userId, canKick, canBan }: UserModerationProps) {
-  const room = useRoom();
-
-  return (
-    <Box direction="Column" gap="100">
-      <Text size="L400">Moderation</Text>
-      <SequenceCard
-        variant="SurfaceVariant"
-        style={{ padding: config.space.S100 }}
-        direction="Column"
-      >
-        <MenuItem
-          size="400"
-          radii="300"
-          variant="SurfaceVariant"
-          before={<Icon size="100" src={Icons.ArrowGoLeft} />}
-          disabled={!canKick}
-        >
-          <Text size="T300">Kick</Text>
-        </MenuItem>
-        <MenuItem
-          size="400"
-          radii="300"
-          variant="SurfaceVariant"
-          fill="None"
-          before={<Icon size="100" src={Icons.NoEntry} />}
-          disabled={!canBan}
-        >
-          <Text size="T300">Ban</Text>
-        </MenuItem>
-      </SequenceCard>
-    </Box>
-  );
-}
+import { UserBanAlert, UserModeration } from './UserModeration';
 
 type UserRoomProfileProps = {
   userId: string;
@@ -174,7 +109,15 @@ export function UserRoomProfile({ userId }: UserRoomProfileProps) {
             <MutualRoomsChip userId={userId} />
           </Box>
         </Box>
-        {member?.membership === 'ban' && <UserBanAlert userId={userId} />}
+        {member?.membership === 'ban' && (
+          <UserBanAlert
+            userId={userId}
+            reason={member.events.member?.getContent().reason}
+            canUnban={canBan}
+            bannedBy={member.events.member?.getSender()}
+            ts={member.events.member?.getTs()}
+          />
+        )}
         {(canKick || canBan) && (
           <UserModeration userId={userId} canKick={canKick} canBan={canBan} />
         )}
