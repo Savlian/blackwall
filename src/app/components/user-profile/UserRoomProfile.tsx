@@ -1,172 +1,24 @@
-import {
-  Box,
-  Button,
-  Chip,
-  color,
-  config,
-  Icon,
-  Icons,
-  Line,
-  Menu,
-  MenuItem,
-  PopOut,
-  RectCords,
-  Spinner,
-  Text,
-} from 'folds';
-import React, { MouseEventHandler, useCallback, useState } from 'react';
-import FocusTrap from 'focus-trap-react';
-import { isKeyHotkey } from 'is-hotkey';
+import { Box, Button, color, config, Icon, Icons, MenuItem, Spinner, Text } from 'folds';
+import React, { useCallback } from 'react';
 import { UserHero, UserHeroName } from './UserHero';
 import { getDMRoomFor, getMxIdServer, mxcUrlToHttp } from '../../utils/matrix';
 import { getMemberAvatarMxc, getMemberDisplayName } from '../../utils/room';
 import { useMatrixClient } from '../../hooks/useMatrixClient';
 import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
-import { PowerColorBadge, PowerIcon } from '../power';
 import { usePowerLevels, usePowerLevelsAPI } from '../../hooks/usePowerLevels';
-import { getPowers, getTagIconSrc, usePowerLevelTags } from '../../hooks/usePowerLevelTags';
-import { stopPropagation } from '../../utils/keyboard';
-import { StateEvent } from '../../../types/matrix/room';
-import { useOpenRoomSettings } from '../../state/hooks/roomSettings';
-import { RoomSettingsPage } from '../../state/roomSettings';
 import { useRoom } from '../../hooks/useRoom';
-import { useSpaceOptionally } from '../../hooks/useSpace';
 import { useUserPresence } from '../../hooks/useUserPresence';
 import { SequenceCard } from '../sequence-card';
 import { MutualRoomsChip, ServerChip } from './UserChips';
 import { CutoutCard } from '../cutout-card';
 import { SettingTile } from '../setting-tile';
-import { useOpenSpaceSettings } from '../../state/hooks/spaceSettings';
-import { SpaceSettingsPage } from '../../state/spaceSettings';
 import { AsyncStatus, useAsyncCallback } from '../../hooks/useAsyncCallback';
 import { createDM } from '../../../client/action/room';
 import { hasDevices } from '../../../util/matrixUtil';
 import { useRoomNavigate } from '../../hooks/useRoomNavigate';
 import { useAlive } from '../../hooks/useAlive';
 import { useCloseUserRoomProfile } from '../../state/hooks/userRoomProfile';
-
-function PowerChip({ userId }: { userId: string }) {
-  const mx = useMatrixClient();
-  const room = useRoom();
-  const space = useSpaceOptionally();
-  const useAuthentication = useMediaAuthentication();
-  const openRoomSettings = useOpenRoomSettings();
-  const openSpaceSettings = useOpenSpaceSettings();
-
-  const powerLevels = usePowerLevels(room);
-  const { getPowerLevel, canSendStateEvent } = usePowerLevelsAPI(powerLevels);
-  const [powerLevelTags, getPowerLevelTag] = usePowerLevelTags(room, powerLevels);
-  const myPower = getPowerLevel(mx.getSafeUserId());
-  const canChangePowers = canSendStateEvent(StateEvent.RoomPowerLevels, myPower);
-
-  const userPower = getPowerLevel(userId);
-  const tag = getPowerLevelTag(userPower);
-  const tagIconSrc = tag.icon && getTagIconSrc(mx, useAuthentication, tag.icon);
-
-  const [cords, setCords] = useState<RectCords>();
-
-  const open: MouseEventHandler<HTMLButtonElement> = (evt) => {
-    setCords(evt.currentTarget.getBoundingClientRect());
-  };
-
-  const close = () => setCords(undefined);
-
-  return (
-    <PopOut
-      anchor={cords}
-      position="Bottom"
-      align="Start"
-      offset={4}
-      content={
-        <FocusTrap
-          focusTrapOptions={{
-            initialFocus: false,
-            onDeactivate: close,
-            clickOutsideDeactivates: true,
-            escapeDeactivates: stopPropagation,
-            isKeyForward: (evt: KeyboardEvent) => isKeyHotkey('arrowdown', evt),
-            isKeyBackward: (evt: KeyboardEvent) => isKeyHotkey('arrowup', evt),
-          }}
-        >
-          <Menu>
-            <div style={{ padding: config.space.S100 }}>
-              {getPowers(powerLevelTags).map((power) => {
-                const powerTag = powerLevelTags[power];
-                const powerTagIconSrc =
-                  powerTag.icon && getTagIconSrc(mx, useAuthentication, powerTag.icon);
-
-                return (
-                  <MenuItem
-                    key={power}
-                    variant="Surface"
-                    fill="None"
-                    size="300"
-                    radii="300"
-                    aria-disabled={!canChangePowers}
-                    aria-pressed={userPower === power}
-                    before={<PowerColorBadge color={powerTag.color} />}
-                    after={
-                      powerTagIconSrc ? (
-                        <PowerIcon size="50" iconSrc={powerTagIconSrc} />
-                      ) : undefined
-                    }
-                    onClick={canChangePowers ? undefined : undefined}
-                  >
-                    <Text size="B300">{powerTag.name}</Text>
-                  </MenuItem>
-                );
-              })}
-            </div>
-
-            <Line size="300" />
-            <div style={{ padding: config.space.S100 }}>
-              <MenuItem
-                variant="Surface"
-                fill="None"
-                size="300"
-                radii="300"
-                onClick={() => {
-                  console.log(room.roomId, space?.roomId);
-                  if (room.isSpaceRoom()) {
-                    openSpaceSettings(
-                      room.roomId,
-                      space?.roomId,
-                      SpaceSettingsPage.PermissionsPage
-                    );
-                  } else {
-                    openRoomSettings(room.roomId, space?.roomId, RoomSettingsPage.PermissionsPage);
-                  }
-                  close();
-                }}
-              >
-                <Text size="B300">Manage Powers</Text>
-              </MenuItem>
-            </div>
-          </Menu>
-        </FocusTrap>
-      }
-    >
-      <Chip
-        variant="SurfaceVariant"
-        radii="Pill"
-        before={
-          cords ? (
-            <Icon size="50" src={Icons.ChevronBottom} />
-          ) : (
-            <PowerColorBadge color={tag.color} />
-          )
-        }
-        after={tagIconSrc ? <PowerIcon size="50" iconSrc={tagIconSrc} /> : undefined}
-        onClick={open}
-        aria-pressed={!!cords}
-      >
-        <Text size="B300" truncate>
-          {tag.name}
-        </Text>
-      </Chip>
-    </PopOut>
-  );
-}
+import { PowerChip } from './PowerChip';
 
 type UserBanAlertProps = {
   userId: string;
