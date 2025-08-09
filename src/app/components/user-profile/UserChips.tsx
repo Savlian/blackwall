@@ -428,7 +428,7 @@ export function IgnoredUserAlert() {
             <Text size="L400">Blocked User</Text>
           </Box>
           <Box direction="Column">
-            <Text size="T200">You do not receive any messages or invites sent by this user.</Text>
+            <Text size="T200">You do not receive any messages or invites from this user.</Text>
           </Box>
         </Box>
       </SettingTile>
