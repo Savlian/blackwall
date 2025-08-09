@@ -147,7 +147,7 @@ export function MembersDrawer({ room, members }: MembersDrawerProps) {
     const btn = evt.currentTarget as HTMLButtonElement;
     const userId = btn.getAttribute('data-user-id');
     if (!userId) return;
-    openUserRoomProfile(room.roomId, space?.roomId, userId, btn.getBoundingClientRect());
+    openUserRoomProfile(room.roomId, space?.roomId, userId, btn.getBoundingClientRect(), 'Left');
   };
 
   return (

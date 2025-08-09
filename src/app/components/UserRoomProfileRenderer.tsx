@@ -10,7 +10,7 @@ import { SpaceProvider } from '../hooks/useSpace';
 import { RoomProvider } from '../hooks/useRoom';
 
 function UserRoomProfileContextMenu({ state }: { state: UserRoomProfileState }) {
-  const { roomId, spaceId, userId, cords } = state;
+  const { roomId, spaceId, userId, cords, position } = state;
   const allJoinedRooms = useAllJoinedRoomsSet();
   const getRoom = useGetRoom(allJoinedRooms);
   const room = getRoom(roomId);
@@ -23,7 +23,7 @@ function UserRoomProfileContextMenu({ state }: { state: UserRoomProfileState }) 
   return (
     <PopOut
       anchor={cords}
-      position="Top"
+      position={position ?? 'Top'}
       align="Start"
       content={
         <FocusTrap

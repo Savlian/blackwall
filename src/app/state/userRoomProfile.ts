@@ -1,4 +1,4 @@
-import { RectCords } from 'folds';
+import { Position, RectCords } from 'folds';
 import { atom } from 'jotai';
 
 export type UserRoomProfileState = {
@@ -6,6 +6,7 @@ export type UserRoomProfileState = {
   roomId: string;
   spaceId?: string;
   cords: RectCords;
+  position?: Position;
 };
 
 export const userRoomProfileAtom = atom<UserRoomProfileState | undefined>(undefined);
