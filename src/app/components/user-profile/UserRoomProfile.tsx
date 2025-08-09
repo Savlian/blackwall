@@ -16,8 +16,10 @@ import { useRoomNavigate } from '../../hooks/useRoomNavigate';
 import { useAlive } from '../../hooks/useAlive';
 import { useCloseUserRoomProfile } from '../../state/hooks/userRoomProfile';
 import { PowerChip } from './PowerChip';
-import { UserBanAlert, UserModeration } from './UserModeration';
+import { UserInviteAlert, UserBanAlert, UserModeration, UserKickAlert } from './UserModeration';
 import { useIgnoredUsers } from '../../hooks/useIgnoredUsers';
+import { useMembership } from '../../hooks/useMembership';
+import { Membership } from '../../../types/matrix/room';
 
 type UserRoomProfileProps = {
   userId: string;
@@ -38,8 +40,10 @@ export function UserRoomProfile({ userId }: UserRoomProfileProps) {
   const userPowerLevel = getPowerLevel(userId);
   const canKick = canDoAction('kick', myPowerLevel) && myPowerLevel > userPowerLevel;
   const canBan = canDoAction('ban', myPowerLevel) && myPowerLevel > userPowerLevel;
+  const canInvite = canDoAction('invite', myPowerLevel);
 
   const member = room.getMember(userId);
+  const membership = useMembership(room, userId);
 
   const server = getMxIdServer(userId);
   const displayName = getMemberDisplayName(room, userId);
@@ -115,7 +119,7 @@ export function UserRoomProfile({ userId }: UserRoomProfileProps) {
           </Box>
         </Box>
         {ignored && <IgnoredUserAlert />}
-        {member?.membership === 'ban' && (
+        {member && membership === Membership.Ban && (
           <UserBanAlert
             userId={userId}
             reason={member.events.member?.getContent().reason}
@@ -124,9 +128,31 @@ export function UserRoomProfile({ userId }: UserRoomProfileProps) {
             ts={member.events.member?.getTs()}
           />
         )}
-        {(canKick || canBan) && (
-          <UserModeration userId={userId} canKick={canKick} canBan={canBan} />
+        {member &&
+          membership === Membership.Leave &&
+          member.events.member &&
+          member.events.member.getSender() !== userId && (
+            <UserKickAlert
+              reason={member.events.member?.getContent().reason}
+              kickedBy={member.events.member?.getSender()}
+              ts={member.events.member?.getTs()}
+            />
+          )}
+        {member && membership === Membership.Invite && (
+          <UserInviteAlert
+            userId={userId}
+            reason={member.events.member?.getContent().reason}
+            canKick={canKick}
+            invitedBy={member.events.member?.getSender()}
+            ts={member.events.member?.getTs()}
+          />
         )}
+        <UserModeration
+          userId={userId}
+          canInvite={canInvite && membership === Membership.Leave}
+          canKick={canKick && membership === Membership.Join}
+          canBan={canBan && membership !== Membership.Ban}
+        />
       </Box>
     </Box>
   );
