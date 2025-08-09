@@ -1,4 +1,4 @@
-import React, { MouseEventHandler, useMemo, useState } from 'react';
+import React, { MouseEventHandler, useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FocusTrap from 'focus-trap-react';
 import { isKeyHotkey } from 'is-hotkey';
@@ -26,7 +26,7 @@ import { useCloseUserRoomProfile } from '../../state/hooks/userRoomProfile';
 import { stopPropagation } from '../../utils/keyboard';
 import { copyToClipboard } from '../../utils/dom';
 import { getExploreServerPath } from '../../pages/pathUtils';
-import { AsyncStatus } from '../../hooks/useAsyncCallback';
+import { AsyncStatus, useAsyncCallback } from '../../hooks/useAsyncCallback';
 import { factoryRoomIdByAtoZ } from '../../utils/sort';
 import { useMutualRooms, useMutualRoomsSupport } from '../../hooks/useMutualRooms';
 import { useRoomNavigate } from '../../hooks/useRoomNavigate';
@@ -38,12 +38,16 @@ import { getDirectRoomAvatarUrl, getRoomAvatarUrl } from '../../utils/room';
 import { nameInitials } from '../../utils/common';
 import { getMatrixToUser } from '../../plugins/matrix-to';
 import { useTimeoutToggle } from '../../hooks/useTimeoutToggle';
+import { useIgnoredUsers } from '../../hooks/useIgnoredUsers';
+import { CutoutCard } from '../cutout-card';
+import { SettingTile } from '../setting-tile';
 
 export function ServerChip({ server }: { server: string }) {
   const mx = useMatrixClient();
   const myServer = getMxIdServer(mx.getSafeUserId());
   const navigate = useNavigate();
   const closeProfile = useCloseUserRoomProfile();
+  const [copied, setCopied] = useTimeoutToggle();
 
   const [cords, setCords] = useState<RectCords>();
 
@@ -79,6 +83,7 @@ export function ServerChip({ server }: { server: string }) {
                 radii="300"
                 onClick={() => {
                   copyToClipboard(server);
+                  setCopied();
                   close();
                 }}
               >
@@ -123,7 +128,7 @@ export function ServerChip({ server }: { server: string }) {
           cords ? (
             <Icon size="50" src={Icons.ChevronBottom} />
           ) : (
-            <Icon size="50" src={Icons.Server} />
+            <Icon size="50" src={copied ? Icons.Check : Icons.Server} />
           )
         }
         onClick={open}
@@ -409,6 +414,100 @@ export function MutualRoomsChip({ userId }: { userId: string }) {
             `${mutualRoomsState.data.length} Mutual Rooms`}
           {mutualRoomsState.status === AsyncStatus.Loading && 'Mutual Rooms'}
         </Text>
+      </Chip>
+    </PopOut>
+  );
+}
+
+export function IgnoredUserAlert() {
+  return (
+    <CutoutCard style={{ padding: config.space.S200 }} variant="Critical">
+      <SettingTile>
+        <Box direction="Column" gap="200">
+          <Box gap="200" justifyContent="SpaceBetween">
+            <Text size="L400">Blocked User</Text>
+          </Box>
+          <Box direction="Column">
+            <Text size="T200">You do not receive any messages or invites sent by this user.</Text>
+          </Box>
+        </Box>
+      </SettingTile>
+    </CutoutCard>
+  );
+}
+
+export function OptionsChip({ userId }: { userId: string }) {
+  const mx = useMatrixClient();
+  const [cords, setCords] = useState<RectCords>();
+
+  const open: MouseEventHandler<HTMLButtonElement> = (evt) => {
+    setCords(evt.currentTarget.getBoundingClientRect());
+  };
+
+  const close = () => setCords(undefined);
+
+  const ignoredUsers = useIgnoredUsers();
+  const ignored = ignoredUsers.includes(userId);
+
+  const [ignoreState, toggleIgnore] = useAsyncCallback(
+    useCallback(async () => {
+      const users = ignoredUsers.filter((u) => u !== userId);
+      if (!ignored) users.push(userId);
+      await mx.setIgnoredUsers(users);
+    }, [mx, ignoredUsers, userId, ignored])
+  );
+  const ignoring = ignoreState.status === AsyncStatus.Loading;
+
+  return (
+    <PopOut
+      anchor={cords}
+      position="Bottom"
+      align="Start"
+      offset={4}
+      content={
+        <FocusTrap
+          focusTrapOptions={{
+            initialFocus: false,
+            onDeactivate: close,
+            clickOutsideDeactivates: true,
+            escapeDeactivates: stopPropagation,
+            isKeyForward: (evt: KeyboardEvent) => isKeyHotkey('arrowdown', evt),
+            isKeyBackward: (evt: KeyboardEvent) => isKeyHotkey('arrowup', evt),
+          }}
+        >
+          <Menu>
+            <div style={{ padding: config.space.S100 }}>
+              <MenuItem
+                variant="Critical"
+                fill="None"
+                size="300"
+                radii="300"
+                onClick={() => {
+                  toggleIgnore();
+                  close();
+                }}
+                before={
+                  ignoring ? (
+                    <Spinner variant="Critical" size="50" />
+                  ) : (
+                    <Icon size="50" src={Icons.Prohibited} />
+                  )
+                }
+                disabled={ignoring}
+              >
+                <Text size="B300">{ignored ? 'Unblock User' : 'Block User'}</Text>
+              </MenuItem>
+            </div>
+          </Menu>
+        </FocusTrap>
+      }
+    >
+      <Chip variant="SurfaceVariant" radii="Pill" onClick={open} aria-pressed={!!cords}>
+        {ignoring ? (
+          <Spinner variant="Secondary" size="50" />
+        ) : (
+          <Icon size="50" src={Icons.HorizontalDots} />
+        )}
       </Chip>
     </PopOut>
   );

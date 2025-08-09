@@ -8,15 +8,16 @@ import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
 import { usePowerLevels, usePowerLevelsAPI } from '../../hooks/usePowerLevels';
 import { useRoom } from '../../hooks/useRoom';
 import { useUserPresence } from '../../hooks/useUserPresence';
-import { MutualRoomsChip, ServerChip, ShareChip } from './UserChips';
+import { IgnoredUserAlert, MutualRoomsChip, OptionsChip, ServerChip, ShareChip } from './UserChips';
 import { AsyncStatus, useAsyncCallback } from '../../hooks/useAsyncCallback';
-import { createDM } from '../../../client/action/room';
+import { createDM, ignore } from '../../../client/action/room';
 import { hasDevices } from '../../../util/matrixUtil';
 import { useRoomNavigate } from '../../hooks/useRoomNavigate';
 import { useAlive } from '../../hooks/useAlive';
 import { useCloseUserRoomProfile } from '../../state/hooks/userRoomProfile';
 import { PowerChip } from './PowerChip';
 import { UserBanAlert, UserModeration } from './UserModeration';
+import { useIgnoredUsers } from '../../hooks/useIgnoredUsers';
 
 type UserRoomProfileProps = {
   userId: string;
@@ -27,6 +28,8 @@ export function UserRoomProfile({ userId }: UserRoomProfileProps) {
   const { navigateRoom } = useRoomNavigate();
   const alive = useAlive();
   const closeUserRoomProfile = useCloseUserRoomProfile();
+  const ignoredUsers = useIgnoredUsers();
+  const ignored = ignoredUsers.includes(userId);
 
   const room = useRoom();
   const powerlevels = usePowerLevels(room);
@@ -108,8 +111,10 @@ export function UserRoomProfile({ userId }: UserRoomProfileProps) {
             <ShareChip userId={userId} />
             <PowerChip userId={userId} />
             <MutualRoomsChip userId={userId} />
+            <OptionsChip userId={userId} />
           </Box>
         </Box>
+        {ignored && <IgnoredUserAlert />}
         {member?.membership === 'ban' && (
           <UserBanAlert
             userId={userId}
