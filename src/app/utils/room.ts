@@ -20,7 +20,6 @@ import {
 import { CryptoBackend } from 'matrix-js-sdk/lib/common-crypto/CryptoBackend';
 import { AccountDataEvent } from '../../types/matrix/accountData';
 import {
-  IRoomCreateContent,
   Membership,
   MessageEvent,
   NotificationType,
@@ -519,30 +518,4 @@ export const guessPerfectParent = (
   });
 
   return perfectParent;
-};
-
-export const getRoomCreators = (createEvent: MatrixEvent): string[] | undefined => {
-  const createContent = createEvent.getContent<IRoomCreateContent>();
-  const roomVersion = createContent.room_version;
-
-  if (['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'].includes(roomVersion)) {
-    // room version doesn't support creators.
-    return undefined;
-  }
-
-  const creators: Set<string> = new Set();
-
-  if (createEvent.event.sender) {
-    creators.add(createEvent.event.sender);
-  }
-
-  if ('additional_creators' in createContent && Array.isArray(createContent.additional_creators)) {
-    createContent.additional_creators.forEach((creator) => {
-      if (typeof creator === 'string') {
-        creators.add(creator);
-      }
-    });
-  }
-
-  return Array.from(creators);
 };
