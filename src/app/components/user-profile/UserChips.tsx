@@ -36,6 +36,8 @@ import { useAllJoinedRoomsSet, useGetRoom } from '../../hooks/useGetRoom';
 import { RoomAvatar, RoomIcon } from '../room-avatar';
 import { getDirectRoomAvatarUrl, getRoomAvatarUrl } from '../../utils/room';
 import { nameInitials } from '../../utils/common';
+import { getMatrixToUser } from '../../plugins/matrix-to';
+import { useTimeoutToggle } from '../../hooks/useTimeoutToggle';
 
 export function ServerChip({ server }: { server: string }) {
   const mx = useMatrixClient();
@@ -129,6 +131,88 @@ export function ServerChip({ server }: { server: string }) {
       >
         <Text size="B300" truncate>
           {server}
+        </Text>
+      </Chip>
+    </PopOut>
+  );
+}
+
+export function ShareChip({ userId }: { userId: string }) {
+  const [cords, setCords] = useState<RectCords>();
+
+  const [copied, setCopied] = useTimeoutToggle();
+
+  const open: MouseEventHandler<HTMLButtonElement> = (evt) => {
+    setCords(evt.currentTarget.getBoundingClientRect());
+  };
+
+  const close = () => setCords(undefined);
+
+  return (
+    <PopOut
+      anchor={cords}
+      position="Bottom"
+      align="Start"
+      offset={4}
+      content={
+        <FocusTrap
+          focusTrapOptions={{
+            initialFocus: false,
+            onDeactivate: close,
+            clickOutsideDeactivates: true,
+            escapeDeactivates: stopPropagation,
+            isKeyForward: (evt: KeyboardEvent) => isKeyHotkey('arrowdown', evt),
+            isKeyBackward: (evt: KeyboardEvent) => isKeyHotkey('arrowup', evt),
+          }}
+        >
+          <Menu>
+            <div style={{ padding: config.space.S100 }}>
+              <MenuItem
+                variant="Surface"
+                fill="None"
+                size="300"
+                radii="300"
+                onClick={() => {
+                  copyToClipboard(userId);
+                  setCopied();
+                  close();
+                }}
+              >
+                <Text size="B300">Copy User ID</Text>
+              </MenuItem>
+              <MenuItem
+                variant="Surface"
+                fill="None"
+                size="300"
+                radii="300"
+                onClick={() => {
+                  copyToClipboard(getMatrixToUser(userId));
+                  setCopied();
+                  close();
+                }}
+              >
+                <Text size="B300">Copy User Link</Text>
+              </MenuItem>
+            </div>
+          </Menu>
+        </FocusTrap>
+      }
+    >
+      <Chip
+        variant={copied ? 'Success' : 'SurfaceVariant'}
+        radii="Pill"
+        before={
+          cords ? (
+            <Icon size="50" src={Icons.ChevronBottom} />
+          ) : (
+            <Icon size="50" src={copied ? Icons.Check : Icons.Link} />
+          )
+        }
+        onClick={open}
+        aria-pressed={!!cords}
+      >
+        <Text size="B300" truncate>
+          Share
         </Text>
       </Chip>
     </PopOut>

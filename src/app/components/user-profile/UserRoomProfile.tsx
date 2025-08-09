@@ -8,7 +8,7 @@ import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
 import { usePowerLevels, usePowerLevelsAPI } from '../../hooks/usePowerLevels';
 import { useRoom } from '../../hooks/useRoom';
 import { useUserPresence } from '../../hooks/useUserPresence';
-import { MutualRoomsChip, ServerChip } from './UserChips';
+import { MutualRoomsChip, ServerChip, ShareChip } from './UserChips';
 import { AsyncStatus, useAsyncCallback } from '../../hooks/useAsyncCallback';
 import { createDM } from '../../../client/action/room';
 import { hasDevices } from '../../../util/matrixUtil';
@@ -105,6 +105,7 @@ export function UserRoomProfile({ userId }: UserRoomProfileProps) {
           )}
           <Box alignItems="Center" gap="200" wrap="Wrap">
             {server && <ServerChip server={server} />}
+            <ShareChip userId={userId} />
             <PowerChip userId={userId} />
             <MutualRoomsChip userId={userId} />
           </Box>
