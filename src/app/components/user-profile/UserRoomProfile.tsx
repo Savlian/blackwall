@@ -10,7 +10,7 @@ import { useRoom } from '../../hooks/useRoom';
 import { useUserPresence } from '../../hooks/useUserPresence';
 import { IgnoredUserAlert, MutualRoomsChip, OptionsChip, ServerChip, ShareChip } from './UserChips';
 import { AsyncStatus, useAsyncCallback } from '../../hooks/useAsyncCallback';
-import { createDM, ignore } from '../../../client/action/room';
+import { createDM } from '../../../client/action/room';
 import { hasDevices } from '../../../util/matrixUtil';
 import { useRoomNavigate } from '../../hooks/useRoomNavigate';
 import { useAlive } from '../../hooks/useAlive';
