@@ -59,6 +59,47 @@ import { useOpenUserRoomProfile, useUserRoomProfileState } from '../../state/hoo
 import { useSpaceOptionally } from '../../hooks/useSpace';
 import { ContainerColor } from '../../styles/ContainerColor.css';
 
+type MemberDrawerHeaderProps = {
+  room: Room;
+};
+function MemberDrawerHeader({ room }: MemberDrawerHeaderProps) {
+  const setPeopleDrawer = useSetSetting(settingsAtom, 'isPeopleDrawer');
+
+  return (
+    <Header className={css.MembersDrawerHeader} variant="Background" size="600">
+      <Box grow="Yes" alignItems="Center" gap="200">
+        <Box grow="Yes" alignItems="Center" gap="200">
+          <Text title={`${room.getJoinedMemberCount()} Members`} size="H5" truncate>
+            {`${millify(room.getJoinedMemberCount())} Members`}
+          </Text>
+        </Box>
+        <Box shrink="No" alignItems="Center">
+          <TooltipProvider
+            position="Bottom"
+            align="End"
+            offset={4}
+            tooltip={
+              <Tooltip>
+                <Text>Close</Text>
+              </Tooltip>
+            }
+          >
+            {(triggerRef) => (
+              <IconButton
+                ref={triggerRef}
+                variant="Background"
+                onClick={() => setPeopleDrawer(false)}
+              >
+                <Icon src={Icons.Cross} />
+              </IconButton>
+            )}
+          </TooltipProvider>
+        </Box>
+      </Box>
+    </Header>
+  );
+}
+
 type MemberItemProps = {
   mx: MatrixClient;
   useAuthentication: boolean;
@@ -143,7 +184,6 @@ export function MembersDrawer({ room, members }: MembersDrawerProps) {
   const powerLevels = usePowerLevelsContext();
   const [, getPowerLevelTag] = usePowerLevelTags(room, powerLevels);
   const fetchingMembers = members.length < room.getJoinedMemberCount();
-  const setPeopleDrawer = useSetSetting(settingsAtom, 'isPeopleDrawer');
   const openUserRoomProfile = useOpenUserRoomProfile();
   const space = useSpaceOptionally();
   const openProfileUserId = useUserRoomProfileState()?.userId;
@@ -214,37 +254,7 @@ export function MembersDrawer({ room, members }: MembersDrawerProps) {
       shrink="No"
       direction="Column"
     >
-      <Header className={css.MembersDrawerHeader} variant="Background" size="600">
-        <Box grow="Yes" alignItems="Center" gap="200">
-          <Box grow="Yes" alignItems="Center" gap="200">
-            <Text title={`${room.getJoinedMemberCount()} Members`} size="H5" truncate>
-              {`${millify(room.getJoinedMemberCount())} Members`}
-            </Text>
-          </Box>
-          <Box shrink="No" alignItems="Center">
-            <TooltipProvider
-              position="Bottom"
-              align="End"
-              offset={4}
-              tooltip={
-                <Tooltip>
-                  <Text>Close</Text>
-                </Tooltip>
-              }
-            >
-              {(triggerRef) => (
-                <IconButton
-                  ref={triggerRef}
-                  variant="Background"
-                  onClick={() => setPeopleDrawer(false)}
-                >
-                  <Icon src={Icons.Cross} />
-                </IconButton>
-              )}
-            </TooltipProvider>
-          </Box>
-        </Box>
-      </Header>
+      <MemberDrawerHeader room={room} />
       <Box className={css.MemberDrawerContentBase} grow="Yes">
         <Scroll ref={scrollRef} variant="Background" size="300" visibility="Hover" hideTrack>
           <Box className={css.MemberDrawerContent} direction="Column" gap="200">
