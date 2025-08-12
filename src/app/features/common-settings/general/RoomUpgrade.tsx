@@ -218,7 +218,7 @@ export function RoomUpgrade({ permissions, requestClose }: RoomUpgradeProps) {
           replacementRoom
             ? tombstoneContent.body ||
               `This ${room.isSpaceRoom() ? 'space' : 'room'} has been replaced!`
-            : `Current room version: ${roomVersion}.`
+            : `Current version: ${roomVersion}.`
         }
         after={
           <Box alignItems="Center" gap="200">
