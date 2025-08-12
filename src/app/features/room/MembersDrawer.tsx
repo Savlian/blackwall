@@ -39,7 +39,6 @@ import {
   useAsyncSearch,
 } from '../../hooks/useAsyncSearch';
 import { useDebounce } from '../../hooks/useDebounce';
-import { usePowerLevelTags, useFlattenPowerLevelTagMembers } from '../../hooks/usePowerLevelTags';
 import { TypingIndicator } from '../../components/typing-indicator';
 import { getMemberDisplayName, getMemberSearchStr } from '../../utils/room';
 import { getMxIdLocalPart } from '../../utils/matrix';
@@ -51,13 +50,15 @@ import { UserAvatar } from '../../components/user-avatar';
 import { useRoomTypingMember } from '../../hooks/useRoomTypingMembers';
 import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
 import { useMembershipFilter, useMembershipFilterMenu } from '../../hooks/useMemberFilter';
-import { useMemberSort, useMemberSortMenu } from '../../hooks/useMemberSort';
-import { usePowerLevelsAPI, usePowerLevelsContext } from '../../hooks/usePowerLevels';
+import { useMemberPowerSort, useMemberSort, useMemberSortMenu } from '../../hooks/useMemberSort';
+import { usePowerLevelsContext } from '../../hooks/usePowerLevels';
 import { MembershipFilterMenu } from '../../components/MembershipFilterMenu';
 import { MemberSortMenu } from '../../components/MemberSortMenu';
 import { useOpenUserRoomProfile, useUserRoomProfileState } from '../../state/hooks/userRoomProfile';
 import { useSpaceOptionally } from '../../hooks/useSpace';
 import { ContainerColor } from '../../styles/ContainerColor.css';
+import { useFlattenPowerTagMembers, useGetMemberPowerTag } from '../../hooks/useMemberPowerTag';
+import { useRoomCreators } from '../../hooks/useRoomCreators';
 
 type MemberDrawerHeaderProps = {
   room: Room;
@@ -182,7 +183,9 @@ export function MembersDrawer({ room, members }: MembersDrawerProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const scrollTopAnchorRef = useRef<HTMLDivElement>(null);
   const powerLevels = usePowerLevelsContext();
-  const [, getPowerLevelTag] = usePowerLevelTags(room, powerLevels);
+  const creators = useRoomCreators(room);
+  const getPowerTag = useGetMemberPowerTag(room, creators, powerLevels);
+
   const fetchingMembers = members.length < room.getJoinedMemberCount();
   const openUserRoomProfile = useOpenUserRoomProfile();
   const space = useSpaceOptionally();
@@ -192,20 +195,16 @@ export function MembersDrawer({ room, members }: MembersDrawerProps) {
   const sortFilterMenu = useMemberSortMenu();
   const [sortFilterIndex, setSortFilterIndex] = useSetting(settingsAtom, 'memberSortFilterIndex');
   const [membershipFilterIndex, setMembershipFilterIndex] = useState(0);
-  const { getPowerLevel } = usePowerLevelsAPI(powerLevels);
 
   const membershipFilter = useMembershipFilter(membershipFilterIndex, membershipFilterMenu);
   const memberSort = useMemberSort(sortFilterIndex, sortFilterMenu);
+  const memberPowerSort = useMemberPowerSort(creators);
 
   const typingMembers = useRoomTypingMember(room.roomId);
 
   const filteredMembers = useMemo(
-    () =>
-      members
-        .filter(membershipFilter.filterFn)
-        .sort(memberSort.sortFn)
-        .sort((a, b) => b.powerLevel - a.powerLevel),
-    [members, membershipFilter, memberSort]
+    () => members.filter(membershipFilter.filterFn).sort(memberSort.sortFn).sort(memberPowerSort),
+    [members, membershipFilter, memberSort, memberPowerSort]
   );
 
   const [result, search, resetSearch] = useAsyncSearch(
@@ -217,11 +216,7 @@ export function MembersDrawer({ room, members }: MembersDrawerProps) {
 
   const processMembers = result ? result.items : filteredMembers;
 
-  const PLTagOrRoomMember = useFlattenPowerLevelTagMembers(
-    processMembers,
-    getPowerLevel,
-    getPowerLevelTag
-  );
+  const PLTagOrRoomMember = useFlattenPowerTagMembers(processMembers, getPowerTag);
 
   const virtualizer = useVirtualizer({
     count: PLTagOrRoomMember.length,

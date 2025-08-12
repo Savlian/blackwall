@@ -24,19 +24,19 @@ import { SequenceCardStyle } from '../../room-settings/styles.css';
 import { SettingTile } from '../../../components/setting-tile';
 import { useRoom } from '../../../hooks/useRoom';
 import { AsyncStatus, useAsyncCallback } from '../../../hooks/useAsyncCallback';
-import { IPowerLevels, powerLevelAPI } from '../../../hooks/usePowerLevels';
 import { IRoomCreateContent, StateEvent } from '../../../../types/matrix/room';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { useStateEvent } from '../../../hooks/useStateEvent';
 import { useRoomNavigate } from '../../../hooks/useRoomNavigate';
 import { useCapabilities } from '../../../hooks/useCapabilities';
 import { stopPropagation } from '../../../utils/keyboard';
+import { RoomPermissionsAPI } from '../../../hooks/useRoomPermissions';
 
 type RoomUpgradeProps = {
-  powerLevels: IPowerLevels;
+  permissions: RoomPermissionsAPI;
   requestClose: () => void;
 };
-export function RoomUpgrade({ powerLevels, requestClose }: RoomUpgradeProps) {
+export function RoomUpgrade({ permissions, requestClose }: RoomUpgradeProps) {
   const mx = useMatrixClient();
   const room = useRoom();
   const { navigateRoom, navigateSpace } = useRoomNavigate();
@@ -56,12 +56,7 @@ export function RoomUpgrade({ powerLevels, requestClose }: RoomUpgradeProps) {
   )?.getContent<RoomTombstoneEventContent>();
   const replacementRoom = tombstoneContent?.replacement_room;
 
-  const userPowerLevel = powerLevelAPI.getPowerLevel(powerLevels, mx.getSafeUserId());
-  const canUpgrade = powerLevelAPI.canSendStateEvent(
-    powerLevels,
-    StateEvent.RoomTombstone,
-    userPowerLevel
-  );
+  const canUpgrade = permissions.stateEvent(StateEvent.RoomTombstone, mx.getSafeUserId());
 
   const handleOpenRoom = () => {
     if (replacementRoom) {

@@ -16,7 +16,7 @@ import {
 } from 'folds';
 import { SequenceCard } from '../../../components/sequence-card';
 import { SequenceCardStyle } from '../styles.css';
-import { getPowers, getTagIconSrc, usePowerLevelTags } from '../../../hooks/usePowerLevelTags';
+import { getPowers, usePowerLevelTags } from '../../../hooks/usePowerLevelTags';
 import { SettingTile } from '../../../components/setting-tile';
 import { getPermissionPower, IPowerLevels } from '../../../hooks/usePowerLevels';
 import { useRoom } from '../../../hooks/useRoom';
@@ -25,6 +25,7 @@ import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { useMediaAuthentication } from '../../../hooks/useMediaAuthentication';
 import { stopPropagation } from '../../../utils/keyboard';
 import { PermissionGroup } from './types';
+import { getPowerTagIconSrc } from '../../../hooks/useMemberPowerTag';
 
 type PeekPermissionsProps = {
   powerLevels: IPowerLevels;
@@ -108,7 +109,7 @@ export function Powers({ powerLevels, permissionGroups, onEdit }: PowersProps) {
   const mx = useMatrixClient();
   const useAuthentication = useMediaAuthentication();
   const room = useRoom();
-  const [powerLevelTags] = usePowerLevelTags(room, powerLevels);
+  const powerLevelTags = usePowerLevelTags(room, powerLevels);
 
   return (
     <Box direction="Column" gap="100">
@@ -142,7 +143,7 @@ export function Powers({ powerLevels, permissionGroups, onEdit }: PowersProps) {
           <Box gap="200" wrap="Wrap">
             {getPowers(powerLevelTags).map((power) => {
               const tag = powerLevelTags[power];
-              const tagIconSrc = tag.icon && getTagIconSrc(mx, useAuthentication, tag.icon);
+              const tagIconSrc = tag.icon && getPowerTagIconSrc(mx, useAuthentication, tag.icon);
 
               return (
                 <PeekPermissions

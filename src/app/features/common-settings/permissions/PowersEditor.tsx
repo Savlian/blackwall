@@ -27,10 +27,7 @@ import { SequenceCardStyle } from '../styles.css';
 import { SettingTile } from '../../../components/setting-tile';
 import {
   getPowers,
-  getTagIconSrc,
   getUsedPowers,
-  PowerLevelTag,
-  PowerLevelTagIcon,
   PowerLevelTags,
   usePowerLevelTags,
 } from '../../../hooks/usePowerLevelTags';
@@ -47,15 +44,16 @@ import { useFilePicker } from '../../../hooks/useFilePicker';
 import { CompactUploadCardRenderer } from '../../../components/upload-card';
 import { createUploadAtom, UploadSuccess } from '../../../state/upload';
 import { AsyncStatus, useAsyncCallback } from '../../../hooks/useAsyncCallback';
-import { StateEvent } from '../../../../types/matrix/room';
+import { MemberPowerTag, MemberPowerTagIcon, StateEvent } from '../../../../types/matrix/room';
 import { useAlive } from '../../../hooks/useAlive';
 import { BetaNoticeBadge } from '../../../components/BetaNoticeBadge';
+import { getPowerTagIconSrc } from '../../../hooks/useMemberPowerTag';
 
 type EditPowerProps = {
   maxPower: number;
   power?: number;
-  tag?: PowerLevelTag;
-  onSave: (power: number, tag: PowerLevelTag) => void;
+  tag?: MemberPowerTag;
+  onSave: (power: number, tag: MemberPowerTag) => void;
   onClose: () => void;
 };
 function EditPower({ maxPower, power, tag, onSave, onClose }: EditPowerProps) {
@@ -70,9 +68,9 @@ function EditPower({ maxPower, power, tag, onSave, onClose }: EditPowerProps) {
   const pickFile = useFilePicker(setIconFile, false);
 
   const [tagColor, setTagColor] = useState<string | undefined>(tag?.color);
-  const [tagIcon, setTagIcon] = useState<PowerLevelTagIcon | undefined>(tag?.icon);
+  const [tagIcon, setTagIcon] = useState<MemberPowerTagIcon | undefined>(tag?.icon);
   const uploadingIcon = iconFile && !tagIcon;
-  const tagIconSrc = tagIcon && getTagIconSrc(mx, useAuthentication, tagIcon);
+  const tagIconSrc = tagIcon && getPowerTagIconSrc(mx, useAuthentication, tagIcon);
 
   const iconUploadAtom = useMemo(() => {
     if (iconFile) return createUploadAtom(iconFile);
@@ -105,7 +103,7 @@ function EditPower({ maxPower, power, tag, onSave, onClose }: EditPowerProps) {
     const tagName = nameInput.value.trim();
     if (!tagName) return;
 
-    const editedTag: PowerLevelTag = {
+    const editedTag: MemberPowerTag = {
       name: tagName,
       color: tagColor,
       icon: tagIcon,
@@ -298,7 +296,7 @@ export function PowersEditor({ powerLevels, requestClose }: PowersEditorProps) {
     return [up, Math.max(...Array.from(up))];
   }, [powerLevels]);
 
-  const [powerLevelTags] = usePowerLevelTags(room, powerLevels);
+  const powerLevelTags = usePowerLevelTags(room, powerLevels);
   const [editedPowerTags, setEditedPowerTags] = useState<PowerLevelTags>();
   const [deleted, setDeleted] = useState<Set<number>>(new Set());
 
@@ -317,7 +315,7 @@ export function PowersEditor({ powerLevels, requestClose }: PowersEditorProps) {
   }, []);
 
   const handleSaveTag = useCallback(
-    (power: number, tag: PowerLevelTag) => {
+    (power: number, tag: MemberPowerTag) => {
       setEditedPowerTags((tags) => {
         const editedTags = { ...(tags ?? powerLevelTags) };
         editedTags[power] = tag;
@@ -419,7 +417,8 @@ export function PowersEditor({ powerLevels, requestClose }: PowersEditorProps) {
                 </SequenceCard>
                 {getPowers(powerTags).map((power) => {
                   const tag = powerTags[power];
-                  const tagIconSrc = tag.icon && getTagIconSrc(mx, useAuthentication, tag.icon);
+                  const tagIconSrc =
+                    tag.icon && getPowerTagIconSrc(mx, useAuthentication, tag.icon);
 
                   return (
                     <SequenceCard
