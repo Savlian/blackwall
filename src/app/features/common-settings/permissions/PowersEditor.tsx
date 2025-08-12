@@ -48,7 +48,7 @@ import { MemberPowerTag, MemberPowerTagIcon, StateEvent } from '../../../../type
 import { useAlive } from '../../../hooks/useAlive';
 import { BetaNoticeBadge } from '../../../components/BetaNoticeBadge';
 import { getPowerTagIconSrc } from '../../../hooks/useMemberPowerTag';
-import { useRoomCreators } from '../../../hooks/useRoomCreators';
+import { creatorsSupported } from '../../../utils/matrix';
 
 type EditPowerProps = {
   maxPower: number;
@@ -62,7 +62,7 @@ function EditPower({ maxPower, power, tag, onSave, onClose }: EditPowerProps) {
   const room = useRoom();
   const roomToParents = useAtomValue(roomToParentsAtom);
   const useAuthentication = useMediaAuthentication();
-  const creators = useRoomCreators(room);
+  const supportCreators = creatorsSupported(room.getVersion());
 
   const imagePackRooms = useImagePackRooms(room.roomId, roomToParents);
 
@@ -165,7 +165,7 @@ function EditPower({ maxPower, power, tag, onSave, onClose }: EditPowerProps) {
               radii="300"
               type="number"
               placeholder="75"
-              max={creators.has(mx.getSafeUserId()) ? undefined : maxPower}
+              max={supportCreators ? undefined : maxPower}
               outlined={typeof power === 'number'}
               readOnly={typeof power === 'number'}
               required
