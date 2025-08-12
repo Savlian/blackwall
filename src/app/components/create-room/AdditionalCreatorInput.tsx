@@ -34,9 +34,11 @@ import { findAndReplace } from '../../utils/findAndReplace';
 import { highlightText } from '../../styles/CustomHtml.css';
 import { makeHighlightRegex } from '../../plugins/react-custom-html-parser';
 
-export const useAdditionalCreators = () => {
+export const useAdditionalCreators = (defaultCreators?: string[]) => {
   const mx = useMatrixClient();
-  const [additionalCreators, setAdditionalCreators] = useState<string[]>([]);
+  const [additionalCreators, setAdditionalCreators] = useState<string[]>(
+    () => defaultCreators?.filter((id) => id !== mx.getSafeUserId()) ?? []
+  );
 
   const addAdditionalCreator = (userId: string) => {
     if (userId === mx.getSafeUserId()) return;
@@ -75,11 +77,13 @@ type AdditionalCreatorInputProps = {
   additionalCreators: string[];
   onSelect: (userId: string) => void;
   onRemove: (userId: string) => void;
+  disabled?: boolean;
 };
 export function AdditionalCreatorInput({
   additionalCreators,
   onSelect,
   onRemove,
+  disabled,
 }: AdditionalCreatorInputProps) {
   const mx = useMatrixClient();
   const [menuCords, setMenuCords] = useState<RectCords>();
@@ -164,6 +168,7 @@ export function AdditionalCreatorInput({
               radii="Pill"
               after={<Icon size="50" src={Icons.Cross} />}
               onClick={() => onRemove(creator)}
+              disabled={disabled}
             >
               <Text size="B300">{creator}</Text>
             </Chip>
@@ -289,6 +294,7 @@ export function AdditionalCreatorInput({
               radii="Pill"
               onClick={handleOpenMenu}
               aria-pressed={!!menuCords}
+              disabled={disabled}
             >
               <Icon size="50" src={Icons.Plus} />
             </Chip>
