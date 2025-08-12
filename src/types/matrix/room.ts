@@ -71,7 +71,7 @@ export type IRoomCreateContent = {
   room_version: string;
   type?: string;
   predecessor?: {
-    event_id: string;
+    event_id?: string;
     room_id: string;
   };
 };
