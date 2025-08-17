@@ -96,9 +96,13 @@ export const ImageContent = as<'div', ImageContentProps>(
       useCallback(async () => {
         const mediaUrl = (useThumbnail ? mxcUrlToHttp(mx, url, useAuthentication, imgWidth, imgHeight, resizeMethod) : mxcUrlToHttp(mx, url, useAuthentication)) ?? url;
         if (encInfo) {
-          const fileContent = await downloadEncryptedMedia(mediaUrl, (encBuf) =>
-            decryptFile(encBuf, mimeType ?? FALLBACK_MIMETYPE, encInfo)
-          );
+          const decrypt = (encBuf: ArrayBuffer) => decryptFile(encBuf, mimeType ?? FALLBACK_MIMETYPE, encInfo);
+          let fileContent;
+          try {
+            fileContent = await downloadEncryptedMedia(mediaUrl, decrypt);
+          } catch {
+            fileContent = await downloadEncryptedMedia(mxcUrlToHttp(mx, url, useAuthentication) ?? url, decrypt);
+          }
           return URL.createObjectURL(fileContent);
         }
         return mediaUrl;
