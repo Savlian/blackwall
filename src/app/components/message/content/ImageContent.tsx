@@ -94,7 +94,7 @@ export const ImageContent = as<'div', ImageContentProps>(
 
     const [srcState, loadSrc] = useAsyncCallback(
       useCallback(async () => {
-        const mediaUrl = (useThumbnail ? mxcUrlToHttp(mx, url, useAuthentication) : mxcUrlToHttp(mx, url, useAuthentication, imgWidth, imgHeight, resizeMethod)) ?? url;
+        const mediaUrl = (useThumbnail ? mxcUrlToHttp(mx, url, useAuthentication, imgWidth, imgHeight, resizeMethod) : mxcUrlToHttp(mx, url, useAuthentication)) ?? url;
         if (encInfo) {
           const fileContent = await downloadEncryptedMedia(mediaUrl, (encBuf) =>
             decryptFile(encBuf, mimeType ?? FALLBACK_MIMETYPE, encInfo)
