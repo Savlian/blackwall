@@ -51,7 +51,7 @@ import {
   guessDmRoomUserId,
   rateLimitedActions,
 } from '../../../utils/matrix';
-import { Time } from '../../../components/message';
+import { Time, Username, UsernameBold } from '../../../components/message';
 import { useElementSizeObserver } from '../../../hooks/useElementSizeObserver';
 import { onEnterOrSpace, stopPropagation } from '../../../utils/keyboard';
 import { RoomTopicViewer } from '../../../components/room-topic-viewer';
@@ -67,6 +67,9 @@ import { useIgnoredUsers } from '../../../hooks/useIgnoredUsers';
 import { useReportRoomSupported } from '../../../hooks/useReportRoomSupported';
 import { useSetting } from '../../../state/hooks/settings';
 import { settingsAtom } from '../../../state/settings';
+import { ContainerColor } from '../../../styles/ContainerColor.css';
+import colorMXID from '../../../../util/colorMXID';
+import { CutoutCard } from '../../../components/cutout-card';
 
 const COMPACT_CARD_WIDTH = 548;
 
@@ -193,7 +196,7 @@ function InviteCard({
       variant="SurfaceVariant"
       direction="Column"
       gap="300"
-      style={{ padding: `${config.space.S400} ${config.space.S400} ${config.space.S200}` }}
+      style={{ padding: config.space.S400 }}
     >
       {(invite.isEncrypted || invite.isDirect || invite.isSpace) && (
         <Box gap="200" alignItems="Center">
@@ -308,15 +311,10 @@ function InviteCard({
         </Box>
       </Box>
       <Box gap="200" alignItems="Baseline">
-        <Box grow="Yes" direction="Column">
+        <Box grow="Yes">
           <Text size="T200" priority="300">
             From: <b>{invite.senderId}</b>
           </Text>
-          {invite.reason && (
-            <Text size="T200" priority="300">
-              Reason: <b>{invite.reason}</b>
-            </Text>
-          )}
         </Box>
         {typeof invite.inviteTs === 'number' && invite.inviteTs !== 0 && (
           <Box shrink="No">
@@ -330,6 +328,23 @@ function InviteCard({
           </Box>
         )}
       </Box>
+      {invite.reason && (
+        <CutoutCard
+          variant="Surface"
+          style={{ padding: `${config.space.S100} ${config.space.S200}` }}
+        >
+          <Box direction="Row" gap="100" alignItems="Baseline" wrap="Wrap">
+            <Username style={{ color: colorMXID(invite.senderId) }}>
+              <Text as="span" size="T300" truncate>
+                <UsernameBold>{invite.senderName}</UsernameBold>
+              </Text>
+            </Username>
+            <Text size="T300" priority="400">
+              {invite.reason}
+            </Text>
+          </Box>
+        </CutoutCard>
+      )}
     </SequenceCard>
   );
 }
