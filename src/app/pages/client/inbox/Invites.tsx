@@ -309,41 +309,31 @@ function InviteCard({
           </Box>
         </Box>
       </Box>
-      <Box gap="200" alignItems="Baseline">
-        <Box grow="Yes">
-          <Text size="T200" priority="300">
-            From: <b>{invite.senderId}</b>
-          </Text>
-        </Box>
-        {typeof invite.inviteTs === 'number' && invite.inviteTs !== 0 && (
-          <Box shrink="No">
-            <Time
-              size="T200"
-              ts={invite.inviteTs}
-              hour24Clock={hour24Clock}
-              dateFormatString={dateFormatString}
-              priority="300"
-            />
-          </Box>
-        )}
-      </Box>
-      {invite.reason && (
-        <CutoutCard
-          variant="Surface"
-          style={{ padding: `${config.space.S100} ${config.space.S200}` }}
-        >
-          <Box direction="Row" gap="100" alignItems="Baseline" wrap="Wrap">
-            <Username style={{ color: colorMXID(invite.senderId) }}>
-              <Text as="span" size="T300" truncate>
-                <UsernameBold>{invite.senderName}</UsernameBold>
-              </Text>
-            </Username>
-            <Text size="T300" priority="400">
-              {invite.reason}
+      <Box direction="Column">
+        <Box gap="200" alignItems="Baseline">
+          <Box grow="Yes">
+            <Text size="T200" priority="300">
+              From: <b>{invite.senderId}</b>
             </Text>
           </Box>
-        </CutoutCard>
-      )}
+          {typeof invite.inviteTs === 'number' && invite.inviteTs !== 0 && (
+            <Box shrink="No">
+              <Time
+                size="T200"
+                ts={invite.inviteTs}
+                hour24Clock={hour24Clock}
+                dateFormatString={dateFormatString}
+                priority="300"
+              />
+            </Box>
+          )}
+        </Box>
+        {invite.reason && (
+          <Text size="T200" priority="300">
+            Reason: {invite.reason}
+          </Text>
+        )}
+      </Box>
     </SequenceCard>
   );
 }
