@@ -81,6 +81,7 @@ type InviteData = {
   senderId: string;
   senderName: string;
   inviteTs?: number;
+  reason?: string;
 
   isSpace: boolean;
   isDirect: boolean;
@@ -102,11 +103,17 @@ const makeInviteData = (mx: MatrixClient, room: Room, useAuthentication: boolean
   const member = room.getMember(userId);
   const memberEvent = member?.events.member;
 
+  const content = memberEvent?.getContent();
   const senderId = memberEvent?.getSender();
+
   const senderName = senderId
     ? getMemberDisplayName(room, senderId) ?? getMxIdLocalPart(senderId) ?? senderId
     : undefined;
   const inviteTs = memberEvent?.getTs();
+  const reason =
+    content && 'reason' in content && typeof content.reason === 'string'
+      ? content.reason
+      : undefined;
 
   return {
     room,
@@ -119,6 +126,7 @@ const makeInviteData = (mx: MatrixClient, room: Room, useAuthentication: boolean
     senderId: senderId ?? 'Unknown',
     senderName: senderName ?? 'Unknown',
     inviteTs,
+    reason,
 
     isSpace: isSpace(room),
     isDirect: direct,
@@ -130,7 +138,8 @@ const hasBadWords = (invite: InviteData): boolean =>
   testBadWords(invite.roomName) ||
   testBadWords(invite.roomTopic ?? '') ||
   testBadWords(invite.senderName) ||
-  testBadWords(invite.senderId);
+  testBadWords(invite.senderId) ||
+  testBadWords(invite.reason || '');
 
 type NavigateHandler = (roomId: string, space: boolean) => void;
 
@@ -299,10 +308,15 @@ function InviteCard({
         </Box>
       </Box>
       <Box gap="200" alignItems="Baseline">
-        <Box grow="Yes">
+        <Box grow="Yes" direction="Column">
           <Text size="T200" priority="300">
             From: <b>{invite.senderId}</b>
           </Text>
+          {invite.reason && (
+            <Text size="T200" priority="300">
+              Reason: <b>{invite.reason}</b>
+            </Text>
+          )}
         </Box>
         {typeof invite.inviteTs === 'number' && invite.inviteTs !== 0 && (
           <Box shrink="No">
