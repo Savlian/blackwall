@@ -106,7 +106,7 @@ const makeInviteData = (mx: MatrixClient, room: Room, useAuthentication: boolean
   const senderName = senderId
     ? getMemberDisplayName(room, senderId) ?? getMxIdLocalPart(senderId) ?? senderId
     : undefined;
-  const inviteTs = memberEvent?.getTs() ?? 0;
+  const inviteTs = memberEvent?.getTs();
 
   return {
     room,
@@ -304,7 +304,7 @@ function InviteCard({
             From: <b>{invite.senderId}</b>
           </Text>
         </Box>
-        {invite.inviteTs && (
+        {typeof invite.inviteTs === 'number' && invite.inviteTs !== 0 && (
           <Box shrink="No">
             <Time
               size="T200"
