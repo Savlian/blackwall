@@ -67,7 +67,6 @@ import { useIgnoredUsers } from '../../../hooks/useIgnoredUsers';
 import { useReportRoomSupported } from '../../../hooks/useReportRoomSupported';
 import { useSetting } from '../../../state/hooks/settings';
 import { settingsAtom } from '../../../state/settings';
-import { ContainerColor } from '../../../styles/ContainerColor.css';
 import colorMXID from '../../../../util/colorMXID';
 import { CutoutCard } from '../../../components/cutout-card';
 
