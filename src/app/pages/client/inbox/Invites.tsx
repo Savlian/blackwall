@@ -51,7 +51,7 @@ import {
   guessDmRoomUserId,
   rateLimitedActions,
 } from '../../../utils/matrix';
-import { Time, Username, UsernameBold } from '../../../components/message';
+import { Time } from '../../../components/message';
 import { useElementSizeObserver } from '../../../hooks/useElementSizeObserver';
 import { onEnterOrSpace, stopPropagation } from '../../../utils/keyboard';
 import { RoomTopicViewer } from '../../../components/room-topic-viewer';
@@ -67,8 +67,6 @@ import { useIgnoredUsers } from '../../../hooks/useIgnoredUsers';
 import { useReportRoomSupported } from '../../../hooks/useReportRoomSupported';
 import { useSetting } from '../../../state/hooks/settings';
 import { settingsAtom } from '../../../state/settings';
-import colorMXID from '../../../../util/colorMXID';
-import { CutoutCard } from '../../../components/cutout-card';
 
 const COMPACT_CARD_WIDTH = 548;
 
