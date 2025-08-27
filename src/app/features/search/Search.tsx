@@ -388,7 +388,7 @@ export function Search({ requestClose }: SearchProps) {
                             </Text>
                             {dmUsername && (
                               <Text as="span" size="T200" priority="300" truncate>
-                                -{' '}
+                                @
                                 {queryHighlighRegex
                                   ? highlightText(queryHighlighRegex, [dmUsername])
                                   : dmUsername}
