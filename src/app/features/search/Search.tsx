@@ -39,7 +39,12 @@ import {
 } from '../../hooks/useAsyncSearch';
 import { useAllJoinedRoomsSet, useGetRoom } from '../../hooks/useGetRoom';
 import { RoomAvatar, RoomIcon } from '../../components/room-avatar';
-import { getAllParents, getDirectRoomAvatarUrl, guessPerfectParent } from '../../utils/room';
+import {
+  getAllParents,
+  getDirectRoomAvatarUrl,
+  getRoomAvatarUrl,
+  guessPerfectParent,
+} from '../../utils/room';
 import { highlightText, makeHighlightRegex } from '../../plugins/react-custom-html-parser';
 import { factoryRoomIdByActivity } from '../../utils/sort';
 import { nameInitials } from '../../utils/common';
@@ -349,7 +354,11 @@ export function Search({ requestClose }: SearchProps) {
                               {dm || room.isSpaceRoom() ? (
                                 <RoomAvatar
                                   roomId={room.roomId}
-                                  src={getDirectRoomAvatarUrl(mx, room)}
+                                  src={
+                                    dm
+                                      ? getDirectRoomAvatarUrl(mx, room)
+                                      : getRoomAvatarUrl(mx, room)
+                                  }
                                   alt={room.name}
                                   renderFallback={() => (
                                     <Text as="span" size="H6">
