@@ -245,10 +245,12 @@ export function Explore() {
   const exploringFeaturedRooms = useExploreFeaturedRooms();
   const exploringUnlistedServer = useMemo(
     () =>
-      selectedServer !== undefined &&
-      selectedServer !== userServer &&
-      featuredServers.includes(selectedServer) &&
-      exploreServers.includes(selectedServer),
+      !(
+        selectedServer === undefined ||
+        selectedServer === userServer ||
+        featuredServers.includes(selectedServer) ||
+        exploreServers.includes(selectedServer)
+      ),
     [exploreServers, featuredServers, selectedServer, userServer]
   );
 
@@ -358,7 +360,7 @@ export function Explore() {
                 server={server}
                 selected={server === selectedServer}
                 onRemove={() => removeServerCallback(server)}
-                icon={Icons.Category}
+                icon={Icons.Server}
               />
             ))}
             <AddExploreServerPrompt

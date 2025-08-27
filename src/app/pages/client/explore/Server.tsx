@@ -363,6 +363,7 @@ export function PublicRooms() {
   const roomTypeFilters = useRoomTypeFilters();
   const [exploreServers, , removeServer] = useExploreServers();
   const isUserAddedServer = server && exploreServers.includes(server);
+  const isUserHomeServer = server && server === userServer;
 
   const currentLimit: number = useMemo(() => {
     const limitParam = serverSearchParams.limit;
@@ -528,7 +529,7 @@ export function PublicRooms() {
               )}
             </Box>
             <Box grow="Yes" basis="Yes" justifyContent="Center" alignItems="Center" gap="200">
-              {screenSize !== ScreenSize.Mobile && <Icon size="400" src={Icons.Server} />}
+              {screenSize !== ScreenSize.Mobile && <Icon size="400" src={isUserHomeServer ? Icons.Home : Icons.Server} />}
               <Text size="H3" truncate>
                 {server}
               </Text>
