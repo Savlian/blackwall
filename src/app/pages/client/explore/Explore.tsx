@@ -342,7 +342,7 @@ export function Explore() {
                 key={server}
                 server={server}
                 selected={server === selectedServer}
-                icon={Icons.Category}
+                icon={Icons.Server}
               />
             ))}
           </NavCategory>
