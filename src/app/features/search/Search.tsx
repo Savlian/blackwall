@@ -57,6 +57,7 @@ import { UnreadBadge, UnreadBadgeCenter } from '../../components/unread-badge';
 import { searchModalAtom } from '../../state/searchModal';
 import { useKeyDown } from '../../hooks/useKeyDown';
 import navigation from '../../../client/state/navigation';
+import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
 
 enum SearchRoomType {
   Rooms = '#',
@@ -134,6 +135,7 @@ type SearchProps = {
 };
 export function Search({ requestClose }: SearchProps) {
   const mx = useMatrixClient();
+  const useAuthentication = useMediaAuthentication();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { navigateRoom, navigateSpace } = useRoomNavigate();
@@ -356,8 +358,8 @@ export function Search({ requestClose }: SearchProps) {
                                   roomId={room.roomId}
                                   src={
                                     dm
-                                      ? getDirectRoomAvatarUrl(mx, room)
-                                      : getRoomAvatarUrl(mx, room)
+                                      ? getDirectRoomAvatarUrl(mx, room, 32, useAuthentication)
+                                      : getRoomAvatarUrl(mx, room, 32, useAuthentication)
                                   }
                                   alt={room.name}
                                   renderFallback={() => (
