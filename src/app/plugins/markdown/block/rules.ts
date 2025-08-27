@@ -44,11 +44,11 @@ export const BlockQuoteRule: BlockMDRule = {
 };
 
 const ORDERED_LIST_MD_1 = '-';
-const O_LIST_ITEM_PREFIX = /^(-|[\da-zA-Z]\.) */;
+const O_LIST_ITEM_PREFIX = /^([\da-zA-Z]\.) */;
 const O_LIST_START = /^([\d])\./;
 const O_LIST_TYPE = /^([aAiI])\./;
 const O_LIST_TRAILING_NEWLINE = /\n$/;
-const ORDERED_LIST_REG_1 = /(^(?:-|[\da-zA-Z]\.) +.+\n?)+/m;
+const ORDERED_LIST_REG_1 = /(^(?:[\da-zA-Z]\.) +.+\n?)+/m;
 export const OrderedListRule: BlockMDRule = {
   match: (text) => text.match(ORDERED_LIST_REG_1),
   html: (match, parseInline) => {
@@ -74,9 +74,9 @@ export const OrderedListRule: BlockMDRule = {
 };
 
 const UNORDERED_LIST_MD_1 = '*';
-const U_LIST_ITEM_PREFIX = /^\* */;
+const U_LIST_ITEM_PREFIX = /^([-*+]) */;
 const U_LIST_TRAILING_NEWLINE = /\n$/;
-const UNORDERED_LIST_REG_1 = /(^\* +.+\n?)+/m;
+const UNORDERED_LIST_REG_1 = /(^([-*+]) +.+\n?)+/m;
 export const UnorderedListRule: BlockMDRule = {
   match: (text) => text.match(UNORDERED_LIST_REG_1),
   html: (match, parseInline) => {
