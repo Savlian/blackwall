@@ -396,7 +396,7 @@ export function Search({ requestClose }: SearchProps) {
                             )}
                             {!dm && perfectParent && perfectParent !== perfectOrphanParent && (
                               <Text size="T200" priority="300" truncate>
-                                - {getRoom(perfectParent)?.name ?? perfectParent}
+                                — {getRoom(perfectParent)?.name ?? perfectParent}
                               </Text>
                             )}
                           </Box>
