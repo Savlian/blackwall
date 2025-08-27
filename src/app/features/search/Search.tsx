@@ -58,6 +58,8 @@ import { searchModalAtom } from '../../state/searchModal';
 import { useKeyDown } from '../../hooks/useKeyDown';
 import navigation from '../../../client/state/navigation';
 import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
+import { KeySymbol } from '../../utils/key-symbol';
+import { isMacOS } from '../../utils/user-agent';
 
 enum SearchRoomType {
   Rooms = '#',
@@ -409,7 +411,7 @@ export function Search({ requestClose }: SearchProps) {
             <Box shrink="No" justifyContent="Center" style={{ padding: config.space.S200 }}>
               <Text size="T200" priority="300">
                 Type <b>#</b> for rooms, <b>@</b> for DMs and <b>*</b> for spaces. Hotkey:{' '}
-                <b>Ctrl + k</b>
+                <b>{isMacOS() ? KeySymbol.Command : 'Ctrl'} + k</b>
               </Text>
             </Box>
           </Modal>
