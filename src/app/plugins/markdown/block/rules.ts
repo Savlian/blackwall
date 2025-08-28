@@ -11,13 +11,13 @@ export const HeadingRule: BlockMDRule = {
 };
 
 const CODEBLOCK_MD_1 = '```';
-const CODEBLOCK_REG_1 = /^`{3}(\S*)\n((?:.*\n)+?)`{3} *(?!.)\n?/m;
+const CODEBLOCK_REG_1 = /^(`{3,}|~{3,})(?:[ \t]*(\S+))?\n([\s\S]*?)\1 *(?!.)\n?/m;
 export const CodeBlockRule: BlockMDRule = {
   match: (text) => text.match(CODEBLOCK_REG_1),
   html: (match) => {
-    const [, g1, g2] = match;
-    const classNameAtt = g1 ? ` class="language-${g1}"` : '';
-    return `<pre data-md="${CODEBLOCK_MD_1}"><code${classNameAtt}>${g2}</code></pre>`;
+    const [ , fence, lang, code ] = match;
+    const classNameAtt = lang ? ` class="language-${lang}"` : '';
+    return `<pre data-md="${fence}"><code${classNameAtt}>${code}</code></pre>`;
   },
 };
 
