@@ -140,7 +140,44 @@ export const BubbleContent = style({
   padding: config.space.S200,
   backgroundColor: color.SurfaceVariant.Container,
   color: color.SurfaceVariant.OnContainer,
-  borderRadius: config.radii.R400,
+  borderRadius: config.radii.R500,
+  position: 'relative',
+});
+
+export const BubbleContentArrow = style({
+  selectors: {
+    '&::before': {
+      content: '',
+      display: 'inline-block',
+      background: 'inherit',
+      width: toRem(8),
+      height: toRem(8),
+      position: 'absolute',
+      transform: 'rotateZ(45deg)',
+    },
+  },
+});
+
+export const BubbleContentArrowLeft = style({
+  selectors: {
+    '&::before': {
+      left: toRem(-4),
+      top: config.radii.R500,
+      zIndex: 1,
+      borderBottomLeftRadius: toRem(2),
+    },
+  },
+});
+
+export const BubbleContentArrowRight = style({
+  selectors: {
+    '&::before': {
+      right: toRem(-4),
+      top: config.radii.R500,
+      zIndex: 1,
+      borderTopRightRadius: toRem(2),
+    },
+  },
 });
 
 export const Username = style({

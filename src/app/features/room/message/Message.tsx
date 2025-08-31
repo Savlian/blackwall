@@ -723,6 +723,7 @@ export const Message = as<'div', MessageProps>(
     const mx = useMatrixClient();
     const useAuthentication = useMediaAuthentication();
     const senderId = mEvent.getSender() ?? '';
+
     const [hover, setHover] = useState(false);
     const { hoverProps } = useHover({ onHoverChange: setHover });
     const { focusWithinProps } = useFocusWithin({ onFocusWithinChange: setHover });
@@ -746,7 +747,7 @@ export const Message = as<'div', MessageProps>(
       <Box
         gap="300"
         direction={messageLayout === MessageLayout.Compact ? 'RowReverse' : 'Row'}
-        justifyContent="SpaceBetween"
+        justifyContent={messageLayout === MessageLayout.Bubble ? undefined : 'SpaceBetween'}
         alignItems="Baseline"
         grow="Yes"
       >
@@ -875,7 +876,9 @@ export const Message = as<'div', MessageProps>(
 
     return (
       <MessageBase
-        className={classNames(css.MessageBase, className)}
+        className={classNames(css.MessageBase, className, {
+          [css.MessageBaseBubbleCollapsed]: messageLayout === MessageLayout.Bubble && collapse,
+        })}
         tabIndex={0}
         space={messageSpacing}
         collapse={collapse}
