@@ -44,10 +44,6 @@ export const Header = style({
   paddingBottom: 0,
 });
 
-export const EmojiBoardTab = style({
-  cursor: 'pointer',
-});
-
 export const Footer = style({
   padding: config.space.S200,
   margin: config.space.S300,

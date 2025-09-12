@@ -11,13 +11,10 @@ import React, {
   useRef,
 } from 'react';
 import {
-  Badge,
   Box,
-  Chip,
   Icon,
   IconButton,
   Icons,
-  Input,
   Line,
   Scroll,
   Text,
@@ -47,31 +44,14 @@ import { useAsyncSearch, UseAsyncSearchOptions } from '../../hooks/useAsyncSearc
 import { useDebounce } from '../../hooks/useDebounce';
 import { useThrottle } from '../../hooks/useThrottle';
 import { addRecentEmoji } from '../../plugins/recent-emoji';
-import { mobileOrTablet } from '../../utils/user-agent';
 import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
 import { ImagePack, ImageUsage, PackImageReader } from '../../plugins/custom-emoji';
 import { getEmoticonSearchStr } from '../../plugins/utils';
+import { SearchInput, EmojiBoardTabs } from './components';
+import { EmojiBoardTab, EmojiItemInfo, EmojiType } from './types';
 
 const RECENT_GROUP_ID = 'recent_group';
 const SEARCH_GROUP_ID = 'search_group';
-
-export enum EmojiBoardTab {
-  Emoji = 'Emoji',
-  Sticker = 'Sticker',
-}
-
-enum EmojiType {
-  Emoji = 'emoji',
-  CustomEmoji = 'customEmoji',
-  Sticker = 'sticker',
-}
-
-export type EmojiItemInfo = {
-  type: EmojiType;
-  data: string;
-  shortcode: string;
-  label: string;
-};
 
 const getDOMGroupId = (id: string): string => `EmojiBoardGroup-${id}`;
 
@@ -166,43 +146,6 @@ const EmojiBoardLayout = as<
     {sidebar}
   </Box>
 ));
-
-function EmojiBoardTabs({
-  tab,
-  onTabChange,
-}: {
-  tab: EmojiBoardTab;
-  onTabChange: (tab: EmojiBoardTab) => void;
-}) {
-  return (
-    <Box gap="100">
-      <Badge
-        className={css.EmojiBoardTab}
-        as="button"
-        variant="Secondary"
-        fill={tab === EmojiBoardTab.Sticker ? 'Solid' : 'None'}
-        size="500"
-        onClick={() => onTabChange(EmojiBoardTab.Sticker)}
-      >
-        <Text as="span" size="L400">
-          Sticker
-        </Text>
-      </Badge>
-      <Badge
-        className={css.EmojiBoardTab}
-        as="button"
-        variant="Secondary"
-        fill={tab === EmojiBoardTab.Emoji ? 'Solid' : 'None'}
-        size="500"
-        onClick={() => onTabChange(EmojiBoardTab.Emoji)}
-      >
-        <Text as="span" size="L400">
-          Emoji
-        </Text>
-      </Badge>
-    </Box>
-  );
-}
 
 export function SidebarBtn<T extends string>({
   active,
@@ -753,6 +696,11 @@ export function EmojiBoard({
     }
   };
 
+  const handleTextCustomEmojiSelect = (textEmoji: string) => {
+    onCustomEmojiSelect?.(textEmoji, textEmoji);
+    requestClose();
+  };
+
   const handleEmojiPreview = useCallback(
     (element: HTMLButtonElement) => {
       const emojiInfo = getEmojiItemInfo(element);
@@ -819,37 +767,11 @@ export function EmojiBoard({
           <Header>
             <Box direction="Column" gap="200">
               {onTabChange && <EmojiBoardTabs tab={tab} onTabChange={onTabChange} />}
-              <Input
-                data-emoji-board-search
-                variant="SurfaceVariant"
-                size="400"
-                placeholder={allowTextCustomEmoji ? 'Search or Text Reaction ' : 'Search'}
-                maxLength={50}
-                after={
-                  allowTextCustomEmoji && result?.query ? (
-                    <Chip
-                      variant="Primary"
-                      radii="Pill"
-                      after={<Icon src={Icons.ArrowRight} size="50" />}
-                      outlined
-                      onClick={() => {
-                        const searchInput = document.querySelector<HTMLInputElement>(
-                          '[data-emoji-board-search="true"]'
-                        );
-                        const textReaction = searchInput?.value.trim();
-                        if (!textReaction) return;
-                        onCustomEmojiSelect?.(textReaction, textReaction);
-                        requestClose();
-                      }}
-                    >
-                      <Text size="L400">React</Text>
-                    </Chip>
-                  ) : (
-                    <Icon src={Icons.Search} size="50" />
-                  )
-                }
+              <SearchInput
+                query={result?.query}
                 onChange={handleOnChange}
-                autoFocus={!mobileOrTablet()}
+                allowTextCustomEmoji={allowTextCustomEmoji}
+                onTextCustomEmojiSelect={handleTextCustomEmojiSelect}
               />
             </Box>
           </Header>
