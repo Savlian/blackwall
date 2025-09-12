@@ -13,30 +13,10 @@ export const Base = style({
   overflow: 'hidden',
 });
 
-export const Sidebar = style({
-  width: toRem(54),
-  backgroundColor: color.Surface.Container,
-  color: color.Surface.OnContainer,
-  position: 'relative',
-});
-
-export const SidebarContent = style({
-  padding: `${config.space.S200} 0`,
-});
-
-export const SidebarStack = style({
-  width: '100%',
-  backgroundColor: color.Surface.Container,
-});
-
 export const NativeEmojiSidebarStack = style({
   position: 'sticky',
   bottom: '-67%',
   zIndex: 1,
-});
-
-export const SidebarDivider = style({
-  width: toRem(18),
 });
 
 export const Header = style({
