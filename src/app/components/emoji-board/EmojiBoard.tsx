@@ -10,20 +10,7 @@ import React, {
   useMemo,
   useRef,
 } from 'react';
-import {
-  Box,
-  Icon,
-  IconButton,
-  Icons,
-  Line,
-  Scroll,
-  Text,
-  Tooltip,
-  TooltipProvider,
-  as,
-  config,
-  toRem,
-} from 'folds';
+import { Box, Icon, Icons, Line, Scroll, Text, as, toRem } from 'folds';
 import FocusTrap from 'focus-trap-react';
 import { isKeyHotkey } from 'is-hotkey';
 import classNames from 'classnames';
@@ -47,7 +34,15 @@ import { addRecentEmoji } from '../../plugins/recent-emoji';
 import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
 import { ImagePack, ImageUsage, PackImageReader } from '../../plugins/custom-emoji';
 import { getEmoticonSearchStr } from '../../plugins/utils';
-import { SearchInput, EmojiBoardTabs } from './components';
+import {
+  SearchInput,
+  EmojiBoardTabs,
+  SidebarStack,
+  SidebarDivider,
+  SidebarBtn,
+  Sidebar,
+  NoStickerPacks,
+} from './components';
 import { EmojiBoardTab, EmojiItemInfo, EmojiType } from './types';
 
 const RECENT_GROUP_ID = 'recent_group';
@@ -72,34 +67,6 @@ const getEmojiItemInfo = (element: Element): EmojiItemInfo | undefined => {
 };
 
 const activeGroupIdAtom = atom<string | undefined>(undefined);
-
-function Sidebar({ children }: { children: ReactNode }) {
-  return (
-    <Box className={css.Sidebar} shrink="No">
-      <Scroll size="0">
-        <Box className={css.SidebarContent} direction="Column" alignItems="Center" gap="100">
-          {children}
-        </Box>
-      </Scroll>
-    </Box>
-  );
-}
-
-const SidebarStack = as<'div'>(({ className, children, ...props }, ref) => (
-  <Box
-    className={classNames(css.SidebarStack, className)}
-    direction="Column"
-    alignItems="Center"
-    gap="100"
-    {...props}
-    ref={ref}
-  >
-    {children}
-  </Box>
-));
-function SidebarDivider() {
-  return <Line className={css.SidebarDivider} size="300" variant="Surface" />;
-}
 
 function Header({ children }: { children: ReactNode }) {
   return (
@@ -146,46 +113,6 @@ const EmojiBoardLayout = as<
     {sidebar}
   </Box>
 ));
-
-export function SidebarBtn<T extends string>({
-  active,
-  label,
-  id,
-  onItemClick,
-  children,
-}: {
-  active?: boolean;
-  label: string;
-  id: T;
-  onItemClick: (id: T) => void;
-  children: ReactNode;
-}) {
-  return (
-    <TooltipProvider
-      delay={500}
-      position="Left"
-      tooltip={
-        <Tooltip id={`SidebarStackItem-${id}-label`}>
-          <Text size="T300">{label}</Text>
-        </Tooltip>
-      }
-    >
-      {(ref) => (
-        <IconButton
-          aria-pressed={active}
-          aria-labelledby={`SidebarStackItem-${id}-label`}
-          ref={ref}
-          onClick={() => onItemClick(id)}
-          size="400"
-          radii="300"
-          variant="Surface"
-        >
-          {children}
-        </IconButton>
-      )}
-    </TooltipProvider>
-  );
-}
 
 export const EmojiGroup = as<
   'div',
@@ -514,23 +441,7 @@ export const StickerGroups = memo(
     useAuthentication?: boolean;
   }) => (
     <>
-      {groups.length === 0 && (
-        <Box
-          style={{ padding: `${toRem(60)} ${config.space.S500}` }}
-          alignItems="Center"
-          justifyContent="Center"
-          direction="Column"
-          gap="300"
-        >
-          <Icon size="600" src={Icons.Sticker} />
-          <Box direction="Inherit">
-            <Text align="Center">No Sticker Packs!</Text>
-            <Text priority="300" align="Center" size="T200">
-              Add stickers from user, room or space settings.
-            </Text>
-          </Box>
-        </Box>
-      )}
+      {groups.length === 0 && <NoStickerPacks />}
       {groups.map((pack) => (
         <EmojiGroup key={pack.id} id={pack.id} label={pack.meta.name || 'Unknown'}>
           {pack
