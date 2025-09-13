@@ -60,7 +60,7 @@ function ServerCard({ serverName, onExplore }: ServerCardProps) {
           </>
         )}
       </Box>
-      <Button onClick={onExplore} variant="Secondary" fill="Soft" size="300">
+      <Button onClick={onExplore} variant="Secondary" size="300">
         <Text size="B300" truncate>
           Explore Rooms
         </Text>

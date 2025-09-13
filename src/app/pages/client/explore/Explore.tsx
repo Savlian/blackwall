@@ -346,8 +346,7 @@ export function Explore() {
                 icon={Icons.Server}
                 action={{
                   alwaysVisible: false,
-                  icon: Icons.Bookmark,
-                  filled: true,
+                  icon: Icons.Minus,
                   onClick: () => removeServerBookmarkCallback(server),
                 }}
               />
