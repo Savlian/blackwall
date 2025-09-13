@@ -42,6 +42,9 @@ import {
   SidebarBtn,
   Sidebar,
   NoStickerPacks,
+  createPreviewDataAtom,
+  Preview,
+  PreviewData,
 } from './components';
 import { EmojiBoardTab, EmojiItemInfo, EmojiType } from './types';
 
@@ -68,35 +71,14 @@ const getEmojiItemInfo = (element: Element): EmojiItemInfo | undefined => {
 
 const activeGroupIdAtom = atom<string | undefined>(undefined);
 
-function Header({ children }: { children: ReactNode }) {
-  return (
-    <Box className={css.Header} direction="Column" shrink="No">
-      {children}
-    </Box>
-  );
-}
-
-function Content({ children }: { children: ReactNode }) {
-  return <Box grow="Yes">{children}</Box>;
-}
-
-function Footer({ children }: { children: ReactNode }) {
-  return (
-    <Box shrink="No" className={css.Footer} gap="300" alignItems="Center">
-      {children}
-    </Box>
-  );
-}
-
 const EmojiBoardLayout = as<
   'div',
   {
     header: ReactNode;
     sidebar?: ReactNode;
-    footer?: ReactNode;
     children: ReactNode;
   }
->(({ className, header, sidebar, footer, children, ...props }, ref) => (
+>(({ className, header, sidebar, children, ...props }, ref) => (
   <Box
     display="InlineFlex"
     className={classNames(css.Base, className)}
@@ -105,9 +87,10 @@ const EmojiBoardLayout = as<
     ref={ref}
   >
     <Box direction="Column" grow="Yes">
-      {header}
+      <Box className={css.Header} direction="Column" shrink="No">
+        {header}
+      </Box>
       {children}
-      {footer}
     </Box>
     <Line size="300" direction="Vertical" />
     {sidebar}
@@ -439,10 +422,11 @@ export const StickerGroups = memo(
     mx: MatrixClient;
     groups: ImagePack[];
     useAuthentication?: boolean;
-  }) => (
-    <>
-      {groups.length === 0 && <NoStickerPacks />}
-      {groups.map((pack) => (
+  }) =>
+    groups.length === 0 ? (
+      <NoStickerPacks />
+    ) : (
+      groups.map((pack) => (
         <EmojiGroup key={pack.id} id={pack.id} label={pack.meta.name || 'Unknown'}>
           {pack
             .getImages(ImageUsage.Sticker)
@@ -464,9 +448,8 @@ export const StickerGroups = memo(
               </StickerItem>
             ))}
         </EmojiGroup>
-      ))}
-    </>
-  )
+      ))
+    )
 );
 
 export const NativeEmojiGroups = memo(
@@ -490,6 +473,8 @@ export const NativeEmojiGroups = memo(
     </>
   )
 );
+
+const DefaultEmojiPreview: PreviewData = { key: '🙂', shortcode: 'slight_smile' };
 
 const SEARCH_OPTIONS: UseAsyncSearchOptions = {
   limit: 1000,
@@ -525,6 +510,11 @@ export function EmojiBoard({
   const stickerTab = tab === EmojiBoardTab.Sticker;
   const usage = emojiTab ? ImageUsage.Emoticon : ImageUsage.Sticker;
 
+  const previewAtom = useMemo(
+    () => createPreviewDataAtom(emojiTab ? DefaultEmojiPreview : undefined),
+    [emojiTab]
+  );
+  const setPreviewData = useSetAtom(previewAtom);
   const setActiveGroupId = useSetAtom(activeGroupIdAtom);
   const mx = useMatrixClient();
   const useAuthentication = useMediaAuthentication();
@@ -534,8 +524,6 @@ export function EmojiBoard({
   const recentEmojis = useRecentEmoji(mx, 21);
 
   const contentScrollRef = useRef<HTMLDivElement>(null);
-  const emojiPreviewRef = useRef<HTMLDivElement>(null);
-  const emojiPreviewTextRef = useRef<HTMLParagraphElement>(null);
 
   const searchList = useMemo(() => {
     let list: Array<PackImageReader | IEmoji> = [];
@@ -615,23 +603,14 @@ export function EmojiBoard({
   const handleEmojiPreview = useCallback(
     (element: HTMLButtonElement) => {
       const emojiInfo = getEmojiItemInfo(element);
-      if (!emojiInfo || !emojiPreviewTextRef.current) return;
-      if (emojiInfo.type === EmojiType.Emoji && emojiPreviewRef.current) {
-        emojiPreviewRef.current.textContent = emojiInfo.data;
-      } else if (emojiInfo.type === EmojiType.CustomEmoji && emojiPreviewRef.current) {
-        const img = document.createElement('img');
-        img.className = css.CustomEmojiImg;
-        img.setAttribute(
-          'src',
-          mxcUrlToHttp(mx, emojiInfo.data, useAuthentication) || emojiInfo.data
-        );
-        img.setAttribute('alt', emojiInfo.shortcode);
-        emojiPreviewRef.current.textContent = '';
-        emojiPreviewRef.current.appendChild(img);
-      }
-      emojiPreviewTextRef.current.textContent = `:${emojiInfo.shortcode}:`;
+      if (!emojiInfo) return;
+
+      setPreviewData({
+        key: emojiInfo.data,
+        shortcode: emojiInfo.shortcode,
+      });
     },
-    [mx, useAuthentication]
+    [setPreviewData]
   );
 
   const throttleEmojiHover = useThrottle(handleEmojiPreview, {
@@ -675,17 +654,15 @@ export function EmojiBoard({
     >
       <EmojiBoardLayout
         header={
-          <Header>
-            <Box direction="Column" gap="200">
-              {onTabChange && <EmojiBoardTabs tab={tab} onTabChange={onTabChange} />}
-              <SearchInput
-                query={result?.query}
-                onChange={handleOnChange}
-                allowTextCustomEmoji={allowTextCustomEmoji}
-                onTextCustomEmojiSelect={handleTextCustomEmojiSelect}
-              />
-            </Box>
-          </Header>
+          <Box direction="Column" gap="200">
+            {onTabChange && <EmojiBoardTabs tab={tab} onTabChange={onTabChange} />}
+            <SearchInput
+              query={result?.query}
+              onChange={handleOnChange}
+              allowTextCustomEmoji={allowTextCustomEmoji}
+              onTextCustomEmojiSelect={handleTextCustomEmojiSelect}
+            />
+          </Box>
         }
         sidebar={
           <Sidebar>
@@ -711,34 +688,8 @@ export function EmojiBoard({
             )}
           </Sidebar>
         }
-        footer={
-          emojiTab ? (
-            <Footer>
-              <Box
-                display="InlineFlex"
-                ref={emojiPreviewRef}
-                className={css.EmojiPreview}
-                alignItems="Center"
-                justifyContent="Center"
-              >
-                😃
-              </Box>
-              <Text ref={emojiPreviewTextRef} size="H5" truncate>
-                :smiley:
-              </Text>
-            </Footer>
-          ) : (
-            imagePacks.length > 0 && (
-              <Footer>
-                <Text ref={emojiPreviewTextRef} size="H5" truncate>
-                  :smiley:
-                </Text>
-              </Footer>
-            )
-          )
-        }
       >
-        <Content>
+        <Box grow="Yes">
           <Scroll
             ref={contentScrollRef}
             size="400"
@@ -779,7 +730,8 @@ export function EmojiBoard({
               {emojiTab && <NativeEmojiGroups groups={emojiGroups} labels={emojiGroupLabels} />}
             </Box>
           </Scroll>
-        </Content>
+        </Box>
+        <Preview previewAtom={previewAtom} />
       </EmojiBoardLayout>
     </FocusTrap>
   );

@@ -24,17 +24,6 @@ export const Header = style({
   paddingBottom: 0,
 });
 
-export const Footer = style({
-  padding: config.space.S200,
-  margin: config.space.S300,
-  marginTop: 0,
-  minHeight: toRem(40),
-
-  borderRadius: config.radii.R400,
-  backgroundColor: color.SurfaceVariant.Container,
-  color: color.SurfaceVariant.OnContainer,
-});
-
 export const EmojiGroup = style({
   padding: `${config.space.S300} 0`,
 });
@@ -55,16 +44,6 @@ export const EmojiGroupContent = style([
   DefaultReset,
   {
     padding: `0 ${config.space.S200}`,
-  },
-]);
-
-export const EmojiPreview = style([
-  DefaultReset,
-  {
-    width: toRem(32),
-    height: toRem(32),
-    fontSize: toRem(32),
-    lineHeight: toRem(32),
   },
 ]);
 
