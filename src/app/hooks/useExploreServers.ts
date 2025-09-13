@@ -7,16 +7,17 @@ export type InCinnyExploreServersContent = {
   servers?: string[];
 };
 
-export const useExploreServers = (): [
-  string[],
-  (server: string) => Promise<void>,
-  (server: string) => Promise<void>
-] => {
+export const useExploreServers = (
+  exclude?: string[]
+): [string[], (server: string) => Promise<void>, (server: string) => Promise<void>] => {
   const mx = useMatrixClient();
   const accountData = useAccountData(AccountDataEvent.CinnyExplore);
   const userAddedServers = useMemo(
-    () => accountData?.getContent<InCinnyExploreServersContent>()?.servers ?? [],
-    [accountData]
+    () =>
+      accountData
+        ?.getContent<InCinnyExploreServersContent>()
+        ?.servers?.filter((server) => !exclude?.includes(server)) ?? [],
+    [exclude, accountData]
   );
 
   const addServer = useCallback(
