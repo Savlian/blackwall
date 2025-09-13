@@ -31,7 +31,6 @@ import {
   NavLink,
 } from '../../../components/nav';
 import { getExploreFeaturedPath, getExploreServerPath } from '../../pathUtils';
-import { useClientConfig } from '../../../hooks/useClientConfig';
 import {
   useExploreFeaturedRooms,
   useExploreServer,
@@ -46,7 +45,7 @@ import { useExploreServers } from '../../../hooks/useExploreServers';
 import { useAlive } from '../../../hooks/useAlive';
 
 type AddExploreServerPromptProps = {
-  onSubmit: (server: string) => Promise<void>;
+  onSubmit: (server: string, save: boolean) => Promise<void>;
   header: ReactNode;
   children: ReactNode;
   selected?: boolean;
@@ -69,18 +68,24 @@ export function AddExploreServerPrompt({
     return server || undefined;
   };
 
-  const [submitState, handleSubmit] = useAsyncCallback(
-    useCallback(async () => {
+  const submit = useCallback(
+    async (save: boolean) => {
       const server = getInputServer();
       if (!server) return;
 
       await mx.publicRooms({ server, limit: 1 });
-      await onSubmit(server);
+      await onSubmit(server, save);
       if (alive()) {
         setDialog(false);
       }
-    }, [alive, onSubmit, mx])
+    },
+    [alive, onSubmit, mx]
   );
+
+  const [viewState, handleView] = useAsyncCallback(() => submit(false));
+  const [saveViewState, handleSaveView] = useAsyncCallback(() => submit(true));
+  const busy =
+    viewState.status === AsyncStatus.Loading || saveViewState.status === AsyncStatus.Loading;
 
   return (
     <>
@@ -108,21 +113,12 @@ export function AddExploreServerPrompt({
                   <Icon src={Icons.Cross} />
                 </IconButton>
               </Header>
-              <Box
-                as="form"
-                onSubmit={(evt) => {
-                  evt.preventDefault();
-                  handleSubmit();
-                }}
-                style={{ padding: config.space.S400 }}
-                direction="Column"
-                gap="400"
-              >
+              <Box style={{ padding: config.space.S400 }} direction="Column" gap="400">
                 <Text priority="400">Add server name to explore public communities.</Text>
                 <Box direction="Column" gap="100">
                   <Text size="L400">Server Name</Text>
                   <Input ref={serverInputRef} name="serverInput" variant="Background" required />
-                  {submitState.status === AsyncStatus.Error && (
+                  {viewState.status === AsyncStatus.Error && (
                     <Text style={{ color: color.Critical.Main }} size="T300">
                       Failed to load public rooms. Please try again.
                     </Text>
@@ -131,17 +127,31 @@ export function AddExploreServerPrompt({
                 <Box direction="Column" gap="200">
                   <Button
                     type="submit"
-                    onClick={handleSubmit}
+                    onClick={handleView}
                     variant="Secondary"
                     fill="Soft"
                     before={
-                      submitState.status === AsyncStatus.Loading && (
+                      viewState.status === AsyncStatus.Loading && (
                         <Spinner fill="Solid" variant="Secondary" size="200" />
                       )
                     }
-                    disabled={submitState.status === AsyncStatus.Loading}
+                    disabled={busy}
                   >
                     <Text size="B400">View</Text>
+                  </Button>
+                  <Button
+                    type="submit"
+                    onClick={handleSaveView}
+                    variant="Primary"
+                    fill="Soft"
+                    before={
+                      saveViewState.status === AsyncStatus.Loading && (
+                        <Spinner fill="Solid" variant="Secondary" size="200" />
+                      )
+                    }
+                    disabled={busy}
+                  >
+                    <Text size="B400">Save & View</Text>
                   </Button>
                 </Box>
               </Box>
@@ -158,30 +168,33 @@ export function AddExploreServerPrompt({
   );
 }
 
+type ExploreServerNavItemAction = {
+  onClick: () => Promise<void>;
+  icon: IconSrc;
+  alwaysVisible: boolean;
+};
 type ExploreServerNavItemProps = {
   server: string;
   selected: boolean;
   icon: IconSrc;
-  onRemove?: (() => Promise<void>) | null;
+  action?: ExploreServerNavItemAction;
 };
 export function ExploreServerNavItem({
   server,
   selected,
   icon,
-  onRemove = null,
+  action,
 }: ExploreServerNavItemProps) {
   const [hover, setHover] = useState(false);
   const { hoverProps } = useHover({ onHoverChange: setHover });
   const { focusWithinProps } = useFocusWithin({ onFocusWithinChange: setHover });
-  const [removeState, removeCallback] = useAsyncCallback(
+  const [actionState, actionCallback] = useAsyncCallback(
     useCallback(async () => {
-      if (onRemove !== null) {
-        await onRemove();
-      }
-    }, [onRemove])
+      await action?.onClick();
+    }, [action])
   );
-  const removeInProgress =
-    removeState.status === AsyncStatus.Loading || removeState.status === AsyncStatus.Success;
+  const actionInProgress =
+    actionState.status === AsyncStatus.Loading || actionState.status === AsyncStatus.Success;
 
   return (
     <NavItem
@@ -205,20 +218,20 @@ export function ExploreServerNavItem({
           </Box>
         </NavItemContent>
       </NavLink>
-      {onRemove !== null && (hover || removeInProgress) && (
+      {action !== undefined && (hover || actionInProgress || action.alwaysVisible) && (
         <NavItemOptions>
           <IconButton
-            onClick={removeCallback}
+            onClick={actionCallback}
             variant="Background"
             fill="None"
             size="300"
             radii="300"
-            disabled={removeInProgress}
+            disabled={actionInProgress}
           >
-            {removeInProgress ? (
+            {actionInProgress ? (
               <Spinner variant="Secondary" fill="Solid" size="200" />
             ) : (
-              <Icon size="50" src={Icons.Minus} />
+              <Icon size="50" src={action.icon} />
             )}
           </IconButton>
         </NavItemOptions>
@@ -232,13 +245,7 @@ export function Explore() {
   const navigate = useNavigate();
   useNavToActivePathMapper('explore');
   const userId = mx.getUserId();
-  const clientConfig = useClientConfig();
   const userServer = userId ? getMxIdServer(userId) : undefined;
-  const featuredServers = useMemo(
-    () =>
-      clientConfig.featuredCommunities?.servers?.filter((server) => server !== userServer) ?? [],
-    [clientConfig, userServer]
-  );
   const [exploreServers, addServer, removeServer] = useExploreServers();
 
   const selectedServer = useExploreServer();
@@ -248,20 +255,19 @@ export function Explore() {
       !(
         selectedServer === undefined ||
         selectedServer === userServer ||
-        featuredServers.includes(selectedServer) ||
         exploreServers.includes(selectedServer)
       ),
-    [exploreServers, featuredServers, selectedServer, userServer]
+    [exploreServers, selectedServer, userServer]
   );
 
   const addServerCallback = useCallback(
-    async (server: string) => {
-      if (server !== userServer && selectedServer && !featuredServers.includes(selectedServer)) {
+    async (server: string, save: boolean) => {
+      if (save && server !== userServer && selectedServer) {
         await addServer(server);
       }
       navigate(getExploreServerPath(server));
     },
-    [addServer, navigate, userServer, featuredServers, selectedServer]
+    [addServer, navigate, userServer, selectedServer]
   );
 
   const removeServerCallback = useCallback(
@@ -269,13 +275,6 @@ export function Explore() {
       await removeServer(server);
     },
     [removeServer]
-  );
-
-  const exploreUnlistedServerCallback = useCallback(
-    async (server: string) => {
-      navigate(getExploreServerPath(server));
-    },
-    [navigate]
   );
 
   return (
@@ -293,29 +292,6 @@ export function Explore() {
       <PageNavContent>
         <Box direction="Column" gap="300">
           <NavCategory>
-            <AddExploreServerPrompt
-              onSubmit={exploreUnlistedServerCallback}
-              header={<Text size="H4">View Server</Text>}
-              selected={exploringUnlistedServer}
-            >
-              <Box as="span" grow="Yes" alignItems="Center" gap="200">
-                <Avatar size="200" radii="400">
-                  <Icon src={Icons.Link} size="100" />
-                </Avatar>
-                <Box as="span" grow="Yes">
-                  <Text as="span" size="Inherit" truncate>
-                    Explore with Address
-                  </Text>
-                </Box>
-              </Box>
-            </AddExploreServerPrompt>
-          </NavCategory>
-          <NavCategory>
-            <NavCategoryHeader>
-              <Text size="O400" style={{ paddingLeft: config.space.S200 }}>
-                Featured
-              </Text>
-            </NavCategoryHeader>
             <NavItem variant="Background" radii="400" aria-selected={exploringFeaturedRooms}>
               <NavLink to={getExploreFeaturedPath()}>
                 <NavItemContent>
@@ -325,7 +301,7 @@ export function Explore() {
                     </Avatar>
                     <Box as="span" grow="Yes">
                       <Text as="span" size="Inherit" truncate>
-                        Featured Rooms
+                        Featured
                       </Text>
                     </Box>
                   </Box>
@@ -339,14 +315,18 @@ export function Explore() {
                 icon={Icons.Home}
               />
             )}
-            {featuredServers.map((server) => (
+            {exploringUnlistedServer && selectedServer !== undefined && (
               <ExploreServerNavItem
-                key={server}
-                server={server}
-                selected={server === selectedServer}
+                server={selectedServer}
+                selected
                 icon={Icons.Server}
+                action={{
+                  alwaysVisible: true,
+                  icon: Icons.Plus,
+                  onClick: () => addServerCallback(selectedServer, true),
+                }}
               />
-            ))}
+            )}
           </NavCategory>
           <NavCategory>
             <NavCategoryHeader>
@@ -359,8 +339,12 @@ export function Explore() {
                 key={server}
                 server={server}
                 selected={server === selectedServer}
-                onRemove={() => removeServerCallback(server)}
                 icon={Icons.Server}
+                action={{
+                  alwaysVisible: false,
+                  icon: Icons.Minus,
+                  onClick: () => removeServerCallback(server),
+                }}
               />
             ))}
             <AddExploreServerPrompt

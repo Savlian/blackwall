@@ -8,7 +8,7 @@ export const CardGrid = style({
   gap: config.space.S400,
 });
 
-export const RoomCardBase = style([
+export const CardBase = style([
   DefaultReset,
   ContainerColor({ variant: 'SurfaceVariant' }),
   {

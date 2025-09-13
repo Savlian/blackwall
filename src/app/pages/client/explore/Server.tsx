@@ -37,7 +37,7 @@ import { MatrixClient, Method, RoomType } from 'matrix-js-sdk';
 import { Page, PageContent, PageContentCenter, PageHeader } from '../../../components/page';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { RoomTopicViewer } from '../../../components/room-topic-viewer';
-import { RoomCard, RoomCardBase, RoomCardGrid } from '../../../components/room-card';
+import { RoomCard, CardBase, CardGrid } from '../../../components/room-card';
 import { ExploreServerPathSearchParams } from '../../paths';
 import { getExploreServerPath, withSearchParam } from '../../pathUtils';
 import * as css from './style.css';
@@ -361,9 +361,9 @@ export function PublicRooms() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const roomTypeFilters = useRoomTypeFilters();
-  const [exploreServers, , removeServer] = useExploreServers();
-  const isUserAddedServer = server && exploreServers.includes(server);
-  const isUserHomeServer = server && server === userServer;
+  const [exploreServers, addServer, removeServer] = useExploreServers();
+  const isUserHomeserver = server && server === userServer;
+  const isBookmarkedServer = server && exploreServers.includes(server);
 
   const currentLimit: number = useMemo(() => {
     const limitParam = serverSearchParams.limit;
@@ -480,15 +480,18 @@ export function PublicRooms() {
     setMenuAnchor(evt.currentTarget.getBoundingClientRect());
   };
 
-  const [removeServerState, handleRemoveServer] = useAsyncCallback(
-    useCallback(async () => {
-      if (!server) return;
+  const [menuActionState, handleMenuAction] = useAsyncCallback(
+    useCallback(
+      async (action: (server: string) => Promise<unknown>) => {
+        if (!server) return;
 
-      setMenuAnchor(undefined);
-      await removeServer(server);
-    }, [server, removeServer])
+        setMenuAnchor(undefined);
+        await action(server);
+      },
+      [server]
+    )
   );
-  const isRemoving = removeServerState.status === AsyncStatus.Loading;
+  const menuActionBusy = menuActionState.status === AsyncStatus.Loading;
 
   return (
     <Page>
@@ -529,7 +532,9 @@ export function PublicRooms() {
               )}
             </Box>
             <Box grow="Yes" basis="Yes" justifyContent="Center" alignItems="Center" gap="200">
-              {screenSize !== ScreenSize.Mobile && <Icon size="400" src={isUserHomeServer ? Icons.Home : Icons.Server} />}
+              {screenSize !== ScreenSize.Mobile && (
+                <Icon size="400" src={isUserHomeserver ? Icons.Home : Icons.Server} />
+              )}
               <Text size="H3" truncate>
                 {server}
               </Text>
@@ -546,7 +551,7 @@ export function PublicRooms() {
                 }
               >
                 {(triggerRef) =>
-                  isUserAddedServer && (
+                  !isUserHomeserver && (
                     <IconButton
                       onClick={handleOpenMenu}
                       ref={triggerRef}
@@ -576,22 +581,27 @@ export function PublicRooms() {
                     <Menu style={{ maxWidth: toRem(160), width: '100vw' }}>
                       <Box direction="Column" gap="100" style={{ padding: config.space.S100 }}>
                         <MenuItem
-                          onClick={handleRemoveServer}
-                          variant="Critical"
+                          onClick={() =>
+                            handleMenuAction(isBookmarkedServer ? removeServer : addServer)
+                          }
+                          variant={isBookmarkedServer ? 'Critical' : 'Primary'}
                           fill="None"
                           size="300"
                           after={
-                            isRemoving ? (
+                            menuActionBusy ? (
                               <Spinner fill="Solid" variant="Secondary" size="200" />
                             ) : (
-                              <Icon size="100" src={Icons.Delete} />
+                              <Icon
+                                size="100"
+                                src={isBookmarkedServer ? Icons.Delete : Icons.Plus}
+                              />
                             )
                           }
                           radii="300"
-                          disabled={isRemoving}
+                          disabled={menuActionBusy}
                         >
                           <Text style={{ flexGrow: 1 }} as="span" size="T300" truncate>
-                            Remove Server
+                            {isBookmarkedServer ? 'Remove Server' : 'Add Server'}
                           </Text>
                         </MenuItem>
                       </Box>
@@ -660,11 +670,11 @@ export function PublicRooms() {
                     </Box>
                   </Box>
                   {isLoading && (
-                    <RoomCardGrid>
+                    <CardGrid>
                       {[...Array(currentLimit).keys()].map((item) => (
-                        <RoomCardBase key={item} style={{ minHeight: toRem(260) }} />
+                        <CardBase key={item} style={{ minHeight: toRem(260) }} />
                       ))}
-                    </RoomCardGrid>
+                    </CardGrid>
                   )}
                   {error && (
                     <Box direction="Column" className={css.PublicRoomsError} gap="200">
@@ -675,7 +685,7 @@ export function PublicRooms() {
                   {data &&
                     (data.chunk.length > 0 ? (
                       <>
-                        <RoomCardGrid>
+                        <CardGrid>
                           {data?.chunk.map((chunkRoom) => (
                             <RoomCard
                               key={chunkRoom.room_id}
@@ -700,7 +710,7 @@ export function PublicRooms() {
                               )}
                             />
                           ))}
-                        </RoomCardGrid>
+                        </CardGrid>
 
                         {(data.prev_batch || data.next_batch) && (
                           <Box justifyContent="Center" gap="200">
