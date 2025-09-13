@@ -15,6 +15,7 @@ export type ClientConfig = {
     spaces?: string[];
     rooms?: string[];
     servers?: string[];
+    directoryServer?: string;
   };
 
   hashRouter?: HashRouterConfig;

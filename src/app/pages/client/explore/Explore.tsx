@@ -32,6 +32,7 @@ import {
 } from '../../../components/nav';
 import { getExploreFeaturedPath, getExploreServerPath } from '../../pathUtils';
 import {
+  useDirectoryServer,
   useExploreFeaturedRooms,
   useExploreServer,
 } from '../../../hooks/router/useExploreSelected';
@@ -250,28 +251,31 @@ export function Explore() {
   useNavToActivePathMapper('explore');
   const userId = mx.getUserId();
   const userServer = userId ? getMxIdServer(userId) : undefined;
+  const directoryServer = useDirectoryServer();
   const [bookmarkedServers, addServerBookmark, removeServerBookmark] = useBookmarkedServers();
-
   const selectedServer = useExploreServer();
+
   const exploringFeaturedRooms = useExploreFeaturedRooms();
+  const exploringDirectory = directoryServer !== undefined && selectedServer === directoryServer;
   const exploringUnlistedServer = useMemo(
     () =>
       !(
         selectedServer === undefined ||
         selectedServer === userServer ||
+        exploringDirectory ||
         bookmarkedServers.includes(selectedServer)
       ),
-    [bookmarkedServers, selectedServer, userServer]
+    [bookmarkedServers, selectedServer, userServer, exploringDirectory]
   );
 
   const viewServerCallback = useCallback(
     async (server: string, saveBookmark: boolean) => {
-      if (saveBookmark && server !== userServer && selectedServer) {
+      if (saveBookmark && server !== userServer && server !== directoryServer && selectedServer) {
         await addServerBookmark(server);
       }
       navigate(getExploreServerPath(server));
     },
-    [addServerBookmark, navigate, userServer, selectedServer]
+    [addServerBookmark, navigate, userServer, directoryServer, selectedServer]
   );
 
   const removeServerBookmarkCallback = useCallback(
@@ -312,6 +316,24 @@ export function Explore() {
                 </NavItemContent>
               </NavLink>
             </NavItem>
+            {directoryServer && (
+              <NavItem variant="Background" radii="400" aria-selected={exploringDirectory}>
+                <NavLink to={getExploreServerPath(directoryServer)}>
+                  <NavItemContent>
+                    <Box as="span" grow="Yes" alignItems="Center" gap="200">
+                      <Avatar size="200" radii="400">
+                        <Icon src={Icons.Search} size="100" filled={exploringDirectory} />
+                      </Avatar>
+                      <Box as="span" grow="Yes">
+                        <Text as="span" size="Inherit" truncate>
+                          Public Room Directory
+                        </Text>
+                      </Box>
+                    </Box>
+                  </NavItemContent>
+                </NavLink>
+              </NavItem>
+            )}
             {userServer && (
               <ExploreServerNavItem
                 server={userServer}

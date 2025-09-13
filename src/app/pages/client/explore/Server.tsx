@@ -9,11 +9,13 @@ import React, {
   useState,
 } from 'react';
 import {
+  Badge,
   Box,
   Button,
   Chip,
   Icon,
   IconButton,
+  IconSrc,
   Icons,
   Input,
   Line,
@@ -49,6 +51,7 @@ import { ScreenSize, useScreenSizeContext } from '../../../hooks/useScreenSize';
 import { BackRouteHandler } from '../../../components/BackRouteHandler';
 import { AsyncStatus, useAsyncCallback } from '../../../hooks/useAsyncCallback';
 import { useBookmarkedServers } from '../../../hooks/useBookmarkedServers';
+import { useDirectoryServer } from '../../../hooks/router/useExploreSelected';
 
 const useServerSearchParams = (searchParams: URLSearchParams): ExploreServerPathSearchParams =>
   useMemo(
@@ -349,6 +352,7 @@ export function PublicRooms() {
   const mx = useMatrixClient();
   const userId = mx.getUserId();
   const userServer = userId && getMxIdServer(userId);
+  const directoryServer = useDirectoryServer();
   const allRooms = useAtomValue(allRoomsAtom);
   const { navigateSpace, navigateRoom } = useRoomNavigate();
   const screenSize = useScreenSizeContext();
@@ -363,6 +367,15 @@ export function PublicRooms() {
   const [bookmarkedServers, addServerBookmark, removeServerBookmark] = useBookmarkedServers();
   const isUserHomeserver = server !== undefined && server === userServer;
   const isBookmarkedServer = server !== undefined && bookmarkedServers.includes(server);
+  const isDirectoryServer = server !== undefined && server === directoryServer;
+  let headerIcon: IconSrc;
+  if (isUserHomeserver) {
+    headerIcon = Icons.Home;
+  } else if (isDirectoryServer) {
+    headerIcon = Icons.Search;
+  } else {
+    headerIcon = Icons.Server;
+  }
 
   const currentLimit: number = useMemo(() => {
     const limitParam = serverSearchParams.limit;
@@ -526,40 +539,70 @@ export function PublicRooms() {
               )}
             </Box>
             <Box grow="Yes" basis="Yes" justifyContent="Center" alignItems="Center" gap="200">
-              {screenSize !== ScreenSize.Mobile && (
-                <Icon size="400" src={isUserHomeserver ? Icons.Home : Icons.Server} />
-              )}
+              {screenSize !== ScreenSize.Mobile && <Icon size="400" src={headerIcon} />}
               <Text size="H3" truncate>
-                {server}
+                {isDirectoryServer ? 'Public Room Directory' : server}
               </Text>
             </Box>
             <Box shrink="No" grow="Yes" basis="No" justifyContent="End">
-              <TooltipProvider
-                position="Bottom"
-                align="End"
-                offset={4}
-                tooltip={
-                  <Tooltip>
-                    <Text>{isBookmarkedServer ? 'Remove Bookmark' : 'Add Bookmark'}</Text>
-                  </Tooltip>
-                }
-              >
-                {(triggerRef) =>
-                  !isUserHomeserver && (
-                    <IconButton
-                      onClick={() =>
-                        handleBookmarkAction(
-                          isBookmarkedServer ? removeServerBookmark : addServerBookmark
-                        )
-                      }
-                      ref={triggerRef}
-                      disabled={bookmarkActionLoading}
+              {isDirectoryServer ? (
+                <TooltipProvider
+                  position="Bottom"
+                  align="End"
+                  offset={4}
+                  tooltip={
+                    <Tooltip>
+                      <Text>provided by {directoryServer}</Text>
+                    </Tooltip>
+                  }
+                >
+                  {(triggerRef) => (
+                    <Chip
+                      as="a"
+                      href={`https://${directoryServer}`}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      variant="Secondary"
+                      radii="Pill"
+                      fill="Soft"
+                      ref={screenSize === ScreenSize.Mobile ? triggerRef : undefined}
+                      style={{ maxWidth: '100%' }}
+                      before={<Icon src={Icons.External} size="50" />}
                     >
-                      <Icon size="400" src={Icons.Bookmark} filled={isBookmarkedServer} />
-                    </IconButton>
-                  )
-                }
-              </TooltipProvider>
+                      <Text size="T200" truncate>
+                        provided by {directoryServer}
+                      </Text>
+                    </Chip>
+                  )}
+                </TooltipProvider>
+              ) : (
+                <TooltipProvider
+                  position="Bottom"
+                  align="End"
+                  offset={4}
+                  tooltip={
+                    <Tooltip>
+                      <Text>{isBookmarkedServer ? 'Remove Bookmark' : 'Add Bookmark'}</Text>
+                    </Tooltip>
+                  }
+                >
+                  {(triggerRef) =>
+                    !isUserHomeserver && (
+                      <IconButton
+                        onClick={() =>
+                          handleBookmarkAction(
+                            isBookmarkedServer ? removeServerBookmark : addServerBookmark
+                          )
+                        }
+                        ref={triggerRef}
+                        disabled={bookmarkActionLoading}
+                      >
+                        <Icon size="400" src={Icons.Bookmark} filled={isBookmarkedServer} />
+                      </IconButton>
+                    )
+                  }
+                </TooltipProvider>
+              )}
             </Box>
           </>
         )}
