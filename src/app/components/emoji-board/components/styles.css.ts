@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { toRem, color, config, DefaultReset } from 'folds';
+import { toRem, color, config, DefaultReset, FocusOutline } from 'folds';
 
 export const Sidebar = style({
   width: toRem(54),
@@ -19,6 +19,12 @@ export const SidebarStack = style({
 
 export const SidebarDivider = style({
   width: toRem(18),
+});
+
+export const SidebarBtnImg = style({
+  width: toRem(24),
+  height: toRem(24),
+  objectFit: 'contain',
 });
 
 export const Preview = style({
@@ -46,6 +52,49 @@ export const PreviewImg = style([
   {
     width: toRem(32),
     height: toRem(32),
+    objectFit: 'contain',
+  },
+]);
+
+export const EmojiItem = style([
+  DefaultReset,
+  FocusOutline,
+  {
+    width: toRem(48),
+    height: toRem(48),
+    fontSize: toRem(32),
+    lineHeight: toRem(32),
+    borderRadius: config.radii.R400,
+    cursor: 'pointer',
+
+    ':hover': {
+      backgroundColor: color.Surface.ContainerHover,
+    },
+  },
+]);
+
+export const StickerItem = style([
+  EmojiItem,
+  {
+    width: toRem(112),
+    height: toRem(112),
+  },
+]);
+
+export const CustomEmojiImg = style([
+  DefaultReset,
+  {
+    width: toRem(32),
+    height: toRem(32),
+    objectFit: 'contain',
+  },
+]);
+
+export const StickerImg = style([
+  DefaultReset,
+  {
+    width: toRem(96),
+    height: toRem(96),
     objectFit: 'contain',
   },
 ]);

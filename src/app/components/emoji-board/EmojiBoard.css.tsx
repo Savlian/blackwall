@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { DefaultReset, FocusOutline, color, config, toRem } from 'folds';
+import { DefaultReset, color, config, toRem } from 'folds';
 
 export const Base = style({
   maxWidth: toRem(432),
@@ -44,48 +44,5 @@ export const EmojiGroupContent = style([
   DefaultReset,
   {
     padding: `0 ${config.space.S200}`,
-  },
-]);
-
-export const EmojiItem = style([
-  DefaultReset,
-  FocusOutline,
-  {
-    width: toRem(48),
-    height: toRem(48),
-    fontSize: toRem(32),
-    lineHeight: toRem(32),
-    borderRadius: config.radii.R400,
-    cursor: 'pointer',
-
-    ':hover': {
-      backgroundColor: color.Surface.ContainerHover,
-    },
-  },
-]);
-
-export const StickerItem = style([
-  EmojiItem,
-  {
-    width: toRem(112),
-    height: toRem(112),
-  },
-]);
-
-export const CustomEmojiImg = style([
-  DefaultReset,
-  {
-    width: toRem(32),
-    height: toRem(32),
-    objectFit: 'contain',
-  },
-]);
-
-export const StickerImg = style([
-  DefaultReset,
-  {
-    width: toRem(96),
-    height: toRem(96),
-    objectFit: 'contain',
   },
 ]);

@@ -10,7 +10,7 @@ import React, {
   useMemo,
   useRef,
 } from 'react';
-import { Box, Icon, Icons, Line, Scroll, Text, as, toRem } from 'folds';
+import { Box, Icons, Line, Scroll, Text, as } from 'folds';
 import FocusTrap from 'focus-trap-react';
 import { isKeyHotkey } from 'is-hotkey';
 import classNames from 'classnames';
@@ -39,12 +39,16 @@ import {
   EmojiBoardTabs,
   SidebarStack,
   SidebarDivider,
-  SidebarBtn,
   Sidebar,
   NoStickerPacks,
   createPreviewDataAtom,
   Preview,
   PreviewData,
+  EmojiItem,
+  StickerItem,
+  CustomEmojiItem,
+  ImageGroupIcon,
+  GroupIcon,
 } from './components';
 import { EmojiBoardTab, EmojiItemInfo, EmojiType } from './types';
 
@@ -125,81 +129,18 @@ export const EmojiGroup = as<
   </Box>
 ));
 
-export function EmojiItem({
-  label,
-  type,
-  data,
-  shortcode,
-  children,
-}: {
-  label: string;
-  type: EmojiType;
-  data: string;
-  shortcode: string;
-  children: ReactNode;
-}) {
-  return (
-    <Box
-      as="button"
-      className={css.EmojiItem}
-      type="button"
-      alignItems="Center"
-      justifyContent="Center"
-      title={label}
-      aria-label={`${label} emoji`}
-      data-emoji-type={type}
-      data-emoji-data={data}
-      data-emoji-shortcode={shortcode}
-    >
-      {children}
-    </Box>
-  );
-}
-
-export function StickerItem({
-  label,
-  type,
-  data,
-  shortcode,
-  children,
-}: {
-  label: string;
-  type: EmojiType;
-  data: string;
-  shortcode: string;
-  children: ReactNode;
-}) {
-  return (
-    <Box
-      as="button"
-      className={css.StickerItem}
-      type="button"
-      alignItems="Center"
-      justifyContent="Center"
-      title={label}
-      aria-label={`${label} sticker`}
-      data-emoji-type={type}
-      data-emoji-data={data}
-      data-emoji-shortcode={shortcode}
-    >
-      {children}
-    </Box>
-  );
-}
-
 function RecentEmojiSidebarStack({ onItemClick }: { onItemClick: (id: string) => void }) {
   const activeGroupId = useAtomValue(activeGroupIdAtom);
 
   return (
     <SidebarStack>
-      <SidebarBtn
+      <GroupIcon
         active={activeGroupId === RECENT_GROUP_ID}
         id={RECENT_GROUP_ID}
         label="Recent"
-        onItemClick={() => onItemClick(RECENT_GROUP_ID)}
-      >
-        <Icon src={Icons.RecentClock} filled={activeGroupId === RECENT_GROUP_ID} />
-      </SidebarBtn>
+        icon={Icons.RecentClock}
+        onClick={onItemClick}
+      />
     </SidebarStack>
   );
 }
@@ -224,27 +165,19 @@ function ImagePackSidebarStack({
       {packs.map((pack) => {
         let label = pack.meta.name;
         if (!label) label = isUserId(pack.id) ? 'Personal Pack' : mx.getRoom(pack.id)?.name;
+
+        const url =
+          mxcUrlToHttp(mx, pack.getAvatarUrl(usage) ?? '', useAuthentication) || pack.meta.avatar;
+
         return (
-          <SidebarBtn
-            active={activeGroupId === pack.id}
+          <ImageGroupIcon
             key={pack.id}
+            active={activeGroupId === pack.id}
             id={pack.id}
-            label={label || 'Unknown Pack'}
-            onItemClick={onItemClick}
-          >
-            <img
-              style={{
-                width: toRem(24),
-                height: toRem(24),
-                objectFit: 'contain',
-              }}
-              src={
-                mxcUrlToHttp(mx, pack.getAvatarUrl(usage) ?? '', useAuthentication) ||
-                pack.meta.avatar
-              }
-              alt={label || 'Unknown Pack'}
-            />
-          </SidebarBtn>
+            label={label ?? 'Unknown Pack'}
+            url={url}
+            onClick={onItemClick}
+          />
         );
       })}
     </SidebarStack>
@@ -267,15 +200,14 @@ function NativeEmojiSidebarStack({
     <SidebarStack className={css.NativeEmojiSidebarStack}>
       <SidebarDivider />
       {groups.map((group) => (
-        <SidebarBtn
+        <GroupIcon
           key={group.id}
           active={activeGroupId === group.id}
           id={group.id}
           label={labels[group.id]}
-          onItemClick={onItemClick}
-        >
-          <Icon src={icons[group.id]} filled={activeGroupId === group.id} />
-        </SidebarBtn>
+          icon={icons[group.id]}
+          onClick={onItemClick}
+        />
       ))}
     </SidebarStack>
   );
@@ -293,15 +225,7 @@ export function RecentEmojiGroup({
   return (
     <EmojiGroup key={id} id={id} label={label}>
       {recentEmojis.map((emoji) => (
-        <EmojiItem
-          key={emoji.unicode}
-          label={emoji.label}
-          type={EmojiType.Emoji}
-          data={emoji.unicode}
-          shortcode={emoji.shortcode}
-        >
-          {emoji.unicode}
-        </EmojiItem>
+        <EmojiItem key={emoji.shortcode} emoji={emoji} />
       ))}
     </EmojiGroup>
   );
@@ -324,53 +248,29 @@ export function SearchEmojiGroup({
 }) {
   return (
     <EmojiGroup key={id} id={id} label={label}>
-      {tab === EmojiBoardTab.Emoji
-        ? searchResult.map((emoji) =>
-            'unicode' in emoji ? (
-              <EmojiItem
-                key={emoji.unicode}
-                label={emoji.label}
-                type={EmojiType.Emoji}
-                data={emoji.unicode}
-                shortcode={emoji.shortcode}
-              >
-                {emoji.unicode}
-              </EmojiItem>
-            ) : (
-              <EmojiItem
-                key={emoji.shortcode}
-                label={emoji.body || emoji.shortcode}
-                type={EmojiType.CustomEmoji}
-                data={emoji.url}
-                shortcode={emoji.shortcode}
-              >
-                <img
-                  loading="lazy"
-                  className={css.CustomEmojiImg}
-                  alt={emoji.body || emoji.shortcode}
-                  src={mxcUrlToHttp(mx, emoji.url, useAuthentication) ?? emoji.url}
-                />
-              </EmojiItem>
-            )
-          )
-        : searchResult.map((emoji) =>
-            'unicode' in emoji ? null : (
-              <StickerItem
-                key={emoji.shortcode}
-                label={emoji.body || emoji.shortcode}
-                type={EmojiType.Sticker}
-                data={emoji.url}
-                shortcode={emoji.shortcode}
-              >
-                <img
-                  loading="lazy"
-                  className={css.StickerImg}
-                  alt={emoji.body || emoji.shortcode}
-                  src={mxcUrlToHttp(mx, emoji.url, useAuthentication) ?? emoji.url}
-                />
-              </StickerItem>
-            )
-          )}
+      {searchResult.map((emoji) => {
+        if ('unicode' in emoji) {
+          return <EmojiItem key={emoji.unicode} emoji={emoji} />;
+        }
+        if (tab === EmojiBoardTab.Sticker) {
+          return (
+            <StickerItem
+              key={emoji.shortcode}
+              mx={mx}
+              useAuthentication={useAuthentication}
+              image={emoji}
+            />
+          );
+        }
+        return (
+          <CustomEmojiItem
+            key={emoji.shortcode}
+            mx={mx}
+            useAuthentication={useAuthentication}
+            image={emoji}
+          />
+        );
+      })}
     </EmojiGroup>
   );
 }
@@ -392,20 +292,12 @@ export const CustomEmojiGroups = memo(
             .getImages(ImageUsage.Emoticon)
             .sort((a, b) => a.shortcode.localeCompare(b.shortcode))
             .map((image) => (
-              <EmojiItem
+              <CustomEmojiItem
                 key={image.shortcode}
-                label={image.body || image.shortcode}
-                type={EmojiType.CustomEmoji}
-                data={image.url}
-                shortcode={image.shortcode}
-              >
-                <img
-                  loading="lazy"
-                  className={css.CustomEmojiImg}
-                  alt={image.body || image.shortcode}
-                  src={mxcUrlToHttp(mx, image.url, useAuthentication) ?? image.url}
-                />
-              </EmojiItem>
+                mx={mx}
+                useAuthentication={useAuthentication}
+                image={image}
+              />
             ))}
         </EmojiGroup>
       ))}
@@ -434,18 +326,10 @@ export const StickerGroups = memo(
             .map((image) => (
               <StickerItem
                 key={image.shortcode}
-                label={image.body || image.shortcode}
-                type={EmojiType.Sticker}
-                data={image.url}
-                shortcode={image.shortcode}
-              >
-                <img
-                  loading="lazy"
-                  className={css.StickerImg}
-                  alt={image.body || image.shortcode}
-                  src={mxcUrlToHttp(mx, image.url, useAuthentication) ?? image.url}
-                />
-              </StickerItem>
+                mx={mx}
+                useAuthentication={useAuthentication}
+                image={image}
+              />
             ))}
         </EmojiGroup>
       ))
@@ -458,15 +342,7 @@ export const NativeEmojiGroups = memo(
       {groups.map((emojiGroup) => (
         <EmojiGroup key={emojiGroup.id} id={emojiGroup.id} label={labels[emojiGroup.id]}>
           {emojiGroup.emojis.map((emoji) => (
-            <EmojiItem
-              key={emoji.unicode}
-              label={emoji.label}
-              type={EmojiType.Emoji}
-              data={emoji.unicode}
-              shortcode={emoji.shortcode}
-            >
-              {emoji.unicode}
-            </EmojiItem>
+            <EmojiItem key={emoji.unicode} emoji={emoji} />
           ))}
         </EmojiGroup>
       ))}

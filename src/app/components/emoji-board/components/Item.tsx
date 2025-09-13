@@ -1,0 +1,89 @@
+import React from 'react';
+import { Box } from 'folds';
+import { MatrixClient } from 'matrix-js-sdk';
+import { EmojiType } from '../types';
+import * as css from './styles.css';
+import { PackImageReader } from '../../../plugins/custom-emoji';
+import { IEmoji } from '../../../plugins/emoji';
+import { mxcUrlToHttp } from '../../../utils/matrix';
+
+type EmojiItemProps = {
+  emoji: IEmoji;
+};
+export function EmojiItem({ emoji }: EmojiItemProps) {
+  return (
+    <Box
+      as="button"
+      type="button"
+      alignItems="Center"
+      justifyContent="Center"
+      className={css.EmojiItem}
+      title={emoji.label}
+      aria-label={`${emoji.label} emoji`}
+      data-emoji-type={EmojiType.Emoji}
+      data-emoji-data={emoji.unicode}
+      data-emoji-shortcode={emoji.shortcode}
+    >
+      {emoji.unicode}
+    </Box>
+  );
+}
+
+type CustomEmojiItemProps = {
+  mx: MatrixClient;
+  useAuthentication?: boolean;
+  image: PackImageReader;
+};
+export function CustomEmojiItem({ mx, useAuthentication, image }: CustomEmojiItemProps) {
+  return (
+    <Box
+      as="button"
+      type="button"
+      alignItems="Center"
+      justifyContent="Center"
+      className={css.EmojiItem}
+      title={image.body || image.shortcode}
+      aria-label={`${image.body || image.shortcode} emoji`}
+      data-emoji-type={EmojiType.CustomEmoji}
+      data-emoji-data={image.url}
+      data-emoji-shortcode={image.shortcode}
+    >
+      <img
+        loading="lazy"
+        className={css.CustomEmojiImg}
+        alt={image.body || image.shortcode}
+        src={mxcUrlToHttp(mx, image.url, useAuthentication) ?? image.url}
+      />
+    </Box>
+  );
+}
+
+type StickerItemProps = {
+  mx: MatrixClient;
+  useAuthentication?: boolean;
+  image: PackImageReader;
+};
+
+export function StickerItem({ mx, useAuthentication, image }: StickerItemProps) {
+  return (
+    <Box
+      as="button"
+      type="button"
+      alignItems="Center"
+      justifyContent="Center"
+      className={css.StickerItem}
+      title={image.body || image.shortcode}
+      aria-label={`${image.body || image.shortcode} emoji`}
+      data-emoji-type={EmojiType.Sticker}
+      data-emoji-data={image.url}
+      data-emoji-shortcode={image.shortcode}
+    >
+      <img
+        loading="lazy"
+        className={css.StickerImg}
+        alt={image.body || image.shortcode}
+        src={mxcUrlToHttp(mx, image.url, useAuthentication) ?? image.url}
+      />
+    </Box>
+  );
+}
