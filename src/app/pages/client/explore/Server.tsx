@@ -48,7 +48,7 @@ import { stopPropagation } from '../../../utils/keyboard';
 import { ScreenSize, useScreenSizeContext } from '../../../hooks/useScreenSize';
 import { BackRouteHandler } from '../../../components/BackRouteHandler';
 import { AsyncStatus, useAsyncCallback } from '../../../hooks/useAsyncCallback';
-import { useExploreServers } from '../../../hooks/useExploreServers';
+import { useBookmarkedServers } from '../../../hooks/useBookmarkedServers';
 
 const useServerSearchParams = (searchParams: URLSearchParams): ExploreServerPathSearchParams =>
   useMemo(
@@ -352,7 +352,6 @@ export function PublicRooms() {
   const allRooms = useAtomValue(allRoomsAtom);
   const { navigateSpace, navigateRoom } = useRoomNavigate();
   const screenSize = useScreenSizeContext();
-  const [menuAnchor, setMenuAnchor] = useState<RectCords>();
 
   const [searchParams] = useSearchParams();
   const serverSearchParams = useServerSearchParams(searchParams);
@@ -361,9 +360,9 @@ export function PublicRooms() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const roomTypeFilters = useRoomTypeFilters();
-  const [exploreServers, addServer, removeServer] = useExploreServers();
-  const isUserHomeserver = server && server === userServer;
-  const isBookmarkedServer = server && exploreServers.includes(server);
+  const [bookmarkedServers, addServerBookmark, removeServerBookmark] = useBookmarkedServers();
+  const isUserHomeserver = server !== undefined && server === userServer;
+  const isBookmarkedServer = server !== undefined && bookmarkedServers.includes(server);
 
   const currentLimit: number = useMemo(() => {
     const limitParam = serverSearchParams.limit;
@@ -476,22 +475,17 @@ export function PublicRooms() {
     explore({ instance: instanceId, since: undefined });
   };
 
-  const handleOpenMenu: MouseEventHandler<HTMLButtonElement> = (evt) => {
-    setMenuAnchor(evt.currentTarget.getBoundingClientRect());
-  };
-
-  const [menuActionState, handleMenuAction] = useAsyncCallback(
+  const [bookmarkActionState, handleBookmarkAction] = useAsyncCallback(
     useCallback(
       async (action: (server: string) => Promise<unknown>) => {
         if (!server) return;
 
-        setMenuAnchor(undefined);
         await action(server);
       },
       [server]
     )
   );
-  const menuActionBusy = menuActionState.status === AsyncStatus.Loading;
+  const bookmarkActionLoading = bookmarkActionState.status === AsyncStatus.Loading;
 
   return (
     <Page>
@@ -546,69 +540,26 @@ export function PublicRooms() {
                 offset={4}
                 tooltip={
                   <Tooltip>
-                    <Text>More Options</Text>
+                    <Text>{isBookmarkedServer ? 'Remove Bookmark' : 'Add Bookmark'}</Text>
                   </Tooltip>
                 }
               >
                 {(triggerRef) =>
                   !isUserHomeserver && (
                     <IconButton
-                      onClick={handleOpenMenu}
+                      onClick={() =>
+                        handleBookmarkAction(
+                          isBookmarkedServer ? removeServerBookmark : addServerBookmark
+                        )
+                      }
                       ref={triggerRef}
-                      aria-pressed={!!menuAnchor}
+                      disabled={bookmarkActionLoading}
                     >
-                      <Icon size="400" src={Icons.VerticalDots} filled={!!menuAnchor} />
+                      <Icon size="400" src={Icons.Bookmark} filled={isBookmarkedServer} />
                     </IconButton>
                   )
                 }
               </TooltipProvider>
-              <PopOut
-                anchor={menuAnchor}
-                position="Bottom"
-                align="End"
-                content={
-                  <FocusTrap
-                    focusTrapOptions={{
-                      initialFocus: false,
-                      returnFocusOnDeactivate: false,
-                      onDeactivate: () => setMenuAnchor(undefined),
-                      clickOutsideDeactivates: true,
-                      isKeyForward: (evt: KeyboardEvent) => evt.key === 'ArrowDown',
-                      isKeyBackward: (evt: KeyboardEvent) => evt.key === 'ArrowUp',
-                      escapeDeactivates: stopPropagation,
-                    }}
-                  >
-                    <Menu style={{ maxWidth: toRem(160), width: '100vw' }}>
-                      <Box direction="Column" gap="100" style={{ padding: config.space.S100 }}>
-                        <MenuItem
-                          onClick={() =>
-                            handleMenuAction(isBookmarkedServer ? removeServer : addServer)
-                          }
-                          variant={isBookmarkedServer ? 'Critical' : 'Primary'}
-                          fill="None"
-                          size="300"
-                          after={
-                            menuActionBusy ? (
-                              <Spinner fill="Solid" variant="Secondary" size="200" />
-                            ) : (
-                              <Icon
-                                size="100"
-                                src={isBookmarkedServer ? Icons.Delete : Icons.Plus}
-                              />
-                            )
-                          }
-                          radii="300"
-                          disabled={menuActionBusy}
-                        >
-                          <Text style={{ flexGrow: 1 }} as="span" size="T300" truncate>
-                            {isBookmarkedServer ? 'Remove Server' : 'Add Server'}
-                          </Text>
-                        </MenuItem>
-                      </Box>
-                    </Menu>
-                  </FocusTrap>
-                }
-              />
             </Box>
           </>
         )}
