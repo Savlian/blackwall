@@ -45,7 +45,7 @@ const setGridColumnCount = (grid: HTMLElement, count: GridColumnCount): void => 
   grid.style.setProperty('grid-template-columns', `repeat(${count}, 1fr)`);
 };
 
-export function CardGrid({ children }: { children: ReactNode }) {
+export function RoomCardGrid({ children }: { children: ReactNode }) {
   const gridRef = useRef<HTMLDivElement>(null);
 
   useElementSizeObserver(
@@ -60,17 +60,17 @@ export function CardGrid({ children }: { children: ReactNode }) {
   );
 }
 
-export const CardBase = as<'div'>(({ className, ...props }, ref) => (
+export const RoomCardBase = as<'div'>(({ className, ...props }, ref) => (
   <Box
     direction="Column"
     gap="300"
-    className={classNames(css.CardBase, className)}
+    className={classNames(css.RoomCardBase, className)}
     {...props}
     ref={ref}
   />
 ));
 
-export const CardName = as<'h6'>(({ ...props }, ref) => (
+export const RoomCardName = as<'h6'>(({ ...props }, ref) => (
   <Text as="h6" size="H6" truncate {...props} ref={ref} />
 ));
 
@@ -208,7 +208,7 @@ export const RoomCard = as<'div', RoomCardProps>(
     const openTopic = () => setViewTopic(true);
 
     return (
-      <CardBase {...props} ref={ref}>
+      <RoomCardBase {...props} ref={ref}>
         <Box gap="200" justifyContent="SpaceBetween">
           <Avatar size="500">
             <RoomAvatar
@@ -229,7 +229,7 @@ export const RoomCard = as<'div', RoomCardProps>(
           )}
         </Box>
         <Box grow="Yes" direction="Column" gap="100">
-          <CardName>{roomName}</CardName>
+          <RoomCardName>{roomName}</RoomCardName>
           <RoomCardTopic onClick={openTopic} onKeyDown={onEnterOrSpace(openTopic)} tabIndex={0}>
             {roomTopic}
           </RoomCardTopic>
@@ -314,7 +314,7 @@ export const RoomCard = as<'div', RoomCardProps>(
             </ErrorDialog>
           </Box>
         )}
-      </CardBase>
+      </RoomCardBase>
     );
   }
 );

@@ -9,13 +9,11 @@ import React, {
   useState,
 } from 'react';
 import {
-  Badge,
   Box,
   Button,
   Chip,
   Icon,
   IconButton,
-  IconSrc,
   Icons,
   Input,
   Line,
@@ -39,7 +37,7 @@ import { MatrixClient, Method, RoomType } from 'matrix-js-sdk';
 import { Page, PageContent, PageContentCenter, PageHeader } from '../../../components/page';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { RoomTopicViewer } from '../../../components/room-topic-viewer';
-import { RoomCard, CardBase, CardGrid } from '../../../components/room-card';
+import { RoomCard, RoomCardBase, RoomCardGrid } from '../../../components/room-card';
 import { ExploreServerPathSearchParams } from '../../paths';
 import { getExploreServerPath, withSearchParam } from '../../pathUtils';
 import * as css from './style.css';
@@ -50,8 +48,7 @@ import { stopPropagation } from '../../../utils/keyboard';
 import { ScreenSize, useScreenSizeContext } from '../../../hooks/useScreenSize';
 import { BackRouteHandler } from '../../../components/BackRouteHandler';
 import { AsyncStatus, useAsyncCallback } from '../../../hooks/useAsyncCallback';
-import { useBookmarkedServers } from '../../../hooks/useBookmarkedServers';
-import { useDirectoryServer } from '../../../hooks/router/useExploreSelected';
+import { useExploreServers } from '../../../hooks/useExploreServers';
 
 const useServerSearchParams = (searchParams: URLSearchParams): ExploreServerPathSearchParams =>
   useMemo(
@@ -352,10 +349,10 @@ export function PublicRooms() {
   const mx = useMatrixClient();
   const userId = mx.getUserId();
   const userServer = userId && getMxIdServer(userId);
-  const directoryServer = useDirectoryServer();
   const allRooms = useAtomValue(allRoomsAtom);
   const { navigateSpace, navigateRoom } = useRoomNavigate();
   const screenSize = useScreenSizeContext();
+  const [menuAnchor, setMenuAnchor] = useState<RectCords>();
 
   const [searchParams] = useSearchParams();
   const serverSearchParams = useServerSearchParams(searchParams);
@@ -364,18 +361,9 @@ export function PublicRooms() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const roomTypeFilters = useRoomTypeFilters();
-  const [bookmarkedServers, addServerBookmark, removeServerBookmark] = useBookmarkedServers();
-  const isUserHomeserver = server !== undefined && server === userServer;
-  const isBookmarkedServer = server !== undefined && bookmarkedServers.includes(server);
-  const isDirectoryServer = server !== undefined && server === directoryServer;
-  let headerIcon: IconSrc;
-  if (isUserHomeserver) {
-    headerIcon = Icons.Home;
-  } else if (isDirectoryServer) {
-    headerIcon = Icons.Search;
-  } else {
-    headerIcon = Icons.Server;
-  }
+  const [exploreServers, , removeServer] = useExploreServers();
+  const isUserAddedServer = server && exploreServers.includes(server);
+  const isUserHomeServer = server && server === userServer;
 
   const currentLimit: number = useMemo(() => {
     const limitParam = serverSearchParams.limit;
@@ -488,17 +476,19 @@ export function PublicRooms() {
     explore({ instance: instanceId, since: undefined });
   };
 
-  const [bookmarkActionState, handleBookmarkAction] = useAsyncCallback(
-    useCallback(
-      async (action: (server: string) => Promise<unknown>) => {
-        if (!server) return;
+  const handleOpenMenu: MouseEventHandler<HTMLButtonElement> = (evt) => {
+    setMenuAnchor(evt.currentTarget.getBoundingClientRect());
+  };
 
-        await action(server);
-      },
-      [server]
-    )
+  const [removeServerState, handleRemoveServer] = useAsyncCallback(
+    useCallback(async () => {
+      if (!server) return;
+
+      setMenuAnchor(undefined);
+      await removeServer(server);
+    }, [server, removeServer])
   );
-  const bookmarkActionLoading = bookmarkActionState.status === AsyncStatus.Loading;
+  const isRemoving = removeServerState.status === AsyncStatus.Loading;
 
   return (
     <Page>
@@ -539,70 +529,76 @@ export function PublicRooms() {
               )}
             </Box>
             <Box grow="Yes" basis="Yes" justifyContent="Center" alignItems="Center" gap="200">
-              {screenSize !== ScreenSize.Mobile && <Icon size="400" src={headerIcon} />}
+              {screenSize !== ScreenSize.Mobile && <Icon size="400" src={isUserHomeServer ? Icons.Home : Icons.Server} />}
               <Text size="H3" truncate>
-                {isDirectoryServer ? 'Public Room Directory' : server}
+                {server}
               </Text>
             </Box>
             <Box shrink="No" grow="Yes" basis="No" justifyContent="End">
-              {isDirectoryServer ? (
-                <TooltipProvider
-                  position="Bottom"
-                  align="End"
-                  offset={4}
-                  tooltip={
-                    <Tooltip>
-                      <Text>provided by {directoryServer}</Text>
-                    </Tooltip>
-                  }
-                >
-                  {(triggerRef) => (
-                    <Chip
-                      as="a"
-                      href={`https://${directoryServer}`}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      variant="Secondary"
-                      radii="Pill"
-                      fill="Soft"
-                      ref={screenSize === ScreenSize.Mobile ? triggerRef : undefined}
-                      style={{ maxWidth: '100%' }}
-                      before={<Icon src={Icons.External} size="50" />}
+              <TooltipProvider
+                position="Bottom"
+                align="End"
+                offset={4}
+                tooltip={
+                  <Tooltip>
+                    <Text>More Options</Text>
+                  </Tooltip>
+                }
+              >
+                {(triggerRef) =>
+                  isUserAddedServer && (
+                    <IconButton
+                      onClick={handleOpenMenu}
+                      ref={triggerRef}
+                      aria-pressed={!!menuAnchor}
                     >
-                      <Text size="T200" truncate>
-                        provided by {directoryServer}
-                      </Text>
-                    </Chip>
-                  )}
-                </TooltipProvider>
-              ) : (
-                <TooltipProvider
-                  position="Bottom"
-                  align="End"
-                  offset={4}
-                  tooltip={
-                    <Tooltip>
-                      <Text>{isBookmarkedServer ? 'Remove Bookmark' : 'Add Bookmark'}</Text>
-                    </Tooltip>
-                  }
-                >
-                  {(triggerRef) =>
-                    !isUserHomeserver && (
-                      <IconButton
-                        onClick={() =>
-                          handleBookmarkAction(
-                            isBookmarkedServer ? removeServerBookmark : addServerBookmark
-                          )
-                        }
-                        ref={triggerRef}
-                        disabled={bookmarkActionLoading}
-                      >
-                        <Icon size="400" src={Icons.Bookmark} filled={isBookmarkedServer} />
-                      </IconButton>
-                    )
-                  }
-                </TooltipProvider>
-              )}
+                      <Icon size="400" src={Icons.VerticalDots} filled={!!menuAnchor} />
+                    </IconButton>
+                  )
+                }
+              </TooltipProvider>
+              <PopOut
+                anchor={menuAnchor}
+                position="Bottom"
+                align="End"
+                content={
+                  <FocusTrap
+                    focusTrapOptions={{
+                      initialFocus: false,
+                      returnFocusOnDeactivate: false,
+                      onDeactivate: () => setMenuAnchor(undefined),
+                      clickOutsideDeactivates: true,
+                      isKeyForward: (evt: KeyboardEvent) => evt.key === 'ArrowDown',
+                      isKeyBackward: (evt: KeyboardEvent) => evt.key === 'ArrowUp',
+                      escapeDeactivates: stopPropagation,
+                    }}
+                  >
+                    <Menu style={{ maxWidth: toRem(160), width: '100vw' }}>
+                      <Box direction="Column" gap="100" style={{ padding: config.space.S100 }}>
+                        <MenuItem
+                          onClick={handleRemoveServer}
+                          variant="Critical"
+                          fill="None"
+                          size="300"
+                          after={
+                            isRemoving ? (
+                              <Spinner fill="Solid" variant="Secondary" size="200" />
+                            ) : (
+                              <Icon size="100" src={Icons.Delete} />
+                            )
+                          }
+                          radii="300"
+                          disabled={isRemoving}
+                        >
+                          <Text style={{ flexGrow: 1 }} as="span" size="T300" truncate>
+                            Remove Server
+                          </Text>
+                        </MenuItem>
+                      </Box>
+                    </Menu>
+                  </FocusTrap>
+                }
+              />
             </Box>
           </>
         )}
@@ -664,11 +660,11 @@ export function PublicRooms() {
                     </Box>
                   </Box>
                   {isLoading && (
-                    <CardGrid>
+                    <RoomCardGrid>
                       {[...Array(currentLimit).keys()].map((item) => (
-                        <CardBase key={item} style={{ minHeight: toRem(260) }} />
+                        <RoomCardBase key={item} style={{ minHeight: toRem(260) }} />
                       ))}
-                    </CardGrid>
+                    </RoomCardGrid>
                   )}
                   {error && (
                     <Box direction="Column" className={css.PublicRoomsError} gap="200">
@@ -679,7 +675,7 @@ export function PublicRooms() {
                   {data &&
                     (data.chunk.length > 0 ? (
                       <>
-                        <CardGrid>
+                        <RoomCardGrid>
                           {data?.chunk.map((chunkRoom) => (
                             <RoomCard
                               key={chunkRoom.room_id}
@@ -704,7 +700,7 @@ export function PublicRooms() {
                               )}
                             />
                           ))}
-                        </CardGrid>
+                        </RoomCardGrid>
 
                         {(data.prev_batch || data.next_batch) && (
                           <Box justifyContent="Center" gap="200">

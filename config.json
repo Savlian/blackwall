@@ -9,6 +9,7 @@
     "xmr.se"
   ],
   "allowCustomHomeservers": true,
+
   "featuredCommunities": {
     "openAsDefault": false,
     "spaces": [
@@ -27,14 +28,9 @@
       "#PrivSec.dev:arcticfoxes.net",
       "#disroot:aria-net.org"
     ],
-    "servers": [
-      "envs.net",
-      "matrix.org",
-      "monero.social",
-      "mozilla.org"
-    ],
-    "directoryServer": "matrixrooms.info"
+    "servers": ["envs.net", "matrix.org", "monero.social", "mozilla.org"]
   },
+
   "hashRouter": {
     "enabled": false,
     "basename": "/"
