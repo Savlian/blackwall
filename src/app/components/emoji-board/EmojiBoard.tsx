@@ -3,20 +3,17 @@ import React, {
   FocusEventHandler,
   MouseEventHandler,
   UIEventHandler,
-  ReactNode,
   useCallback,
   useEffect,
   useMemo,
   useRef,
 } from 'react';
-import { Box, Icons, Line, Scroll, Text, as } from 'folds';
+import { Box, Icons, Scroll } from 'folds';
 import FocusTrap from 'focus-trap-react';
 import { isKeyHotkey } from 'is-hotkey';
-import classNames from 'classnames';
 import { MatrixClient, Room } from 'matrix-js-sdk';
 import { Atom, atom, useAtomValue, useSetAtom } from 'jotai';
 
-import * as css from './EmojiBoard.css';
 import { IEmoji, IEmojiGroup, emojiGroups, emojis } from '../../plugins/emoji';
 import { IEmojiGroupLabels, useEmojiGroupLabels } from './useEmojiGroupLabels';
 import { IEmojiGroupIcons, useEmojiGroupIcons } from './useEmojiGroupIcons';
@@ -48,85 +45,15 @@ import {
   CustomEmojiItem,
   ImageGroupIcon,
   GroupIcon,
+  getEmojiItemInfo,
+  getDOMGroupId,
+  EmojiGroup,
+  EmojiBoardLayout,
 } from './components';
-import { EmojiBoardTab, EmojiItemInfo, EmojiType } from './types';
+import { EmojiBoardTab, EmojiType } from './types';
 
 const RECENT_GROUP_ID = 'recent_group';
 const SEARCH_GROUP_ID = 'search_group';
-
-const getDOMGroupId = (id: string): string => `EmojiBoardGroup-${id}`;
-
-const getEmojiItemInfo = (element: Element): EmojiItemInfo | undefined => {
-  const type = element.getAttribute('data-emoji-type') as EmojiType | undefined;
-  const data = element.getAttribute('data-emoji-data');
-  const label = element.getAttribute('title');
-  const shortcode = element.getAttribute('data-emoji-shortcode');
-
-  if (type && data && shortcode && label)
-    return {
-      type,
-      data,
-      shortcode,
-      label,
-    };
-  return undefined;
-};
-
-const activeGroupIdAtom = atom<string | undefined>(undefined);
-
-const EmojiBoardLayout = as<
-  'div',
-  {
-    header: ReactNode;
-    sidebar?: ReactNode;
-    children: ReactNode;
-  }
->(({ className, header, sidebar, children, ...props }, ref) => (
-  <Box
-    display="InlineFlex"
-    className={classNames(css.Base, className)}
-    direction="Row"
-    {...props}
-    ref={ref}
-  >
-    <Box direction="Column" grow="Yes">
-      <Box className={css.Header} direction="Column" shrink="No">
-        {header}
-      </Box>
-      {children}
-    </Box>
-    <Line size="300" direction="Vertical" />
-    {sidebar}
-  </Box>
-));
-
-export const EmojiGroup = as<
-  'div',
-  {
-    id: string;
-    label: string;
-    children: ReactNode;
-  }
->(({ className, id, label, children, ...props }, ref) => (
-  <Box
-    id={getDOMGroupId(id)}
-    data-group-id={id}
-    className={classNames(css.EmojiGroup, className)}
-    direction="Column"
-    gap="200"
-    {...props}
-    ref={ref}
-  >
-    <Text id={`EmojiGroup-${id}-label`} as="label" className={css.EmojiGroupLabel} size="O400">
-      {label}
-    </Text>
-    <div aria-labelledby={`EmojiGroup-${id}-label`} className={css.EmojiGroupContent}>
-      <Box wrap="Wrap" justifyContent="Center">
-        {children}
-      </Box>
-    </div>
-  </Box>
-));
 
 type EmojiSidebarProps = {
   activeGroupAtom: Atom<string | undefined>;
@@ -185,7 +112,13 @@ function EmojiSidebar({
           })}
         </SidebarStack>
       )}
-      <SidebarStack className={css.NativeEmojiSidebarStack}>
+      <SidebarStack
+        style={{
+          position: 'sticky',
+          bottom: '-67%',
+          zIndex: 1,
+        }}
+      >
         <SidebarDivider />
         {groups.map((group) => (
           <GroupIcon
@@ -397,7 +330,9 @@ export function EmojiBoard({
     [emojiTab]
   );
   const setPreviewData = useSetAtom(previewAtom);
+  const activeGroupIdAtom = useMemo(() => atom<string | undefined>(undefined), []);
   const setActiveGroupId = useSetAtom(activeGroupIdAtom);
+
   const mx = useMatrixClient();
   const useAuthentication = useMediaAuthentication();
   const emojiGroupLabels = useEmojiGroupLabels();
