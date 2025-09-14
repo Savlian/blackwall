@@ -136,7 +136,7 @@ export const ModernBefore = style({
 export const BubbleBefore = style([
   ModernBefore,
   {
-    minWidth: toRem(22),
+    minWidth: toRem(24),
   },
 ]);
 
