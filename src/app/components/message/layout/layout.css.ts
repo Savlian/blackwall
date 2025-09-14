@@ -158,7 +158,7 @@ export const BubbleContentArrow = style({
       width: toRem(8),
       height: toRem(8),
       position: 'absolute',
-      top: toRem(12),
+      top: toRem(12.5),
       zIndex: 1,
       transform: 'rotateZ(45deg)',
     },
