@@ -1,6 +1,6 @@
 import { Box, Icon, IconSrc } from 'folds';
 import React, { ReactNode } from 'react';
-import { CompactLayout, ModernLayout } from '..';
+import { BubbleLayout, CompactLayout, ModernLayout } from '..';
 import { MessageLayout } from '../../../state/settings';
 
 export type EventContentProps = {
@@ -30,9 +30,11 @@ export function EventContent({ messageLayout, time, iconSrc, content }: EventCon
     </Box>
   );
 
-  return messageLayout === MessageLayout.Compact ? (
-    <CompactLayout before={beforeJSX}>{msgContentJSX}</CompactLayout>
-  ) : (
-    <ModernLayout before={beforeJSX}>{msgContentJSX}</ModernLayout>
-  );
+  if (messageLayout === MessageLayout.Compact) {
+    return <CompactLayout before={beforeJSX}>{msgContentJSX}</CompactLayout>;
+  }
+  if (messageLayout === MessageLayout.Bubble) {
+    return <BubbleLayout before={beforeJSX}>{msgContentJSX}</BubbleLayout>;
+  }
+  <ModernLayout before={beforeJSX}>{msgContentJSX}</ModernLayout>;
 }
