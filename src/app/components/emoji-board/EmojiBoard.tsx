@@ -457,7 +457,7 @@ export function EmojiBoard({
 
   const handleScrollToGroup = (groupId: string) => {
     const groupIndex = groups.findIndex((group) => group.id === groupId);
-    virtualizer.scrollToIndex(groupIndex);
+    virtualizer.scrollToIndex(groupIndex, { align: 'start' });
   };
 
   // sync active sidebar tab with scroll
@@ -484,7 +484,7 @@ export function EmojiBoard({
   // reset scroll position on tab change
   useEffect(() => {
     if (groups.length > 0) {
-      virtualizer.scrollToIndex(0);
+      virtualizer.scrollToIndex(0, { align: 'start' });
     }
   }, [tab, virtualizer, groups]);
 
