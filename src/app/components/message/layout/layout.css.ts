@@ -133,7 +133,12 @@ export const ModernBefore = style({
   minWidth: toRem(36),
 });
 
-export const BubbleBefore = style([ModernBefore]);
+export const BubbleBefore = style([
+  ModernBefore,
+  {
+    minWidth: toRem(22),
+  },
+]);
 
 export const BubbleContent = style({
   maxWidth: toRem(800),
@@ -153,6 +158,8 @@ export const BubbleContentArrow = style({
       width: toRem(8),
       height: toRem(8),
       position: 'absolute',
+      top: toRem(12),
+      zIndex: 1,
       transform: 'rotateZ(45deg)',
     },
   },
@@ -162,9 +169,6 @@ export const BubbleContentArrowLeft = style({
   selectors: {
     '&::before': {
       left: toRem(-4),
-      top: config.radii.R500,
-      zIndex: 1,
-      borderBottomLeftRadius: toRem(2),
     },
   },
 });
@@ -173,9 +177,6 @@ export const BubbleContentArrowRight = style({
   selectors: {
     '&::before': {
       right: toRem(-4),
-      top: config.radii.R500,
-      zIndex: 1,
-      borderTopRightRadius: toRem(2),
     },
   },
 });

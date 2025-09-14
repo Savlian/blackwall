@@ -17,14 +17,9 @@ export const BubbleLayout = as<'div', BubbleLayoutProps>(
       <Box
         className={classNames(
           css.BubbleContent,
-          css.BubbleContentArrow,
-          self
-            ? {
-                [css.BubbleContentArrowRight]: !!before,
-              }
-            : {
-                [css.BubbleContentArrowLeft]: !!before,
-              }
+          before ? css.BubbleContentArrow : undefined,
+          before && self ? css.BubbleContentArrowRight : undefined,
+          before && !self ? css.BubbleContentArrowLeft : undefined
         )}
         direction="Column"
       >

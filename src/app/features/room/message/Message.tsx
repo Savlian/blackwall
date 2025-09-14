@@ -747,7 +747,7 @@ export const Message = as<'div', MessageProps>(
       <Box
         gap="300"
         direction={messageLayout === MessageLayout.Compact ? 'RowReverse' : 'Row'}
-        justifyContent={messageLayout === MessageLayout.Bubble ? undefined : 'SpaceBetween'}
+        justifyContent="SpaceBetween"
         alignItems="Baseline"
         grow="Yes"
       >
@@ -795,7 +795,7 @@ export const Message = as<'div', MessageProps>(
         <Avatar
           className={css.MessageAvatar}
           as="button"
-          size="300"
+          size={messageLayout === MessageLayout.Bubble ? '200' : '300'}
           data-user-id={senderId}
           onClick={onUserClick}
         >
@@ -807,7 +807,13 @@ export const Message = as<'div', MessageProps>(
                 : undefined
             }
             alt={senderDisplayName}
-            renderFallback={() => <Icon size="200" src={Icons.User} filled />}
+            renderFallback={() => (
+              <Icon
+                size={messageLayout === MessageLayout.Bubble ? '50' : '200'}
+                src={Icons.User}
+                filled
+              />
+            )}
           />
         </Avatar>
       </AvatarBase>
