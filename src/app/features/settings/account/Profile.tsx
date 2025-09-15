@@ -32,7 +32,7 @@ import { UserEvent } from 'matrix-js-sdk';
 import { SequenceCard } from '../../../components/sequence-card';
 import { SettingTile } from '../../../components/setting-tile';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
-import { getMxIdLocalPart, getMxIdServer, mxcUrlToHttp } from '../../../utils/matrix';
+import { getMxIdServer, mxcUrlToHttp } from '../../../utils/matrix';
 import { useMediaAuthentication } from '../../../hooks/useMediaAuthentication';
 import { useFilePicker } from '../../../hooks/useFilePicker';
 import { useObjectURL } from '../../../hooks/useObjectURL';
@@ -173,7 +173,12 @@ function ProfileTextField<K extends keyof FilterByValues<ExtendedProfile, string
   const hasChanges = defaultValue !== value;
 
   const handleChange: ChangeEventHandler<HTMLInputElement> = (evt) => {
-    setValue(evt.currentTarget.value);
+    const content = evt.currentTarget.value;
+    if (content.length > 0) {
+      setValue(evt.currentTarget.value);
+    } else {
+      setValue(undefined);
+    }
   };
 
   const handleReset = () => {
@@ -390,12 +395,7 @@ export function Profile() {
   const [fieldDefaults, setFieldDefaults] = useState<ExtendedProfile>({})
   useLayoutEffect(() => {
     if (extendedProfile !== undefined) {
-      setFieldDefaults(
-        {
-          ...extendedProfile,
-          displayname: extendedProfile.displayname ?? getMxIdLocalPart(userId) ?? userId,
-        }
-      );
+      setFieldDefaults(extendedProfile);
     }
   }, [userId, setFieldDefaults, extendedProfile]);
 
@@ -406,7 +406,9 @@ export function Profile() {
       async (fields: ExtendedProfile) => {
         await Promise.all(
           Object.entries(fields).map(async ([key, value]) => {
-            if (value !== undefined) {
+            if (value === undefined) {
+              await mx.deleteExtendedProfileProperty(key);
+            } else {
               await mx.setExtendedProfileProperty(key, value);
             }
           })
