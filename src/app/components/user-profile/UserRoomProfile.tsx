@@ -1,5 +1,5 @@
 import { Box, Button, config, Icon, Icons, Text } from 'folds';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserHero, UserHeroName } from './UserHero';
 import { getMxIdServer, mxcUrlToHttp } from '../../utils/matrix';
@@ -22,6 +22,8 @@ import { useMemberPowerCompare } from '../../hooks/useMemberPowerCompare';
 import { CreatorChip } from './CreatorChip';
 import { getDirectCreatePath, withSearchParam } from '../../pages/pathUtils';
 import { DirectCreateSearchParams } from '../../pages/paths';
+import { useExtendedProfile } from '../../hooks/useExtendedProfile';
+import { AsyncStatus } from '../../hooks/useAsyncCallback';
 
 type UserRoomProfileProps = {
   userId: string;
@@ -56,8 +58,14 @@ export function UserRoomProfile({ userId }: UserRoomProfileProps) {
   const displayName = getMemberDisplayName(room, userId);
   const avatarMxc = getMemberAvatarMxc(room, userId);
   const avatarUrl = (avatarMxc && mxcUrlToHttp(mx, avatarMxc, useAuthentication)) ?? undefined;
+  const [extendedProfileState, refreshExtendedProfile] = useExtendedProfile(userId);
+  const extendedProfile = extendedProfileState.status === AsyncStatus.Success ? extendedProfileState.data : undefined;
 
   const presence = useUserPresence(userId);
+
+  useEffect(() => {
+    refreshExtendedProfile();
+  }, [refreshExtendedProfile]);
 
   const handleMessage = () => {
     closeUserRoomProfile();
@@ -77,7 +85,7 @@ export function UserRoomProfile({ userId }: UserRoomProfileProps) {
       <Box direction="Column" gap="500" style={{ padding: config.space.S400 }}>
         <Box direction="Column" gap="400">
           <Box gap="400" alignItems="Start">
-            <UserHeroName displayName={displayName} userId={userId} />
+            <UserHeroName displayName={displayName} userId={userId} extendedProfile={extendedProfile} />
             {userId !== myUserId && (
               <Box shrink="No">
                 <Button

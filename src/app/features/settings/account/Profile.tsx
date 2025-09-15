@@ -1,11 +1,4 @@
-import React, {
-  ChangeEventHandler,
-  FormEventHandler,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, { ChangeEventHandler, ReactNode, useCallback, useMemo, useState } from 'react';
 import {
   Box,
   Text,
@@ -13,28 +6,21 @@ import {
   Icon,
   Icons,
   Input,
-  Avatar,
   Button,
   Overlay,
   OverlayBackdrop,
   OverlayCenter,
   Modal,
-  Dialog,
-  Header,
   config,
   Spinner,
 } from 'folds';
 import FocusTrap from 'focus-trap-react';
+import { UserEvent } from 'matrix-js-sdk';
 import { SequenceCard } from '../../../components/sequence-card';
-import { SequenceCardStyle } from '../styles.css';
 import { SettingTile } from '../../../components/setting-tile';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
-import { UserProfile, useUserProfile } from '../../../hooks/useUserProfile';
 import { getMxIdLocalPart, mxcUrlToHttp } from '../../../utils/matrix';
-import { UserAvatar } from '../../../components/user-avatar';
 import { useMediaAuthentication } from '../../../hooks/useMediaAuthentication';
-import { nameInitials } from '../../../utils/common';
-import { AsyncStatus, useAsyncCallback } from '../../../hooks/useAsyncCallback';
 import { useFilePicker } from '../../../hooks/useFilePicker';
 import { useObjectURL } from '../../../hooks/useObjectURL';
 import { stopPropagation } from '../../../utils/keyboard';
@@ -42,23 +28,24 @@ import { ImageEditor } from '../../../components/image-editor';
 import { ModalWide } from '../../../styles/Modal.css';
 import { createUploadAtom, UploadSuccess } from '../../../state/upload';
 import { CompactUploadCardRenderer } from '../../../components/upload-card';
-import { useCapabilities } from '../../../hooks/useCapabilities';
+import { UserHero, UserHeroName } from '../../../components/user-profile/UserHero';
+import {
+  ExtendedProfile,
+  useExtendedProfile,
+  useProfileFieldAllowed,
+} from '../../../hooks/useExtendedProfile';
+import { ProfileFieldContextProvider, useProfileField } from './ProfileFieldContext';
+import { AsyncStatus, useAsyncCallback } from '../../../hooks/useAsyncCallback';
+import { FilterByValues } from '../../../../types/utils';
 
-type ProfileProps = {
-  profile: UserProfile;
-  userId: string;
-};
-function ProfileAvatar({ profile, userId }: ProfileProps) {
+function ProfileAvatar() {
   const mx = useMatrixClient();
   const useAuthentication = useMediaAuthentication();
-  const capabilities = useCapabilities();
-  const [alertRemove, setAlertRemove] = useState(false);
-  const disableSetAvatar = capabilities['m.set_avatar_url']?.enabled === false;
-
-  const defaultDisplayName = profile.displayName ?? getMxIdLocalPart(userId) ?? userId;
-  const avatarUrl = profile.avatarUrl
-    ? mxcUrlToHttp(mx, profile.avatarUrl, useAuthentication, 96, 96, 'crop') ?? undefined
+  const { busy, value, setValue } = useProfileField('avatar_url');
+  const avatarUrl = value
+    ? mxcUrlToHttp(mx, value, useAuthentication, 96, 96, 'crop') ?? undefined
     : undefined;
+  const disabled = !useProfileFieldAllowed('avatar_url') || busy;
 
   const [imageFile, setImageFile] = useState<File>();
   const imageFileURL = useObjectURL(imageFile);
@@ -76,34 +63,18 @@ function ProfileAvatar({ profile, userId }: ProfileProps) {
   const handleUploaded = useCallback(
     (upload: UploadSuccess) => {
       const { mxc } = upload;
-      mx.setAvatarUrl(mxc);
+      setValue(mxc);
       handleRemoveUpload();
     },
-    [mx, handleRemoveUpload]
+    [setValue, handleRemoveUpload]
   );
 
   const handleRemoveAvatar = () => {
-    mx.setAvatarUrl('');
-    setAlertRemove(false);
+    setValue('');
   };
 
   return (
-    <SettingTile
-      title={
-        <Text as="span" size="L400">
-          Avatar
-        </Text>
-      }
-      after={
-        <Avatar size="500" radii="300">
-          <UserAvatar
-            userId={userId}
-            src={avatarUrl}
-            renderFallback={() => <Text size="H4">{nameInitials(defaultDisplayName)}</Text>}
-          />
-        </Avatar>
-      }
-    >
+    <SettingTile>
       {uploadAtom ? (
         <Box gap="200" direction="Column">
           <CompactUploadCardRenderer
@@ -121,9 +92,9 @@ function ProfileAvatar({ profile, userId }: ProfileProps) {
             fill="Soft"
             outlined
             radii="300"
-            disabled={disableSetAvatar}
+            disabled={disabled}
           >
-            <Text size="B300">Upload</Text>
+            <Text size="B300">Upload Avatar</Text>
           </Button>
           {avatarUrl && (
             <Button
@@ -131,10 +102,10 @@ function ProfileAvatar({ profile, userId }: ProfileProps) {
               variant="Critical"
               fill="None"
               radii="300"
-              disabled={disableSetAvatar}
-              onClick={() => setAlertRemove(true)}
+              disabled={disabled}
+              onClick={handleRemoveAvatar}
             >
-              <Text size="B300">Remove</Text>
+              <Text size="B300">Remove Avatar</Text>
             </Button>
           )}
         </Box>
@@ -162,116 +133,54 @@ function ProfileAvatar({ profile, userId }: ProfileProps) {
           </OverlayCenter>
         </Overlay>
       )}
-
-      <Overlay open={alertRemove} backdrop={<OverlayBackdrop />}>
-        <OverlayCenter>
-          <FocusTrap
-            focusTrapOptions={{
-              initialFocus: false,
-              onDeactivate: () => setAlertRemove(false),
-              clickOutsideDeactivates: true,
-              escapeDeactivates: stopPropagation,
-            }}
-          >
-            <Dialog variant="Surface">
-              <Header
-                style={{
-                  padding: `0 ${config.space.S200} 0 ${config.space.S400}`,
-                  borderBottomWidth: config.borderWidth.B300,
-                }}
-                variant="Surface"
-                size="500"
-              >
-                <Box grow="Yes">
-                  <Text size="H4">Remove Avatar</Text>
-                </Box>
-                <IconButton size="300" onClick={() => setAlertRemove(false)} radii="300">
-                  <Icon src={Icons.Cross} />
-                </IconButton>
-              </Header>
-              <Box style={{ padding: config.space.S400 }} direction="Column" gap="400">
-                <Box direction="Column" gap="200">
-                  <Text priority="400">Are you sure you want to remove profile avatar?</Text>
-                </Box>
-                <Button variant="Critical" onClick={handleRemoveAvatar}>
-                  <Text size="B400">Remove</Text>
-                </Button>
-              </Box>
-            </Dialog>
-          </FocusTrap>
-        </OverlayCenter>
-      </Overlay>
     </SettingTile>
   );
 }
 
-function ProfileDisplayName({ profile, userId }: ProfileProps) {
-  const mx = useMatrixClient();
-  const capabilities = useCapabilities();
-  const disableSetDisplayname = capabilities['m.set_displayname']?.enabled === false;
+type ProfileTextFieldProps<K> = {
+  field: K;
+  label: ReactNode;
+};
 
-  const defaultDisplayName = profile.displayName ?? getMxIdLocalPart(userId) ?? userId;
-  const [displayName, setDisplayName] = useState<string>(defaultDisplayName);
-
-  const [changeState, changeDisplayName] = useAsyncCallback(
-    useCallback((name: string) => mx.setDisplayName(name), [mx])
-  );
-  const changingDisplayName = changeState.status === AsyncStatus.Loading;
-
-  useEffect(() => {
-    setDisplayName(defaultDisplayName);
-  }, [defaultDisplayName]);
+function ProfileTextField<K extends keyof FilterByValues<ExtendedProfile, string | undefined>>({
+  field,
+  label,
+}: ProfileTextFieldProps<K>) {
+  const { busy, defaultValue, value, setValue } = useProfileField<K>(field);
+  const disabled = !useProfileFieldAllowed(field) || busy;
+  const hasChanges = defaultValue !== value;
 
   const handleChange: ChangeEventHandler<HTMLInputElement> = (evt) => {
-    const name = evt.currentTarget.value;
-    setDisplayName(name);
+    setValue(evt.currentTarget.value);
   };
 
   const handleReset = () => {
-    setDisplayName(defaultDisplayName);
+    setValue(defaultValue);
   };
 
-  const handleSubmit: FormEventHandler<HTMLFormElement> = (evt) => {
-    evt.preventDefault();
-    if (changingDisplayName) return;
-
-    const target = evt.target as HTMLFormElement | undefined;
-    const displayNameInput = target?.displayNameInput as HTMLInputElement | undefined;
-    const name = displayNameInput?.value;
-    if (!name) return;
-
-    changeDisplayName(name);
-  };
-
-  const hasChanges = displayName !== defaultDisplayName;
   return (
     <SettingTile
       title={
         <Text as="span" size="L400">
-          Display Name
+          {label}
         </Text>
       }
     >
       <Box direction="Column" grow="Yes" gap="100">
-        <Box
-          as="form"
-          onSubmit={handleSubmit}
-          gap="200"
-          aria-disabled={changingDisplayName || disableSetDisplayname}
-        >
+        <Box gap="200" aria-disabled={disabled}>
           <Box grow="Yes" direction="Column">
             <Input
               required
               name="displayNameInput"
-              value={displayName}
+              value={value ?? ''}
               onChange={handleChange}
               variant="Secondary"
               radii="300"
               style={{ paddingRight: config.space.S200 }}
-              readOnly={changingDisplayName || disableSetDisplayname}
+              readOnly={disabled}
               after={
                 hasChanges &&
-                !changingDisplayName && (
+                !busy && (
                   <IconButton
                     type="reset"
                     onClick={handleReset}
@@ -285,18 +194,6 @@ function ProfileDisplayName({ profile, userId }: ProfileProps) {
               }
             />
           </Box>
-          <Button
-            size="400"
-            variant={hasChanges ? 'Success' : 'Secondary'}
-            fill={hasChanges ? 'Solid' : 'Soft'}
-            outlined
-            radii="300"
-            disabled={!hasChanges || changingDisplayName}
-            type="submit"
-          >
-            {changingDisplayName && <Spinner variant="Success" fill="Solid" size="300" />}
-            <Text size="B400">Save</Text>
-          </Button>
         </Box>
       </Box>
     </SettingTile>
@@ -305,20 +202,113 @@ function ProfileDisplayName({ profile, userId }: ProfileProps) {
 
 export function Profile() {
   const mx = useMatrixClient();
-  const userId = mx.getUserId()!;
-  const profile = useUserProfile(userId);
+  const userId = mx.getUserId() as string;
+
+  const [extendedProfileState, refreshExtendedProfile] = useExtendedProfile(userId);
+  const extendedProfile =
+    extendedProfileState.status === AsyncStatus.Success ? extendedProfileState.data : undefined;
+  const fieldDefaults = useMemo<ExtendedProfile>(
+    () =>
+      extendedProfile !== undefined
+        ? {
+            ...extendedProfile,
+            displayname: extendedProfile.displayname ?? getMxIdLocalPart(userId) ?? userId,
+          }
+        : {},
+    [userId, extendedProfile]
+  );
+
+  const useAuthentication = useMediaAuthentication();
+
+  const [saveState, handleSave] = useAsyncCallback(
+    useCallback(
+      async (fields: ExtendedProfile) => {
+        await Promise.all(
+          Object.entries(fields).map(async ([key, value]) => {
+            if (value !== undefined) {
+              await mx.setExtendedProfileProperty(key, value);
+            }
+          })
+        );
+        await refreshExtendedProfile();
+        // XXX: synthesise a profile update for ourselves because Synapse is broken and won't
+        const user = mx.getUser(userId);
+        if (user) {
+            user.displayName = fields.displayname;
+            user.avatarUrl = fields.avatar_url;
+            user.emit(UserEvent.DisplayName, user.events.presence, user);
+            user.emit(UserEvent.AvatarUrl, user.events.presence, user);
+        }
+      },
+      [mx, userId, refreshExtendedProfile]
+    )
+  );
+
+  const saving = saveState.status === AsyncStatus.Loading;
+  const loadingExtendedProfile = extendedProfileState.status === AsyncStatus.Loading;
+  const busy = saving || loadingExtendedProfile;
 
   return (
     <Box direction="Column" gap="100">
       <Text size="L400">Profile</Text>
       <SequenceCard
-        className={SequenceCardStyle}
         variant="SurfaceVariant"
         direction="Column"
-        gap="400"
+        style={{
+          overflow: 'hidden',
+        }}
       >
-        <ProfileAvatar userId={userId} profile={profile} />
-        <ProfileDisplayName userId={userId} profile={profile} />
+        <ProfileFieldContextProvider fieldDefaults={fieldDefaults} save={handleSave} busy={busy}>
+          {(save, reset, hasChanges, fields) => {
+            const heroAvatarUrl =
+              (fields.avatar_url &&
+                mxcUrlToHttp(mx, fields.avatar_url, useAuthentication)) ??
+              undefined;
+            return (
+              <>
+                <UserHero userId={userId} avatarUrl={heroAvatarUrl} />
+                <Box direction="Column" gap="400" style={{ padding: config.space.S400 }}>
+                  <Box gap="400" alignItems="Start">
+                    <UserHeroName
+                      userId={userId}
+                      displayName={fields.displayname as string}
+                      extendedProfile={fields}
+                    />
+                  </Box>
+                  <ProfileAvatar />
+                  <ProfileTextField field="displayname" label="Display Name" />
+                  <Box gap="300">
+                    <Button
+                      type="submit"
+                      size="300"
+                      variant={!busy && hasChanges ? 'Success' : 'Secondary'}
+                      fill={!busy && hasChanges ? 'Solid' : 'Soft'}
+                      outlined
+                      radii="300"
+                      disabled={!hasChanges || busy}
+                      onClick={save}
+                    >
+                      {saving && <Spinner variant="Success" fill="Solid" size="300" />}
+                      <Text size="B300">Save</Text>
+                    </Button>
+                    <Button
+                      type="reset"
+                      size="300"
+                      variant="Secondary"
+                      fill="Soft"
+                      outlined
+                      radii="300"
+                      onClick={reset}
+                      disabled={!hasChanges || busy}
+                    >
+                      <Text size="B300">Cancel</Text>
+                    </Button>
+                  </Box>
+                </Box>
+              </>
+            );
+          }}
+        </ProfileFieldContextProvider>
       </SequenceCard>
     </Box>
   );
