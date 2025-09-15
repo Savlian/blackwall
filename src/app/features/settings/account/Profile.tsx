@@ -3,6 +3,7 @@ import React, {
   ReactNode,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -385,16 +386,18 @@ export function Profile() {
   const [extendedProfileState, refreshExtendedProfile] = useExtendedProfile(userId);
   const extendedProfile =
     extendedProfileState.status === AsyncStatus.Success ? extendedProfileState.data : undefined;
-  const fieldDefaults = useMemo<ExtendedProfile>(
-    () =>
-      extendedProfile !== undefined
-        ? {
-            ...extendedProfile,
-            displayname: extendedProfile.displayname ?? getMxIdLocalPart(userId) ?? userId,
-          }
-        : {},
-    [userId, extendedProfile]
-  );
+
+  const [fieldDefaults, setFieldDefaults] = useState<ExtendedProfile>({})
+  useLayoutEffect(() => {
+    if (extendedProfile !== undefined) {
+      setFieldDefaults(
+        {
+          ...extendedProfile,
+          displayname: extendedProfile.displayname ?? getMxIdLocalPart(userId) ?? userId,
+        }
+      );
+    }
+  }, [userId, setFieldDefaults, extendedProfile]);
 
   const useAuthentication = useMediaAuthentication();
 
@@ -473,7 +476,7 @@ export function Profile() {
                   <ProfileAvatar />
                   <ProfileTextField field="displayname" label="Display Name" />
                   <ProfileTimezone />
-                  <Box gap="300">
+                  <Box gap="300" alignItems='Center'>
                     <Button
                       type="submit"
                       size="300"
@@ -484,7 +487,6 @@ export function Profile() {
                       disabled={!hasChanges || busy}
                       onClick={save}
                     >
-                      {saving && <Spinner variant="Success" fill="Solid" size="300" />}
                       <Text size="B300">Save</Text>
                     </Button>
                     <Button
@@ -496,9 +498,10 @@ export function Profile() {
                       radii="300"
                       onClick={reset}
                       disabled={!hasChanges || busy}
-                    >
+                      >
                       <Text size="B300">Cancel</Text>
                     </Button>
+                    {saving && <Spinner size="300" />}
                   </Box>
                 </SequenceCard>
               </>

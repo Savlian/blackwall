@@ -1,4 +1,4 @@
-import React, { MouseEventHandler, useCallback, useMemo, useState } from 'react';
+import React, { MouseEventHandler, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FocusTrap from 'focus-trap-react';
 import { isKeyHotkey } from 'is-hotkey';
@@ -538,11 +538,16 @@ export function TimezoneChip({ timezone }: { timezone: string }) {
   );
   const [shortTime, setShortTime] = useState(shortFormat.format());
   const [longTime, setLongTime] = useState(longFormat.format());
-
-  useInterval(() => {
+  const updateTime = useCallback(() => {
     setShortTime(shortFormat.format());
     setLongTime(longFormat.format());
-  }, 1000);
+  }, [setShortTime, setLongTime, shortFormat, longFormat]);
+
+  useEffect(() => {
+    updateTime();
+  }, [timezone, updateTime]);
+
+  useInterval(updateTime, 1000);
 
   return (
     <TooltipProvider
