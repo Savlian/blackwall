@@ -1,5 +1,6 @@
 import React from 'react';
 import { Provider as JotaiProvider } from 'jotai';
+import { OverlayContainerProvider, PopOutContainerProvider, TooltipContainerProvider } from 'folds';
 import { RouterProvider } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -16,28 +17,36 @@ const queryClient = new QueryClient();
 function App() {
   const screenSize = useScreenSize();
 
+  const portalContainer = document.getElementById('portalContainer') ?? undefined;
+
   return (
-    <ScreenSizeProvider value={screenSize}>
-      <FeatureCheck>
-        <ClientConfigLoader
-          fallback={() => <ConfigConfigLoading />}
-          error={(err, retry, ignore) => (
-            <ConfigConfigError error={err} retry={retry} ignore={ignore} />
-          )}
-        >
-          {(clientConfig) => (
-            <ClientConfigProvider value={clientConfig}>
-              <QueryClientProvider client={queryClient}>
-                <JotaiProvider>
-                  <RouterProvider router={createRouter(clientConfig, screenSize)} />
-                </JotaiProvider>
-                <ReactQueryDevtools initialIsOpen={false} />
-              </QueryClientProvider>
-            </ClientConfigProvider>
-          )}
-        </ClientConfigLoader>
-      </FeatureCheck>
-    </ScreenSizeProvider>
+    <TooltipContainerProvider value={portalContainer}>
+      <PopOutContainerProvider value={portalContainer}>
+        <OverlayContainerProvider value={portalContainer}>
+          <ScreenSizeProvider value={screenSize}>
+            <FeatureCheck>
+              <ClientConfigLoader
+                fallback={() => <ConfigConfigLoading />}
+                error={(err, retry, ignore) => (
+                  <ConfigConfigError error={err} retry={retry} ignore={ignore} />
+                )}
+              >
+                {(clientConfig) => (
+                  <ClientConfigProvider value={clientConfig}>
+                    <QueryClientProvider client={queryClient}>
+                      <JotaiProvider>
+                        <RouterProvider router={createRouter(clientConfig, screenSize)} />
+                      </JotaiProvider>
+                      <ReactQueryDevtools initialIsOpen={false} />
+                    </QueryClientProvider>
+                  </ClientConfigProvider>
+                )}
+              </ClientConfigLoader>
+            </FeatureCheck>
+          </ScreenSizeProvider>
+        </OverlayContainerProvider>
+      </PopOutContainerProvider>
+    </TooltipContainerProvider>
   );
 }
 
