@@ -1,5 +1,5 @@
 import { Box, Button, config, Icon, Icons, Text } from 'folds';
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserHero, UserHeroName } from './UserHero';
 import { getMxIdServer, mxcUrlToHttp } from '../../utils/matrix';
@@ -9,7 +9,7 @@ import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
 import { usePowerLevels } from '../../hooks/usePowerLevels';
 import { useRoom } from '../../hooks/useRoom';
 import { useUserPresence } from '../../hooks/useUserPresence';
-import { IgnoredUserAlert, MutualRoomsChip, OptionsChip, ServerChip, ShareChip } from './UserChips';
+import { IgnoredUserAlert, MutualRoomsChip, OptionsChip, ServerChip, ShareChip, TimezoneChip } from './UserChips';
 import { useCloseUserRoomProfile } from '../../state/hooks/userRoomProfile';
 import { PowerChip } from './PowerChip';
 import { UserInviteAlert, UserBanAlert, UserModeration, UserKickAlert } from './UserModeration';
@@ -60,6 +60,16 @@ export function UserRoomProfile({ userId }: UserRoomProfileProps) {
   const avatarUrl = (avatarMxc && mxcUrlToHttp(mx, avatarMxc, useAuthentication)) ?? undefined;
   const [extendedProfileState, refreshExtendedProfile] = useExtendedProfile(userId);
   const extendedProfile = extendedProfileState.status === AsyncStatus.Success ? extendedProfileState.data : undefined;
+  const timezone = useMemo(() => {
+    // @ts-expect-error Intl.supportedValuesOf isn't in the types yet
+    const supportedTimezones = Intl.supportedValuesOf('timeZone') as string[];
+    const profileTimezone = extendedProfile?.['us.cloke.msc4175.tz'];
+    if (profileTimezone && supportedTimezones.includes(profileTimezone)) {
+      return profileTimezone;
+    } 
+      return undefined;
+    
+  }, [extendedProfile]);
 
   const presence = useUserPresence(userId);
 
@@ -107,6 +117,7 @@ export function UserRoomProfile({ userId }: UserRoomProfileProps) {
             {creator ? <CreatorChip /> : <PowerChip userId={userId} />}
             {userId !== myUserId && <MutualRoomsChip userId={userId} />}
             {userId !== myUserId && <OptionsChip userId={userId} />}
+            {timezone && <TimezoneChip timezone={timezone} />}
           </Box>
         </Box>
         {ignored && <IgnoredUserAlert />}

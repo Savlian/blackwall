@@ -21,7 +21,7 @@ import { UserPresence } from '../../hooks/useUserPresence';
 import { AvatarPresence, PresenceBadge } from '../presence';
 import { ImageViewer } from '../image-viewer';
 import { stopPropagation } from '../../utils/keyboard';
-import { extendedProfileFields } from '../../hooks/useExtendedProfile';
+import { ExtendedProfile } from '../../hooks/useExtendedProfile';
 
 type UserHeroProps = {
   userId: string;
@@ -96,7 +96,7 @@ export function UserHero({ userId, avatarUrl, presence }: UserHeroProps) {
 type UserHeroNameProps = {
   displayName?: string;
   userId: string;
-  extendedProfile?: extendedProfileFields;
+  extendedProfile?: ExtendedProfile;
 };
 export function UserHeroName({ displayName, userId, extendedProfile }: UserHeroNameProps) {
   const username = getMxIdLocalPart(userId);

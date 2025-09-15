@@ -1,4 +1,12 @@
-import React, { ChangeEventHandler, ReactNode, useCallback, useMemo, useState } from 'react';
+import React, {
+  ChangeEventHandler,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Box,
   Text,
@@ -13,13 +21,17 @@ import {
   Modal,
   config,
   Spinner,
+  toRem,
+  Dialog,
+  Header,
+  MenuItem,
 } from 'folds';
 import FocusTrap from 'focus-trap-react';
 import { UserEvent } from 'matrix-js-sdk';
 import { SequenceCard } from '../../../components/sequence-card';
 import { SettingTile } from '../../../components/setting-tile';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
-import { getMxIdLocalPart, mxcUrlToHttp } from '../../../utils/matrix';
+import { getMxIdLocalPart, getMxIdServer, mxcUrlToHttp } from '../../../utils/matrix';
 import { useMediaAuthentication } from '../../../hooks/useMediaAuthentication';
 import { useFilePicker } from '../../../hooks/useFilePicker';
 import { useObjectURL } from '../../../hooks/useObjectURL';
@@ -37,6 +49,9 @@ import {
 import { ProfileFieldContextProvider, useProfileField } from './ProfileFieldContext';
 import { AsyncStatus, useAsyncCallback } from '../../../hooks/useAsyncCallback';
 import { FilterByValues } from '../../../../types/utils';
+import { CutoutCard } from '../../../components/cutout-card';
+import { ServerChip, ShareChip, TimezoneChip } from '../../../components/user-profile/UserChips';
+import { SequenceCardStyle } from '../styles.css';
 
 function ProfileAvatar() {
   const mx = useMatrixClient();
@@ -74,7 +89,13 @@ function ProfileAvatar() {
   };
 
   return (
-    <SettingTile>
+    <SettingTile
+      title={
+        <Text as="span" size="L400">
+          Avatar
+        </Text>
+      }
+    >
       {uploadAtom ? (
         <Box gap="200" direction="Column">
           <CompactUploadCardRenderer
@@ -200,9 +221,166 @@ function ProfileTextField<K extends keyof FilterByValues<ExtendedProfile, string
   );
 }
 
+function ProfileTimezone() {
+  const { busy, value, setValue } = useProfileField('us.cloke.msc4175.tz');
+  const disabled = !useProfileFieldAllowed('us.cloke.msc4175.tz') || busy;
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [overlayOpen, setOverlayOpen] = useState(false);
+  const [query, setQuery] = useState('');
+
+  // @ts-expect-error Intl.supportedValuesOf isn't in the types yet
+  const timezones = useMemo(() => Intl.supportedValuesOf('timeZone') as string[], []);
+  const filteredTimezones = timezones.filter(
+    (timezone) =>
+      query.length === 0 || timezone.toLowerCase().replace('_', ' ').includes(query.toLowerCase())
+  );
+
+  const handleSelect = useCallback(
+    (timezone: string) => {
+      setOverlayOpen(false);
+      setValue(timezone);
+    },
+    [setOverlayOpen, setValue]
+  );
+
+  useEffect(() => {
+    if (overlayOpen) {
+      const scrollView = scrollRef.current;
+      const focusedItem = scrollView?.querySelector(`[data-tz="${value}"]`);
+
+      if (value && focusedItem && scrollView) {
+        focusedItem.scrollIntoView({
+          block: 'center',
+        });
+      }
+    }
+  }, [scrollRef, value, overlayOpen]);
+
+  return (
+    <SettingTile
+      title={
+        <Text as="span" size="L400">
+          Timezone
+        </Text>
+      }
+    >
+      <Overlay open={overlayOpen} backdrop={<OverlayBackdrop />}>
+        <OverlayCenter>
+          <FocusTrap
+            focusTrapOptions={{
+              initialFocus: () => inputRef.current,
+              allowOutsideClick: true,
+              clickOutsideDeactivates: true,
+              onDeactivate: () => setOverlayOpen(false),
+              escapeDeactivates: (evt) => {
+                evt.stopPropagation();
+                return true;
+              },
+            }}
+          >
+            <Dialog variant="Surface">
+              <Header
+                style={{
+                  padding: `0 ${config.space.S200} 0 ${config.space.S400}`,
+                  borderBottomWidth: config.borderWidth.B300,
+                }}
+                variant="Surface"
+                size="500"
+              >
+                <Box grow="Yes">
+                  <Text size="H4">Choose a Timezone</Text>
+                </Box>
+                <IconButton size="300" onClick={() => setOverlayOpen(false)} radii="300">
+                  <Icon src={Icons.Cross} />
+                </IconButton>
+              </Header>
+              <Box style={{ padding: config.space.S400 }} direction="Column" gap="400">
+                <Input
+                  ref={inputRef}
+                  size="500"
+                  variant="Background"
+                  radii="400"
+                  outlined
+                  placeholder="Search"
+                  before={<Icon size="200" src={Icons.Search} />}
+                  value={query}
+                  onChange={(evt) => setQuery(evt.currentTarget.value)}
+                />
+                <CutoutCard ref={scrollRef} style={{ overflowY: 'scroll', height: toRem(300) }}>
+                  {filteredTimezones.length === 0 && (
+                    <Box
+                      style={{ paddingTop: config.space.S700 }}
+                      grow="Yes"
+                      alignItems="Center"
+                      justifyContent="Center"
+                      direction="Column"
+                      gap="100"
+                    >
+                      <Text size="H6" align="Center">
+                        No Results
+                      </Text>
+                    </Box>
+                  )}
+                  {filteredTimezones.map((timezone) => (
+                    <MenuItem
+                      key={timezone}
+                      data-tz={timezone}
+                      variant={timezone === value ? 'Success' : 'Surface'}
+                      fill={timezone === value ? 'Soft' : 'None'}
+                      size="300"
+                      radii="0"
+                      after={<Icon size="50" src={Icons.ChevronRight} />}
+                      onClick={() => handleSelect(timezone)}
+                    >
+                      <Box grow="Yes">
+                        <Text size="T200" truncate>
+                          {timezone}
+                        </Text>
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </CutoutCard>
+              </Box>
+            </Dialog>
+          </FocusTrap>
+        </OverlayCenter>
+      </Overlay>
+      <Box gap="200">
+        <Button
+          variant="Secondary"
+          fill="Soft"
+          size="300"
+          radii="300"
+          outlined
+          disabled={disabled}
+          onClick={() => setOverlayOpen(true)}
+          after={<Icon size="100" src={Icons.ChevronRight} />}
+        >
+          <Text size="B300">{value ?? 'Set Timezone'}</Text>
+        </Button>
+        {value && (
+          <Button
+            size="300"
+            variant="Critical"
+            fill="None"
+            radii="300"
+            disabled={disabled}
+            onClick={() => setValue(undefined)}
+          >
+            <Text size="B300">Remove Timezone</Text>
+          </Button>
+        )}
+      </Box>
+    </SettingTile>
+  );
+}
+
 export function Profile() {
   const mx = useMatrixClient();
   const userId = mx.getUserId() as string;
+  const server = getMxIdServer(userId);
 
   const [extendedProfileState, refreshExtendedProfile] = useExtendedProfile(userId);
   const extendedProfile =
@@ -234,10 +412,10 @@ export function Profile() {
         // XXX: synthesise a profile update for ourselves because Synapse is broken and won't
         const user = mx.getUser(userId);
         if (user) {
-            user.displayName = fields.displayname;
-            user.avatarUrl = fields.avatar_url;
-            user.emit(UserEvent.DisplayName, user.events.presence, user);
-            user.emit(UserEvent.AvatarUrl, user.events.presence, user);
+          user.displayName = fields.displayname;
+          user.avatarUrl = fields.avatar_url;
+          user.emit(UserEvent.DisplayName, user.events.presence, user);
+          user.emit(UserEvent.AvatarUrl, user.events.presence, user);
         }
       },
       [mx, userId, refreshExtendedProfile]
@@ -252,7 +430,8 @@ export function Profile() {
     <Box direction="Column" gap="100">
       <Text size="L400">Profile</Text>
       <SequenceCard
-        variant="SurfaceVariant"
+        variant="Surface"
+        outlined
         direction="Column"
         style={{
           overflow: 'hidden',
@@ -261,8 +440,7 @@ export function Profile() {
         <ProfileFieldContextProvider fieldDefaults={fieldDefaults} save={handleSave} busy={busy}>
           {(save, reset, hasChanges, fields) => {
             const heroAvatarUrl =
-              (fields.avatar_url &&
-                mxcUrlToHttp(mx, fields.avatar_url, useAuthentication)) ??
+              (fields.avatar_url && mxcUrlToHttp(mx, fields.avatar_url, useAuthentication)) ??
               undefined;
             return (
               <>
@@ -275,8 +453,26 @@ export function Profile() {
                       extendedProfile={fields}
                     />
                   </Box>
+                  <Box alignItems="Center" gap="200" wrap="Wrap">
+                    {server && <ServerChip server={server} />}
+                    <ShareChip userId={userId} />
+                    {fields['us.cloke.msc4175.tz'] && (
+                      <TimezoneChip timezone={fields['us.cloke.msc4175.tz']} />
+                    )}
+                  </Box>
+                </Box>
+                <SequenceCard
+                  className={SequenceCardStyle}
+                  variant="SurfaceVariant"
+                  direction="Column"
+                  gap="300"
+                  radii='0'
+                  outlined
+                  style={{ borderLeftWidth: "0", borderRightWidth: "0", borderBottomWidth: "0" }}
+                >
                   <ProfileAvatar />
                   <ProfileTextField field="displayname" label="Display Name" />
+                  <ProfileTimezone />
                   <Box gap="300">
                     <Button
                       type="submit"
@@ -304,7 +500,7 @@ export function Profile() {
                       <Text size="B300">Cancel</Text>
                     </Button>
                   </Box>
-                </Box>
+                </SequenceCard>
               </>
             );
           }}

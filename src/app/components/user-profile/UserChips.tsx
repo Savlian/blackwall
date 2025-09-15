@@ -19,6 +19,9 @@ import {
   Box,
   Scroll,
   Avatar,
+  TooltipProvider,
+  Tooltip,
+  Badge,
 } from 'folds';
 import { useMatrixClient } from '../../hooks/useMatrixClient';
 import { getMxIdServer } from '../../utils/matrix';
@@ -41,6 +44,7 @@ import { useTimeoutToggle } from '../../hooks/useTimeoutToggle';
 import { useIgnoredUsers } from '../../hooks/useIgnoredUsers';
 import { CutoutCard } from '../cutout-card';
 import { SettingTile } from '../setting-tile';
+import { useInterval } from '../../hooks/useInterval';
 
 export function ServerChip({ server }: { server: string }) {
   const mx = useMatrixClient();
@@ -510,5 +514,68 @@ export function OptionsChip({ userId }: { userId: string }) {
         )}
       </Chip>
     </PopOut>
+  );
+}
+
+export function TimezoneChip({ timezone }: { timezone: string }) {
+  const shortFormat = useMemo(
+    () =>
+      new Intl.DateTimeFormat(undefined, {
+        dateStyle: undefined,
+        timeStyle: 'short',
+        timeZone: timezone,
+      }),
+    [timezone]
+  );
+  const longFormat = useMemo(
+    () =>
+      new Intl.DateTimeFormat(undefined, {
+        dateStyle: 'long',
+        timeStyle: 'short',
+        timeZone: timezone,
+      }),
+    [timezone]
+  );
+  const [shortTime, setShortTime] = useState(shortFormat.format());
+  const [longTime, setLongTime] = useState(longFormat.format());
+
+  useInterval(() => {
+    setShortTime(shortFormat.format());
+    setLongTime(longFormat.format());
+  }, 1000);
+
+  return (
+    <TooltipProvider
+      position="Top"
+      offset={5}
+      align="Center"
+      tooltip={
+        <Tooltip variant='SurfaceVariant' style={{ maxWidth: toRem(280) }}>
+          <Box direction="Column" alignItems='Start' gap="100">
+            <Box gap="100">
+              <Text size="L400">Timezone:</Text>
+              <Badge size="400" variant="Primary">
+                <Text size="T200">{timezone}</Text>
+              </Badge>
+            </Box>
+            <Text size="T200">{longTime}</Text>
+          </Box>
+        </Tooltip>
+      }
+    >
+      {(triggerRef) => (
+        <Chip
+          ref={triggerRef}
+          variant="SurfaceVariant"
+          radii="Pill"
+          style={{ cursor: "initial" }}
+          before={<Icon size="50" src={Icons.RecentClock} />}
+        >
+          <Text size="B300" truncate>
+            {shortTime}
+          </Text>
+        </Chip>
+      )}
+    </TooltipProvider>
   );
 }
