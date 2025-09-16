@@ -362,7 +362,6 @@ function AddSpaceButton({ item }: { item: HierarchyItem }) {
         </FocusTrap>
       }
     >
-
       {item.parentId === undefined ? (
         <Chip
           variant="SurfaceVariant"
@@ -373,9 +372,6 @@ function AddSpaceButton({ item }: { item: HierarchyItem }) {
         >
           <Text size="B300">Add Space</Text>
         </Chip>
-        {addExisting && (
-          <AddExistingModal space parentId={item.roomId} requestClose={() => setAddExisting(false)} />
-        )}
       ) : (
         <TooltipProvider
           position="Bottom"
@@ -401,6 +397,9 @@ function AddSpaceButton({ item }: { item: HierarchyItem }) {
             </IconButton>
           )}
         </TooltipProvider>
+      )}
+      {addExisting && (
+        <AddExistingModal space parentId={item.roomId} requestClose={() => setAddExisting(false)} />
       )}
     </PopOut>
   );

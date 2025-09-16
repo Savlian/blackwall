@@ -194,16 +194,6 @@ export function Lobby() {
 
   const getRoom = useGetRoom(allJoinedRooms);
 
-  const canEditSpaceChild = useCallback(
-    (powerLevels: IPowerLevels) =>
-      powerLevelAPI.canSendStateEvent(
-        powerLevels,
-        StateEvent.SpaceChild,
-        powerLevelAPI.getPowerLevel(powerLevels, mx.getUserId() ?? undefined)
-      ),
-    [mx]
-  );
-
   const closedCategoriesCache = useRef(new Map());
   useEffect(() => {
     closedCategoriesCache.current.clear();
