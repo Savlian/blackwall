@@ -519,9 +519,7 @@ export function Profile() {
   const userId = mx.getUserId() as string;
   const server = getMxIdServer(userId);
 
-  const [extendedProfileState, refreshExtendedProfile] = useExtendedProfile(userId);
-  const extendedProfile =
-    extendedProfileState.status === AsyncStatus.Success ? extendedProfileState.data : undefined;
+  const [extendedProfile, refreshExtendedProfile] = useExtendedProfile(userId);
 
   const [fieldDefaults, setFieldDefaults] = useState<ExtendedProfile>({});
   useLayoutEffect(() => {
@@ -559,7 +557,7 @@ export function Profile() {
   );
 
   const saving = saveState.status === AsyncStatus.Loading;
-  const loadingExtendedProfile = extendedProfileState.status === AsyncStatus.Loading;
+  const loadingExtendedProfile = extendedProfile === undefined;
   const busy = saving || loadingExtendedProfile;
 
   return (

@@ -23,7 +23,6 @@ import { CreatorChip } from './CreatorChip';
 import { getDirectCreatePath, withSearchParam } from '../../pages/pathUtils';
 import { DirectCreateSearchParams } from '../../pages/paths';
 import { useExtendedProfile } from '../../hooks/useExtendedProfile';
-import { AsyncStatus } from '../../hooks/useAsyncCallback';
 
 type UserRoomProfileProps = {
   userId: string;
@@ -58,8 +57,7 @@ export function UserRoomProfile({ userId }: UserRoomProfileProps) {
   const displayName = getMemberDisplayName(room, userId);
   const avatarMxc = getMemberAvatarMxc(room, userId);
   const avatarUrl = (avatarMxc && mxcUrlToHttp(mx, avatarMxc, useAuthentication)) ?? undefined;
-  const [extendedProfileState, refreshExtendedProfile] = useExtendedProfile(userId);
-  const extendedProfile = extendedProfileState.status === AsyncStatus.Success ? extendedProfileState.data : undefined;
+  const [extendedProfile, refreshExtendedProfile] = useExtendedProfile(userId);
   const timezone = useMemo(() => {
     // @ts-expect-error Intl.supportedValuesOf isn't in the types yet
     const supportedTimezones = Intl.supportedValuesOf('timeZone') as string[];

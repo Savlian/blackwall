@@ -1,6 +1,6 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import z from 'zod';
-import { AsyncCallback, AsyncState, useAsyncCallback } from './useAsyncCallback';
+import { useQuery } from '@tanstack/react-query';
 import { useMatrixClient } from './useMatrixClient';
 import { useSpecVersions } from './useSpecVersions';
 import { useCapabilities } from './useCapabilities';
@@ -30,26 +30,26 @@ export function useExtendedProfileSupported(): boolean {
 
 export function useExtendedProfile(
   userId: string
-): [
-  AsyncState<ExtendedProfile | undefined, unknown>,
-  AsyncCallback<[], ExtendedProfile | undefined>
-] {
+): [ExtendedProfile | undefined, () => Promise<void>] {
   const mx = useMatrixClient();
   const extendedProfileSupported = useExtendedProfileSupported();
-  const [extendedProfileData, refresh] = useAsyncCallback(
-    useCallback(async () => {
+  const { data, refetch } = useQuery({
+    queryKey: ['extended-profile', userId],
+    queryFn: useCallback(async () => {
       if (extendedProfileSupported) {
         return extendedProfile.parse(await mx.getExtendedProfile(userId));
       }
       return undefined;
-    }, [mx, userId, extendedProfileSupported])
-  );
+    }, [mx, userId, extendedProfileSupported]),
+    refetchOnMount: false,
+  });
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
-
-  return [extendedProfileData, refresh];
+  return [
+    data,
+    async () => {
+      await refetch();
+    },
+  ];
 }
 
 const LEGACY_FIELDS = ['displayname', 'avatar_url'];
