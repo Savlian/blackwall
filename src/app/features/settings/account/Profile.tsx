@@ -33,6 +33,7 @@ import {
   PopOut,
   RectCords,
   Menu,
+  Line,
 } from 'folds';
 import FocusTrap from 'focus-trap-react';
 import { UserEvent } from 'matrix-js-sdk';
@@ -595,19 +596,20 @@ export function Profile() {
                     )}
                   </Box>
                 </Box>
+                <Line />
                 <SequenceCard
                   className={SequenceCardStyle}
                   variant="SurfaceVariant"
                   direction="Column"
-                  gap="300"
+                  gap="400"
                   radii="0"
-                  outlined
-                  style={{ borderLeftWidth: '0', borderRightWidth: '0', borderBottomWidth: '0' }}
                 >
-                  <ProfileAvatar />
-                  <ProfileTextField field="displayname" label="Display Name" />
-                  <ProfilePronouns />
-                  <ProfileTimezone />
+                  <Box gap="300" direction='Column'>
+                    <ProfileAvatar />
+                    <ProfileTextField field="displayname" label="Display Name" />
+                    <ProfilePronouns />
+                    <ProfileTimezone />
+                  </Box>
                   <Box gap="300" alignItems="Center">
                     <Button
                       type="submit"
