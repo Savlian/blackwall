@@ -17,13 +17,13 @@ import to from 'await-to-js';
 import { IImageInfo, IThumbnailContent, IVideoInfo } from '../../types/matrix/common';
 import { AccountDataEvent } from '../../types/matrix/accountData';
 import { getStateEvent } from './room';
-import { StateEvent } from '../../types/matrix/room';
+import { Membership, StateEvent } from '../../types/matrix/room';
 
 const DOMAIN_REGEX = /\b(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}\b/;
 
 export const isServerName = (serverName: string): boolean => DOMAIN_REGEX.test(serverName);
 
-const matchMxId = (id: string): RegExpMatchArray | null => id.match(/^([@$+#])(.+):(\S+)$/);
+const matchMxId = (id: string): RegExpMatchArray | null => id.match(/^([@$+#])([^\s:]+):(\S+)$/);
 
 const validMxId = (id: string): boolean => !!matchMxId(id);
 
@@ -182,7 +182,12 @@ export const eventWithShortcode = (ev: MatrixEvent) =>
 export const getDMRoomFor = (mx: MatrixClient, userId: string): Room | undefined => {
   const dmLikeRooms = mx
     .getRooms()
-    .filter((room) => room.hasEncryptionStateEvent() && room.getMembers().length <= 2);
+    .filter(
+      (room) =>
+        room.getMyMembership() === Membership.Join &&
+        room.hasEncryptionStateEvent() &&
+        room.getMembers().length <= 2
+    );
 
   return dmLikeRooms.find((room) => room.getMember(userId));
 };
@@ -225,8 +230,11 @@ export const addRoomIdToMDirect = async (
   roomId: string,
   userId: string
 ): Promise<void> => {
-  const mDirectsEvent = mx.getAccountData(AccountDataEvent.Direct);
-  const userIdToRoomIds: Record<string, string[]> = mDirectsEvent?.getContent() ?? {};
+  const mDirectsEvent = mx.getAccountData(AccountDataEvent.Direct as any);
+  let userIdToRoomIds: Record<string, string[]> = {};
+
+  if (typeof mDirectsEvent !== 'undefined')
+    userIdToRoomIds = structuredClone(mDirectsEvent.getContent());
 
   // remove it from the lists of any others users
   // (it can only be a DM room for one person)
@@ -247,12 +255,15 @@ export const addRoomIdToMDirect = async (
   }
   userIdToRoomIds[userId] = roomIds;
 
-  await mx.setAccountData(AccountDataEvent.Direct, userIdToRoomIds);
+  await mx.setAccountData(AccountDataEvent.Direct as any, userIdToRoomIds as any);
 };
 
 export const removeRoomIdFromMDirect = async (mx: MatrixClient, roomId: string): Promise<void> => {
-  const mDirectsEvent = mx.getAccountData(AccountDataEvent.Direct);
-  const userIdToRoomIds: Record<string, string[]> = mDirectsEvent?.getContent() ?? {};
+  const mDirectsEvent = mx.getAccountData(AccountDataEvent.Direct as any);
+  let userIdToRoomIds: Record<string, string[]> = {};
+
+  if (typeof mDirectsEvent !== 'undefined')
+    userIdToRoomIds = structuredClone(mDirectsEvent.getContent());
 
   Object.keys(userIdToRoomIds).forEach((targetUserId) => {
     const roomIds = userIdToRoomIds[targetUserId];
@@ -262,7 +273,7 @@ export const removeRoomIdFromMDirect = async (mx: MatrixClient, roomId: string):
     }
   });
 
-  await mx.setAccountData(AccountDataEvent.Direct, userIdToRoomIds);
+  await mx.setAccountData(AccountDataEvent.Direct as any, userIdToRoomIds as any);
 };
 
 export const mxcUrlToHttp = (
@@ -343,4 +354,21 @@ export const rateLimitedActions = async <T, R = void>(
       await sleepForMs(actionInterval);
     }
   }
+};
+
+export const knockSupported = (version: string): boolean => {
+  const unsupportedVersion = ['1', '2', '3', '4', '5', '6'];
+  return !unsupportedVersion.includes(version);
+};
+export const restrictedSupported = (version: string): boolean => {
+  const unsupportedVersion = ['1', '2', '3', '4', '5', '6', '7'];
+  return !unsupportedVersion.includes(version);
+};
+export const knockRestrictedSupported = (version: string): boolean => {
+  const unsupportedVersion = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+  return !unsupportedVersion.includes(version);
+};
+export const creatorsSupported = (version: string): boolean => {
+  const unsupportedVersion = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'];
+  return !unsupportedVersion.includes(version);
 };

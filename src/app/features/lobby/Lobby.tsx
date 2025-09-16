@@ -27,7 +27,6 @@ import { useElementSizeObserver } from '../../hooks/useElementSizeObserver';
 import {
   IPowerLevels,
   PowerLevelsContextProvider,
-  powerLevelAPI,
   usePowerLevels,
   useRoomsPowerLevels,
 } from '../../hooks/usePowerLevels';
@@ -55,12 +54,13 @@ import { useRoomMembers } from '../../hooks/useRoomMembers';
 import { SpaceHierarchy } from './SpaceHierarchy';
 import { useGetRoom } from '../../hooks/useGetRoom';
 import { AsyncStatus, useAsyncCallback } from '../../hooks/useAsyncCallback';
+import { getRoomPermissionsAPI } from '../../hooks/useRoomPermissions';
+import { getRoomCreatorsForRoomId } from '../../hooks/useRoomCreators';
 
 const useCanDropLobbyItem = (
   space: Room,
   roomsPowerLevels: Map<string, IPowerLevels>,
-  getRoom: (roomId: string) => Room | undefined,
-  canEditSpaceChild: (powerLevels: IPowerLevels) => boolean
+  getRoom: (roomId: string) => Room | undefined
 ): CanDropCallback => {
   const mx = useMatrixClient();
 
@@ -79,16 +79,20 @@ const useCanDropLobbyItem = (
         return false;
       }
 
+      const powerLevels = roomsPowerLevels.get(containerSpaceId) ?? {};
+      const creators = getRoomCreatorsForRoomId(mx, containerSpaceId);
+      const permissions = getRoomPermissionsAPI(creators, powerLevels);
+
       if (
         getRoom(containerSpaceId) === undefined ||
-        !canEditSpaceChild(roomsPowerLevels.get(containerSpaceId) ?? {})
+        !permissions.stateEvent(StateEvent.SpaceChild, mx.getSafeUserId())
       ) {
         return false;
       }
 
       return true;
     },
-    [space, roomsPowerLevels, getRoom, canEditSpaceChild]
+    [space, roomsPowerLevels, getRoom, mx]
   );
 
   const canDropRoom: CanDropCallback = useCallback(
@@ -102,30 +106,31 @@ const useCanDropLobbyItem = (
       // check and do not allow restricted room to be dragged outside
       // current space if can't change `m.room.join_rules` `content.allow`
       if (draggingOutsideSpace && restrictedItem) {
-        const itemPowerLevel = roomsPowerLevels.get(item.roomId) ?? {};
-        const userPLInItem = powerLevelAPI.getPowerLevel(
-          itemPowerLevel,
-          mx.getUserId() ?? undefined
-        );
-        const canChangeJoinRuleAllow = powerLevelAPI.canSendStateEvent(
-          itemPowerLevel,
+        const itemPowerLevels = roomsPowerLevels.get(item.roomId) ?? {};
+        const itemCreators = getRoomCreatorsForRoomId(mx, item.roomId);
+        const itemPermissions = getRoomPermissionsAPI(itemCreators, itemPowerLevels);
+
+        const canChangeJoinRuleAllow = itemPermissions.stateEvent(
           StateEvent.RoomJoinRules,
-          userPLInItem
+          mx.getSafeUserId()
         );
         if (!canChangeJoinRuleAllow) {
           return false;
         }
       }
 
+      const powerLevels = roomsPowerLevels.get(containerSpaceId) ?? {};
+      const creators = getRoomCreatorsForRoomId(mx, containerSpaceId);
+      const permissions = getRoomPermissionsAPI(creators, powerLevels);
       if (
         getRoom(containerSpaceId) === undefined ||
-        !canEditSpaceChild(roomsPowerLevels.get(containerSpaceId) ?? {})
+        !permissions.stateEvent(StateEvent.SpaceChild, mx.getSafeUserId())
       ) {
         return false;
       }
       return true;
     },
-    [mx, getRoom, canEditSpaceChild, roomsPowerLevels]
+    [mx, getRoom, roomsPowerLevels]
   );
 
   const canDrop: CanDropCallback = useCallback(
@@ -303,23 +308,16 @@ export function Lobby() {
       () =>
         hierarchy
           .flatMap((i) => {
-            const childRooms = Array.isArray(i.rooms)
-              ? i.rooms.map((r) => mx.getRoom(r.roomId))
-              : [];
+            const childRooms = Array.isArray(i.rooms) ? i.rooms.map((r) => getRoom(r.roomId)) : [];
 
-            return [mx.getRoom(i.space.roomId), ...childRooms];
+            return [getRoom(i.space.roomId), ...childRooms];
           })
           .filter((r) => !!r) as Room[],
-      [mx, hierarchy]
+      [hierarchy, getRoom]
     )
   );
 
-  const canDrop: CanDropCallback = useCanDropLobbyItem(
-    space,
-    roomsPowerLevels,
-    getRoom,
-    canEditSpaceChild
-  );
+  const canDrop: CanDropCallback = useCanDropLobbyItem(space, roomsPowerLevels, getRoom);
 
   const [reorderSpaceState, reorderSpace] = useAsyncCallback(
     useCallback(
@@ -355,7 +353,11 @@ export function Lobby() {
           .filter((reorder, index) => {
             if (!reorder.item.parentId) return false;
             const parentPL = roomsPowerLevels.get(reorder.item.parentId);
-            const canEdit = parentPL && canEditSpaceChild(parentPL);
+            if (!parentPL) return false;
+
+            const creators = getRoomCreatorsForRoomId(mx, reorder.item.parentId);
+            const permissions = getRoomPermissionsAPI(creators, parentPL);
+            const canEdit = permissions.stateEvent(StateEvent.SpaceChild, mx.getSafeUserId());
             return canEdit && reorder.orderKey !== currentOrders[index];
           });
 
@@ -371,7 +373,7 @@ export function Lobby() {
           });
         }
       },
-      [mx, hierarchy, lex, roomsPowerLevels, canEditSpaceChild]
+      [mx, hierarchy, lex, roomsPowerLevels]
     )
   );
   const reorderingSpace = reorderSpaceState.status === AsyncStatus.Loading;
@@ -522,7 +524,7 @@ export function Lobby() {
         newItems.push(rId);
       }
       const newSpacesContent = makeCinnySpacesContent(mx, newItems);
-      mx.setAccountData(AccountDataEvent.CinnySpaces, newSpacesContent);
+      mx.setAccountData(AccountDataEvent.CinnySpaces as any, newSpacesContent as any);
     },
     [mx, sidebarItems, sidebarSpaces]
   );
@@ -593,7 +595,6 @@ export function Lobby() {
                             allJoinedRooms={allJoinedRooms}
                             mDirects={mDirects}
                             roomsPowerLevels={roomsPowerLevels}
-                            canEditSpaceChild={canEditSpaceChild}
                             categoryId={categoryId}
                             closed={
                               inClosedCategory || (draggingItem ? 'space' in draggingItem : false)

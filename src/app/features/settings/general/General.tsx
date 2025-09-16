@@ -60,7 +60,7 @@ type ThemeSelectorProps = {
 const ThemeSelector = as<'div', ThemeSelectorProps>(
   ({ themeNames, themes, selected, onSelect, ...props }, ref) => (
     <Menu {...props} ref={ref}>
-      <Box direction="Column" gap="100" style={{ padding: config.space.S200 }}>
+      <Box direction="Column" gap="100" style={{ padding: config.space.S100 }}>
         {themes.map((theme) => (
           <MenuItem
             key={theme.id}
@@ -305,6 +305,7 @@ function PageZoomInput() {
 
 function Appearance() {
   const [systemTheme, setSystemTheme] = useSetting(settingsAtom, 'useSystemTheme');
+  const [monochromeMode, setMonochromeMode] = useSetting(settingsAtom, 'monochromeMode');
   const [twitterEmoji, setTwitterEmoji] = useSetting(settingsAtom, 'twitterEmoji');
 
   return (
@@ -329,6 +330,13 @@ function Appearance() {
           title="Theme"
           description="Theme to use when system theme is not enabled."
           after={<SelectTheme disabled={systemTheme} />}
+        />
+      </SequenceCard>
+
+      <SequenceCard className={SequenceCardStyle} variant="SurfaceVariant" direction="Column">
+        <SettingTile
+          title="Monochrome Mode"
+          after={<Switch variant="Primary" value={monochromeMode} onChange={setMonochromeMode} />}
         />
       </SequenceCard>
 
@@ -781,7 +789,7 @@ function SelectMessageLayout() {
             }}
           >
             <Menu>
-              <Box direction="Column" gap="100" style={{ padding: config.space.S200 }}>
+              <Box direction="Column" gap="100" style={{ padding: config.space.S100 }}>
                 {messageLayoutItems.map((item) => (
                   <MenuItem
                     key={item.layout}
@@ -850,7 +858,7 @@ function SelectMessageSpacing() {
             }}
           >
             <Menu>
-              <Box direction="Column" gap="100" style={{ padding: config.space.S200 }}>
+              <Box direction="Column" gap="100" style={{ padding: config.space.S100 }}>
                 {messageSpacingItems.map((item) => (
                   <MenuItem
                     key={item.spacing}

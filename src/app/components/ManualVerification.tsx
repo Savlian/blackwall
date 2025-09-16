@@ -19,7 +19,7 @@ import { SecretStorageKeyContent } from '../../types/matrix/accountData';
 import { SecretStorageRecoveryKey, SecretStorageRecoveryPassphrase } from './SecretStorage';
 import { useMatrixClient } from '../hooks/useMatrixClient';
 import { AsyncStatus, useAsyncCallback } from '../hooks/useAsyncCallback';
-import { storePrivateKey } from '../../client/state/secretStorageKeys';
+import { storePrivateKey } from '../../client/secretStorageKeys';
 
 export enum ManualVerificationMethod {
   RecoveryPassphrase = 'passphrase',
@@ -78,7 +78,7 @@ export function ManualVerificationMethodSwitcher({
             }}
           >
             <Menu>
-              <Box direction="Column" gap="100" style={{ padding: config.space.S200 }}>
+              <Box direction="Column" gap="100" style={{ padding: config.space.S100 }}>
                 <MenuItem
                   size="300"
                   variant="Surface"

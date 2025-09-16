@@ -22,7 +22,6 @@ import {
   as,
   color,
   config,
-  toRem,
 } from 'folds';
 import React, {
   FormEventHandler,
@@ -76,10 +75,10 @@ import { getMatrixToRoomEvent } from '../../../plugins/matrix-to';
 import { getViaServers } from '../../../plugins/via-servers';
 import { useMediaAuthentication } from '../../../hooks/useMediaAuthentication';
 import { useRoomPinnedEvents } from '../../../hooks/useRoomPinnedEvents';
-import { StateEvent } from '../../../../types/matrix/room';
-import { getTagIconSrc, PowerLevelTag } from '../../../hooks/usePowerLevelTags';
+import { MemberPowerTag, StateEvent } from '../../../../types/matrix/room';
 import { PowerIcon } from '../../../components/power';
 import colorMXID from '../../../../util/colorMXID';
+import { getPowerTagIconSrc } from '../../../hooks/useMemberPowerTag';
 
 export type ReactionHandler = (keyOrMxc: string, shortcode: string) => void;
 
@@ -95,10 +94,10 @@ export const MessageQuickReactions = as<'div', MessageQuickReactionsProps>(
     return (
       <>
         <Box
-          style={{ padding: config.space.S300 }}
+          style={{ padding: config.space.S200 }}
           alignItems="Center"
           justifyContent="Center"
-          gap="300"
+          gap="200"
           {...props}
           ref={ref}
         >
@@ -372,7 +371,7 @@ export const MessagePinItem = as<
     if (!isPinned && eventId) {
       pinContent.pinned.push(eventId);
     }
-    mx.sendStateEvent(room.roomId, StateEvent.RoomPinnedEvents, pinContent);
+    mx.sendStateEvent(room.roomId, StateEvent.RoomPinnedEvents as any, pinContent);
     onClose?.();
   };
 
@@ -680,7 +679,7 @@ export type MessageProps = {
   reactions?: ReactNode;
   hideReadReceipts?: boolean;
   showDeveloperTools?: boolean;
-  powerLevelTag?: PowerLevelTag;
+  memberPowerTag?: MemberPowerTag;
   accessibleTagColors?: Map<string, string>;
   legacyUsernameColor?: boolean;
   hour24Clock: boolean;
@@ -711,7 +710,7 @@ export const Message = as<'div', MessageProps>(
       reactions,
       hideReadReceipts,
       showDeveloperTools,
-      powerLevelTag,
+      memberPowerTag,
       accessibleTagColors,
       legacyUsernameColor,
       hour24Clock,
@@ -734,11 +733,11 @@ export const Message = as<'div', MessageProps>(
       getMemberDisplayName(room, senderId) ?? getMxIdLocalPart(senderId) ?? senderId;
     const senderAvatarMxc = getMemberAvatarMxc(room, senderId);
 
-    const tagColor = powerLevelTag?.color
-      ? accessibleTagColors?.get(powerLevelTag.color)
+    const tagColor = memberPowerTag?.color
+      ? accessibleTagColors?.get(memberPowerTag.color)
       : undefined;
-    const tagIconSrc = powerLevelTag?.icon
-      ? getTagIconSrc(mx, useAuthentication, powerLevelTag.icon)
+    const tagIconSrc = memberPowerTag?.icon
+      ? getPowerTagIconSrc(mx, useAuthentication, memberPowerTag.icon)
       : undefined;
 
     const usernameColor = legacyUsernameColor ? colorMXID(senderId) : tagColor;
@@ -973,7 +972,7 @@ export const Message = as<'div', MessageProps>(
                         escapeDeactivates: stopPropagation,
                       }}
                     >
-                      <Menu style={{ minWidth: toRem(200) }}>
+                      <Menu>
                         {canSendReaction && (
                           <MessageQuickReactions
                             onReaction={(key, shortcode) => {
@@ -1170,7 +1169,6 @@ export const Event = as<'div', EventProps>(
       hideReadReceipts,
       showDeveloperTools,
       children,
-      style,
       ...props
     },
     ref
@@ -1237,7 +1235,7 @@ export const Event = as<'div', EventProps>(
                         escapeDeactivates: stopPropagation,
                       }}
                     >
-                      <Menu style={{ minWidth: toRem(200), ...style }} {...props} ref={ref}>
+                      <Menu {...props} ref={ref}>
                         <Box direction="Column" gap="100" className={css.MessageMenuGroup}>
                           {!hideReadReceipts && (
                             <MessageReadReceiptItem
