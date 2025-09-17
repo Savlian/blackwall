@@ -1,11 +1,10 @@
 import React, { ReactNode } from 'react';
 import classNames from 'classnames';
-import { Box, ContainerColor as TContainerColor, as, color } from 'folds';
+import { Box, ContainerColor, as, color } from 'folds';
 import * as css from './layout.css';
-import { ContainerColor } from '../../../styles/ContainerColor.css';
 
 type BubbleArrowProps = {
-  variant: TContainerColor;
+  variant: ContainerColor;
 };
 function BubbleLeftArrow({ variant }: BubbleArrowProps) {
   return (
