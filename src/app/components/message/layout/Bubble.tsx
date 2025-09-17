@@ -1,17 +1,41 @@
 import React, { ReactNode } from 'react';
 import classNames from 'classnames';
-import { Box, as } from 'folds';
+import { Box, ContainerColor as TContainerColor, as, color } from 'folds';
 import * as css from './layout.css';
+import { ContainerColor } from '../../../styles/ContainerColor.css';
+
+type BubbleArrowProps = {
+  variant: TContainerColor;
+};
+function BubbleLeftArrow({ variant }: BubbleArrowProps) {
+  return (
+    <svg
+      className={css.BubbleLeftArrow}
+      width="9"
+      height="8"
+      viewBox="0 0 9 8"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M9 8V0L0 0L8 8H9Z"
+        fill={color[variant].Container}
+      />
+    </svg>
+  );
+}
 
 type BubbleLayoutProps = {
-  self?: boolean;
   hideBubble?: boolean;
   before?: ReactNode;
+  header?: ReactNode;
 };
 
 export const BubbleLayout = as<'div', BubbleLayoutProps>(
-  ({ self, hideBubble, before, children, ...props }, ref) => (
-    <Box direction={self ? 'RowReverse' : 'Row'} gap="300" {...props} ref={ref}>
+  ({ hideBubble, before, header, children, ...props }, ref) => (
+    <Box gap="200" {...props} ref={ref}>
       <Box className={css.BubbleBefore} shrink="No">
         {before}
       </Box>
@@ -19,15 +43,12 @@ export const BubbleLayout = as<'div', BubbleLayoutProps>(
         className={
           hideBubble
             ? undefined
-            : classNames(
-                css.BubbleContent,
-                before ? css.BubbleContentArrow : undefined,
-                before && self ? css.BubbleContentArrowRight : undefined,
-                before && !self ? css.BubbleContentArrowLeft : undefined
-              )
+            : classNames(css.BubbleContent, before ? css.BubbleContentArrowLeft : undefined)
         }
         direction="Column"
       >
+        {!hideBubble && before ? <BubbleLeftArrow variant="SurfaceVariant" /> : null}
+        {header}
         {children}
       </Box>
     </Box>

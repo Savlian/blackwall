@@ -133,12 +133,10 @@ export const ModernBefore = style({
   minWidth: toRem(36),
 });
 
-export const BubbleBefore = style([
-  ModernBefore,
-  {
-    minWidth: toRem(24),
-  },
-]);
+export const BubbleBefore = style({
+  minWidth: toRem(24),
+  marginLeft: config.space.S300,
+});
 
 export const BubbleContent = style({
   maxWidth: toRem(800),
@@ -149,36 +147,18 @@ export const BubbleContent = style({
   position: 'relative',
 });
 
-export const BubbleContentArrow = style({
-  selectors: {
-    '&::before': {
-      content: '',
-      display: 'inline-block',
-      background: 'inherit',
-      width: toRem(8),
-      height: toRem(8),
-      position: 'absolute',
-      top: toRem(12.5),
-      zIndex: 1,
-      transform: 'rotateZ(45deg)',
-    },
-  },
-});
-
 export const BubbleContentArrowLeft = style({
-  selectors: {
-    '&::before': {
-      left: toRem(-4),
-    },
-  },
+  borderTopLeftRadius: 0,
 });
 
-export const BubbleContentArrowRight = style({
-  selectors: {
-    '&::before': {
-      right: toRem(-4),
-    },
-  },
+export const BubbleLeftArrow = style({
+  width: toRem(9),
+  height: toRem(8),
+
+  position: 'absolute',
+  top: 0,
+  left: toRem(-8),
+  zIndex: 1,
 });
 
 export const Username = style({
