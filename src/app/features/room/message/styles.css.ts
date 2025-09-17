@@ -24,6 +24,10 @@ export const MessageOptionsBar = style([
   },
 ]);
 
+export const BubbleAvatarBase = style({
+  paddingTop: toRem(6),
+});
+
 export const MessageAvatar = style({
   cursor: 'pointer',
 });

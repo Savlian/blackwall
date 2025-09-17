@@ -791,7 +791,9 @@ export const Message = as<'div', MessageProps>(
     );
 
     const avatarJSX = !collapse && messageLayout !== MessageLayout.Compact && (
-      <AvatarBase>
+      <AvatarBase
+        className={messageLayout === MessageLayout.Bubble ? css.BubbleAvatarBase : undefined}
+      >
         <Avatar
           className={css.MessageAvatar}
           as="button"
@@ -1141,8 +1143,7 @@ export const Message = as<'div', MessageProps>(
           </CompactLayout>
         )}
         {messageLayout === MessageLayout.Bubble && (
-          <BubbleLayout before={avatarJSX} onContextMenu={handleContextMenu}>
-            {headerJSX}
+          <BubbleLayout before={avatarJSX} header={headerJSX} onContextMenu={handleContextMenu}>
             {msgContentJSX}
           </BubbleLayout>
         )}
