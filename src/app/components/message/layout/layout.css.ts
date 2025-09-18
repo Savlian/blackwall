@@ -134,8 +134,7 @@ export const ModernBefore = style({
 });
 
 export const BubbleBefore = style({
-  minWidth: toRem(24),
-  marginLeft: config.space.S300,
+  minWidth: toRem(36),
 });
 
 export const BubbleContent = style({

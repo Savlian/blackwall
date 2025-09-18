@@ -19,7 +19,7 @@ function BubbleLeftArrow({ variant }: BubbleArrowProps) {
       <path
         fillRule="evenodd"
         clipRule="evenodd"
-        d="M9 8V0L0 0L8 8H9Z"
+        d="M9.00004 8V0H4.82847C3.04666 0 2.15433 2.15428 3.41426 3.41421L8.00004 8H9.00004Z"
         fill={color[variant].Container}
       />
     </svg>
@@ -34,7 +34,7 @@ type BubbleLayoutProps = {
 
 export const BubbleLayout = as<'div', BubbleLayoutProps>(
   ({ hideBubble, before, header, children, ...props }, ref) => (
-    <Box gap="200" {...props} ref={ref}>
+    <Box gap="300" {...props} ref={ref}>
       <Box className={css.BubbleBefore} shrink="No">
         {before}
       </Box>

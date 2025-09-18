@@ -797,7 +797,7 @@ export const Message = as<'div', MessageProps>(
         <Avatar
           className={css.MessageAvatar}
           as="button"
-          size={messageLayout === MessageLayout.Bubble ? '200' : '300'}
+          size="300"
           data-user-id={senderId}
           onClick={onUserClick}
         >
@@ -809,13 +809,7 @@ export const Message = as<'div', MessageProps>(
                 : undefined
             }
             alt={senderDisplayName}
-            renderFallback={() => (
-              <Icon
-                size={messageLayout === MessageLayout.Bubble ? '50' : '200'}
-                src={Icons.User}
-                filled
-              />
-            )}
+            renderFallback={() => <Icon size="200" src={Icons.User} filled />}
           />
         </Avatar>
       </AvatarBase>

@@ -25,7 +25,7 @@ export const MessageOptionsBar = style([
 ]);
 
 export const BubbleAvatarBase = style({
-  paddingTop: toRem(6),
+  paddingTop: 0,
 });
 
 export const MessageAvatar = style({
