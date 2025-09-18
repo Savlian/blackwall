@@ -38,18 +38,21 @@ export const BubbleLayout = as<'div', BubbleLayoutProps>(
       <Box className={css.BubbleBefore} shrink="No">
         {before}
       </Box>
-      <Box
-        className={
-          hideBubble
-            ? undefined
-            : classNames(css.BubbleContent, before ? css.BubbleContentArrowLeft : undefined)
-        }
-        direction="Column"
-        grow={hideBubble ? 'Yes' : undefined}
-      >
-        {!hideBubble && before ? <BubbleLeftArrow variant="SurfaceVariant" /> : null}
+      <Box grow="Yes" direction="Column">
         {header}
-        {children}
+        <Box>
+          <Box
+            className={
+              hideBubble
+                ? undefined
+                : classNames(css.BubbleContent, before ? css.BubbleContentArrowLeft : undefined)
+            }
+            direction="Column"
+          >
+            {!hideBubble && before ? <BubbleLeftArrow variant="SurfaceVariant" /> : null}
+            {children}
+          </Box>
+        </Box>
       </Box>
     </Box>
   )
