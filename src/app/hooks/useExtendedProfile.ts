@@ -1,9 +1,9 @@
 import { useCallback } from 'react';
 import z from 'zod';
 import { useQuery } from '@tanstack/react-query';
+import { Capabilities } from 'matrix-js-sdk';
 import { useMatrixClient } from './useMatrixClient';
 import { useSpecVersions } from './useSpecVersions';
-import { useCapabilities } from './useCapabilities';
 import { IProfileFieldsCapability } from '../../types/matrix/common';
 
 const extendedProfile = z.looseObject({
@@ -54,11 +54,12 @@ export function useExtendedProfile(
 
 const LEGACY_FIELDS = ['displayname', 'avatar_url'];
 
-export function useProfileEditsAllowed(field: string | null): boolean {
-  const capabilities = useCapabilities();
-  const extendedProfileSupported = useExtendedProfileSupported();
-
-  if (field && LEGACY_FIELDS.includes(field)) {
+export function profileEditsAllowed(
+  field: string,
+  capabilities: Capabilities,
+  extendedProfileSupported: boolean
+): boolean {
+  if (LEGACY_FIELDS.includes(field)) {
     // this field might have a pre-msc4133 capability. check that first
     if (capabilities[`m.set_${field}`]?.enabled === false) {
       return false;
@@ -86,11 +87,6 @@ export function useProfileEditsAllowed(field: string | null): boolean {
       return false;
     }
 
-    if (field === null) {
-      // profile field modifications are not completely disabled
-      return true;
-    }
-
     if (
       extendedProfileCapability.allowed !== undefined &&
       !extendedProfileCapability.allowed.includes(field)
@@ -105,11 +101,6 @@ export function useProfileEditsAllowed(field: string | null): boolean {
     }
 
     // the capability is enabled and `field` isn't blocked
-    return true;
-  }
-
-  if (field === null) {
-    // the homeserver only supports legacy fields. assume profile editing is generally allowed
     return true;
   }
 

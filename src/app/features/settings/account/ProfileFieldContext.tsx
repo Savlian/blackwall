@@ -1,26 +1,35 @@
-import React, { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { FunctionComponent, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { ExtendedProfile } from '../../../hooks/useExtendedProfile';
 
-const ProfileFieldContext = createContext<{
-  busy: boolean;
-  fieldDefaults: ExtendedProfile;
-  fields: ExtendedProfile;
-  setField: (key: string, value: unknown) => void;
-} | null>(null);
+type ExtendedProfileKeys = keyof {
+  [Property in keyof ExtendedProfile as string extends Property ? never : Property]: ExtendedProfile[Property]
+}
 
-export type ProfileFieldContextProviderProps = {
+type ProfileFieldElementRawProps<V, C> = {
+  defaultValue: V,
+  value: V,
+  setValue: (value: V) => void,
+} & C
+
+export type ProfileFieldElementProps<K extends ExtendedProfileKeys, C> = ProfileFieldElementRawProps<ExtendedProfile[K], C>;
+
+type ProfileFieldElements<C> = {
+  [Property in ExtendedProfileKeys]?: FunctionComponent<ProfileFieldElementProps<Property, C>>;
+}
+
+type ProfileFieldContextProps<C> = {
   fieldDefaults: ExtendedProfile;
-  save: (fields: ExtendedProfile) => void;
-  busy: boolean;
-  children: (save: () => void, reset: () => void, hasChanges: boolean, fields: ExtendedProfile) => ReactNode;
+  fieldElements: ProfileFieldElements<C>;
+  children: (reset: () => void, hasChanges: boolean, fields: ExtendedProfile, fieldElements: ReactNode) => ReactNode;
+  context: C;
 };
 
-export function ProfileFieldContextProvider({
+export function ProfileFieldContext<C>({
   fieldDefaults,
-  save,
-  busy,
+  fieldElements: fieldElementConstructors,
   children,
-}: ProfileFieldContextProviderProps) {
+  context
+}: ProfileFieldContextProps<C>): ReactNode {
   const [fields, setFields] = useState<ExtendedProfile>(fieldDefaults);
 
   const reset = useCallback(() => {
@@ -41,35 +50,28 @@ export function ProfileFieldContextProvider({
     [fields]
   );
 
-  const providerValue = useMemo(
-    () => ({ busy, fieldDefaults, fields, setField }),
-    [busy, fieldDefaults, fields, setField]
-  );
-
   const hasChanges = useMemo(
     () => Object.entries(fields).find(([key, value]) => fieldDefaults[key as keyof ExtendedProfile] !== value) !== undefined,
     [fields, fieldDefaults]
   );
 
-  return (
-    <ProfileFieldContext.Provider value={providerValue}>
-      {children(() => save(fields), reset, hasChanges, fields)}
-    </ProfileFieldContext.Provider>
+  const createElement = useCallback(<K extends ExtendedProfileKeys>(key: K, element: ProfileFieldElements<C>[K]) => {
+    const props: ProfileFieldElementRawProps<ExtendedProfile[K], C> = {
+      ...context,
+      defaultValue: fieldDefaults[key],
+      value: fields[key],
+      setValue: (value) => setField(key, value),
+    };
+    if (element !== undefined) {
+      return React.createElement(element, props);
+    } 
+    return undefined;
+  }, [context, fieldDefaults, fields, setField]);
+
+  const fieldElements = Object.entries(fieldElementConstructors).map(([key, element]) => 
+    // @ts-expect-error TypeScript doesn't quite understand the magic going on here
+    createElement(key, element)
   );
-}
 
-export function useProfileField<K extends keyof ExtendedProfile>(field: K): { busy: boolean, defaultValue: ExtendedProfile[K], value: ExtendedProfile[K], setValue: (value: ExtendedProfile[K]) => void } {
-  const context = useContext(ProfileFieldContext);
-  if (context === null) {
-    throw new Error("useProfileField() called without context");
-  }
-
-  return {
-    busy: context.busy,
-    defaultValue: context.fieldDefaults[field],
-    value: context.fields[field],
-    setValue(value) {
-      context.setField(field, value);
-    },
-  };
+  return children(reset, hasChanges, fields, fieldElements);
 }

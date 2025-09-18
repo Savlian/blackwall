@@ -3,7 +3,6 @@ import React, {
   FormEventHandler,
   KeyboardEventHandler,
   MouseEventHandler,
-  ReactNode,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -53,10 +52,10 @@ import { CompactUploadCardRenderer } from '../../../components/upload-card';
 import { UserHero, UserHeroName } from '../../../components/user-profile/UserHero';
 import {
   ExtendedProfile,
+  profileEditsAllowed,
   useExtendedProfile,
-  useProfileEditsAllowed,
 } from '../../../hooks/useExtendedProfile';
-import { ProfileFieldContextProvider, useProfileField } from './ProfileFieldContext';
+import { ProfileFieldContext, ProfileFieldElementProps } from './ProfileFieldContext';
 import { AsyncStatus, useAsyncCallback } from '../../../hooks/useAsyncCallback';
 import { FilterByValues } from '../../../../types/utils';
 import { CutoutCard } from '../../../components/cutout-card';
@@ -66,15 +65,21 @@ import { useUserProfile } from '../../../hooks/useUserProfile';
 import { useAuthMetadata } from '../../../hooks/useAuthMetadata';
 import { useAccountManagementActions } from '../../../hooks/useAccountManagement';
 import { withSearchParam } from '../../../pages/pathUtils';
+import { useCapabilities } from '../../../hooks/useCapabilities';
 
-function ProfileAvatar() {
+type FieldContext = { busy: boolean };
+
+function ProfileAvatar({
+  busy,
+  value,
+  setValue,
+}: ProfileFieldElementProps<'avatar_url', FieldContext>) {
   const mx = useMatrixClient();
   const useAuthentication = useMediaAuthentication();
-  const { busy, value, setValue } = useProfileField('avatar_url');
   const avatarUrl = value
     ? mxcUrlToHttp(mx, value, useAuthentication, 96, 96, 'crop') ?? undefined
     : undefined;
-  const disabled = !useProfileEditsAllowed('avatar_url') || busy;
+  const disabled = busy;
 
   const [imageFile, setImageFile] = useState<File>();
   const imageFileURL = useObjectURL(imageFile);
@@ -172,17 +177,14 @@ function ProfileAvatar() {
   );
 }
 
-type ProfileTextFieldProps<K> = {
-  field: K;
-  label: ReactNode;
-};
-
 function ProfileTextField<K extends keyof FilterByValues<ExtendedProfile, string | undefined>>({
-  field,
   label,
-}: ProfileTextFieldProps<K>) {
-  const { busy, defaultValue, value, setValue } = useProfileField<K>(field);
-  const disabled = !useProfileEditsAllowed(field) || busy;
+  defaultValue,
+  value,
+  setValue,
+  busy,
+}: ProfileFieldElementProps<K, FieldContext> & { label: string }) {
+  const disabled = busy;
   const hasChanges = defaultValue !== value;
 
   const handleChange: ChangeEventHandler<HTMLInputElement> = (evt) => {
@@ -240,9 +242,12 @@ function ProfileTextField<K extends keyof FilterByValues<ExtendedProfile, string
   );
 }
 
-function ProfilePronouns() {
-  const { busy, value, setValue } = useProfileField('io.fsky.nyx.pronouns');
-  const disabled = !useProfileEditsAllowed('io.fsky.nyx.pronouns') || busy;
+function ProfilePronouns({
+  value,
+  setValue,
+  busy,
+}: ProfileFieldElementProps<'io.fsky.nyx.pronouns', FieldContext>) {
+  const disabled = busy;
 
   const [menuCords, setMenuCords] = useState<RectCords>();
   const [pendingPronoun, setPendingPronoun] = useState('');
@@ -364,9 +369,12 @@ function ProfilePronouns() {
   );
 }
 
-function ProfileTimezone() {
-  const { busy, value, setValue } = useProfileField('us.cloke.msc4175.tz');
-  const disabled = !useProfileEditsAllowed('us.cloke.msc4175.tz') || busy;
+function ProfileTimezone({
+  value,
+  setValue,
+  busy,
+}: ProfileFieldElementProps<'us.cloke.msc4175.tz', FieldContext>) {
+  const disabled = busy;
 
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -556,12 +564,26 @@ function IdentityProviderSettings({ authMetadata }: { authMetadata: ValidatedAut
   );
 }
 
+const LEGACY_FIELD_ELEMENTS = {
+  avatar_url: ProfileAvatar,
+  displayname: (props: ProfileFieldElementProps<'displayname', FieldContext>) => (
+    <ProfileTextField label="Display Name" {...props} />
+  ),
+};
+
+const EXTENDED_FIELD_ELEMENTS = {
+  'io.fsky.nyx.pronouns': ProfilePronouns,
+  'us.cloke.msc4175.tz': ProfileTimezone,
+};
+
 export function Profile() {
   const mx = useMatrixClient();
   const userId = mx.getUserId() as string;
   const server = getMxIdServer(userId);
   const authMetadata = useAuthMetadata();
   const accountManagementActions = useAccountManagementActions();
+  const useAuthentication = useMediaAuthentication();
+  const capabilities = useCapabilities();
 
   const [extendedProfile, refreshExtendedProfile] = useExtendedProfile(userId);
   const extendedProfileSupported = extendedProfile !== null;
@@ -570,8 +592,15 @@ export function Profile() {
   const profileEditableThroughIDP =
     authMetadata !== undefined &&
     authMetadata.account_management_actions_supported?.includes(accountManagementActions.profile);
-  const profileEditableThroughClient = useProfileEditsAllowed(null);
 
+  const [fieldElementConstructors, profileEditableThroughClient] = useMemo(() => {
+    const entries = Object.entries({
+      ...LEGACY_FIELD_ELEMENTS,
+      ...(extendedProfileSupported ? EXTENDED_FIELD_ELEMENTS : {}),
+    }).filter(([key]) => profileEditsAllowed(key, capabilities, extendedProfileSupported));
+    return [Object.fromEntries(entries), entries.length > 0];
+  }, [capabilities, extendedProfileSupported]);
+  
   const [fieldDefaults, setFieldDefaults] = useState<ExtendedProfile>({
     displayname: legacyProfile.displayName,
     avatar_url: legacyProfile.avatarUrl,
@@ -581,8 +610,6 @@ export function Profile() {
       setFieldDefaults(extendedProfile);
     }
   }, [setFieldDefaults, extendedProfile]);
-
-  const useAuthentication = useMediaAuthentication();
 
   const [saveState, handleSave] = useAsyncCallback(
     useCallback(
@@ -631,8 +658,12 @@ export function Profile() {
           overflow: 'hidden',
         }}
       >
-        <ProfileFieldContextProvider fieldDefaults={fieldDefaults} save={handleSave} busy={busy}>
-          {(save, reset, hasChanges, fields) => {
+        <ProfileFieldContext
+          fieldDefaults={fieldDefaults}
+          fieldElements={fieldElementConstructors}
+          context={{ busy }}
+        >
+          {(reset, hasChanges, fields, fieldElements) => {
             const heroAvatarUrl =
               (fields.avatar_url && mxcUrlToHttp(mx, fields.avatar_url, useAuthentication)) ??
               undefined;
@@ -669,14 +700,7 @@ export function Profile() {
                   {profileEditableThroughClient && (
                     <>
                       <Box gap="300" direction="Column">
-                        <ProfileAvatar />
-                        <ProfileTextField field="displayname" label="Display Name" />
-                        {extendedProfileSupported && (
-                          <>
-                            <ProfilePronouns />
-                            <ProfileTimezone />
-                          </>
-                        )}
+                        {fieldElements}
                       </Box>
                       <Box gap="300" alignItems="Center">
                         <Button
@@ -687,7 +711,7 @@ export function Profile() {
                           outlined
                           radii="300"
                           disabled={!hasChanges || busy}
-                          onClick={save}
+                          onClick={() => handleSave(fields)}
                         >
                           <Text size="B300">Save</Text>
                         </Button>
@@ -727,7 +751,7 @@ export function Profile() {
               </>
             );
           }}
-        </ProfileFieldContextProvider>
+        </ProfileFieldContext>
       </SequenceCard>
     </Box>
   );
