@@ -93,7 +93,7 @@ export function UserRoomProfile({ userId }: UserRoomProfileProps) {
       <Box direction="Column" gap="500" style={{ padding: config.space.S400 }}>
         <Box direction="Column" gap="400">
           <Box gap="400" alignItems="Start">
-            <UserHeroName displayName={displayName} userId={userId} extendedProfile={extendedProfile} />
+            <UserHeroName displayName={displayName} userId={userId} extendedProfile={extendedProfile ?? undefined} />
             {userId !== myUserId && (
               <Box shrink="No">
                 <Button
@@ -112,10 +112,10 @@ export function UserRoomProfile({ userId }: UserRoomProfileProps) {
           <Box alignItems="Center" gap="200" wrap="Wrap">
             {server && <ServerChip server={server} />}
             <ShareChip userId={userId} />
+            {timezone && <TimezoneChip timezone={timezone} />}
             {creator ? <CreatorChip /> : <PowerChip userId={userId} />}
             {userId !== myUserId && <MutualRoomsChip userId={userId} />}
             {userId !== myUserId && <OptionsChip userId={userId} />}
-            {timezone && <TimezoneChip timezone={timezone} />}
           </Box>
         </Box>
         {ignored && <IgnoredUserAlert />}
