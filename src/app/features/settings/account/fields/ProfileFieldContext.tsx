@@ -1,5 +1,5 @@
 import React, { FunctionComponent, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
-import { ExtendedProfile } from '../../../hooks/useExtendedProfile';
+import { ExtendedProfile } from '../../../../hooks/useExtendedProfile';
 
 type ExtendedProfileKeys = keyof {
   [Property in keyof ExtendedProfile as string extends Property ? never : Property]: ExtendedProfile[Property]
@@ -61,6 +61,7 @@ export function ProfileFieldContext<C>({
       defaultValue: fieldDefaults[key],
       value: fields[key],
       setValue: (value) => setField(key, value),
+      key,
     };
     if (element !== undefined) {
       return React.createElement(element, props);
