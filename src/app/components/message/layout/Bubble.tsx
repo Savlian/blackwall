@@ -45,6 +45,7 @@ export const BubbleLayout = as<'div', BubbleLayoutProps>(
             : classNames(css.BubbleContent, before ? css.BubbleContentArrowLeft : undefined)
         }
         direction="Column"
+        grow={hideBubble ? 'Yes' : undefined}
       >
         {!hideBubble && before ? <BubbleLeftArrow variant="SurfaceVariant" /> : null}
         {header}
