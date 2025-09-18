@@ -30,7 +30,7 @@ export function useExtendedProfileSupported(): boolean {
 
 export function useExtendedProfile(
   userId: string
-): [ExtendedProfile | undefined, () => Promise<void>] {
+): [ExtendedProfile | undefined | null, () => Promise<void>] {
   const mx = useMatrixClient();
   const extendedProfileSupported = useExtendedProfileSupported();
   const { data, refetch } = useQuery({
@@ -39,7 +39,7 @@ export function useExtendedProfile(
       if (extendedProfileSupported) {
         return extendedProfile.parse(await mx.getExtendedProfile(userId));
       }
-      return undefined;
+      return null;
     }, [mx, userId, extendedProfileSupported]),
     refetchOnMount: false,
   });
@@ -54,14 +54,19 @@ export function useExtendedProfile(
 
 const LEGACY_FIELDS = ['displayname', 'avatar_url'];
 
-export function useProfileFieldAllowed(field: string): boolean {
+export function useProfileEditsAllowed(field: string | null): boolean {
   const capabilities = useCapabilities();
   const extendedProfileSupported = useExtendedProfileSupported();
 
-  if (LEGACY_FIELDS.includes(field)) {
+  if (field && LEGACY_FIELDS.includes(field)) {
     // this field might have a pre-msc4133 capability. check that first
     if (capabilities[`m.set_${field}`]?.enabled === false) {
       return false;
+    }
+
+    if (!extendedProfileSupported) {
+      // the homeserver only supports legacy fields
+      return true;
     }
   }
 
@@ -81,6 +86,11 @@ export function useProfileFieldAllowed(field: string): boolean {
       return false;
     }
 
+    if (field === null) {
+      // profile field modifications are not completely disabled
+      return true;
+    }
+
     if (
       extendedProfileCapability.allowed !== undefined &&
       !extendedProfileCapability.allowed.includes(field)
@@ -95,6 +105,11 @@ export function useProfileFieldAllowed(field: string): boolean {
     }
 
     // the capability is enabled and `field` isn't blocked
+    return true;
+  }
+
+  if (field === null) {
+    // the homeserver only supports legacy fields. assume profile editing is generally allowed
     return true;
   }
 

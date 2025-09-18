@@ -36,7 +36,7 @@ import {
   Line,
 } from 'folds';
 import FocusTrap from 'focus-trap-react';
-import { UserEvent } from 'matrix-js-sdk';
+import { UserEvent, ValidatedAuthMetadata } from 'matrix-js-sdk';
 import { isKeyHotkey } from 'is-hotkey';
 import { SequenceCard } from '../../../components/sequence-card';
 import { SettingTile } from '../../../components/setting-tile';
@@ -54,7 +54,7 @@ import { UserHero, UserHeroName } from '../../../components/user-profile/UserHer
 import {
   ExtendedProfile,
   useExtendedProfile,
-  useProfileFieldAllowed,
+  useProfileEditsAllowed,
 } from '../../../hooks/useExtendedProfile';
 import { ProfileFieldContextProvider, useProfileField } from './ProfileFieldContext';
 import { AsyncStatus, useAsyncCallback } from '../../../hooks/useAsyncCallback';
@@ -62,6 +62,10 @@ import { FilterByValues } from '../../../../types/utils';
 import { CutoutCard } from '../../../components/cutout-card';
 import { ServerChip, ShareChip, TimezoneChip } from '../../../components/user-profile/UserChips';
 import { SequenceCardStyle } from '../styles.css';
+import { useUserProfile } from '../../../hooks/useUserProfile';
+import { useAuthMetadata } from '../../../hooks/useAuthMetadata';
+import { useAccountManagementActions } from '../../../hooks/useAccountManagement';
+import { withSearchParam } from '../../../pages/pathUtils';
 
 function ProfileAvatar() {
   const mx = useMatrixClient();
@@ -70,7 +74,7 @@ function ProfileAvatar() {
   const avatarUrl = value
     ? mxcUrlToHttp(mx, value, useAuthentication, 96, 96, 'crop') ?? undefined
     : undefined;
-  const disabled = !useProfileFieldAllowed('avatar_url') || busy;
+  const disabled = !useProfileEditsAllowed('avatar_url') || busy;
 
   const [imageFile, setImageFile] = useState<File>();
   const imageFileURL = useObjectURL(imageFile);
@@ -178,7 +182,7 @@ function ProfileTextField<K extends keyof FilterByValues<ExtendedProfile, string
   label,
 }: ProfileTextFieldProps<K>) {
   const { busy, defaultValue, value, setValue } = useProfileField<K>(field);
-  const disabled = !useProfileFieldAllowed(field) || busy;
+  const disabled = !useProfileEditsAllowed(field) || busy;
   const hasChanges = defaultValue !== value;
 
   const handleChange: ChangeEventHandler<HTMLInputElement> = (evt) => {
@@ -212,6 +216,7 @@ function ProfileTextField<K extends keyof FilterByValues<ExtendedProfile, string
               onChange={handleChange}
               variant="Secondary"
               radii="300"
+              disabled={disabled}
               readOnly={disabled}
               after={
                 hasChanges &&
@@ -237,7 +242,7 @@ function ProfileTextField<K extends keyof FilterByValues<ExtendedProfile, string
 
 function ProfilePronouns() {
   const { busy, value, setValue } = useProfileField('io.fsky.nyx.pronouns');
-  const disabled = !useProfileFieldAllowed('io.fsky.nyx.pronouns') || busy;
+  const disabled = !useProfileEditsAllowed('io.fsky.nyx.pronouns') || busy;
 
   const [menuCords, setMenuCords] = useState<RectCords>();
   const [pendingPronoun, setPendingPronoun] = useState('');
@@ -361,7 +366,7 @@ function ProfilePronouns() {
 
 function ProfileTimezone() {
   const { busy, value, setValue } = useProfileField('us.cloke.msc4175.tz');
-  const disabled = !useProfileFieldAllowed('us.cloke.msc4175.tz') || busy;
+  const disabled = !useProfileEditsAllowed('us.cloke.msc4175.tz') || busy;
 
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -515,45 +520,99 @@ function ProfileTimezone() {
   );
 }
 
+function IdentityProviderSettings({ authMetadata }: { authMetadata: ValidatedAuthMetadata }) {
+  const accountManagementActions = useAccountManagementActions();
+
+  const openProviderProfileSettings = useCallback(() => {
+    const authUrl = authMetadata?.account_management_uri ?? authMetadata?.issuer;
+    if (!authUrl) return;
+
+    window.open(
+      withSearchParam(authUrl, {
+        action: accountManagementActions.profile,
+      }),
+      '_blank'
+    );
+  }, [authMetadata, accountManagementActions]);
+
+  return (
+    <CutoutCard style={{ padding: config.space.S200 }} variant="Surface">
+      <SettingTile
+        description="Change profile settings in your homeserver's account dashboard."
+        after={
+          <Button
+            size="300"
+            variant="Secondary"
+            fill="Soft"
+            radii="300"
+            outlined
+            onClick={openProviderProfileSettings}
+          >
+            <Text size="B300">Open</Text>
+          </Button>
+        }
+      />
+    </CutoutCard>
+  );
+}
+
 export function Profile() {
   const mx = useMatrixClient();
   const userId = mx.getUserId() as string;
   const server = getMxIdServer(userId);
+  const authMetadata = useAuthMetadata();
+  const accountManagementActions = useAccountManagementActions();
 
   const [extendedProfile, refreshExtendedProfile] = useExtendedProfile(userId);
+  const extendedProfileSupported = extendedProfile !== null;
+  const legacyProfile = useUserProfile(userId);
 
-  const [fieldDefaults, setFieldDefaults] = useState<ExtendedProfile>({});
+  const profileEditableThroughIDP =
+    authMetadata !== undefined &&
+    authMetadata.account_management_actions_supported?.includes(accountManagementActions.profile);
+  const profileEditableThroughClient = useProfileEditsAllowed(null);
+
+  const [fieldDefaults, setFieldDefaults] = useState<ExtendedProfile>({
+    displayname: legacyProfile.displayName,
+    avatar_url: legacyProfile.avatarUrl,
+  });
   useLayoutEffect(() => {
-    if (extendedProfile !== undefined) {
+    if (extendedProfile) {
       setFieldDefaults(extendedProfile);
     }
-  }, [userId, setFieldDefaults, extendedProfile]);
+  }, [setFieldDefaults, extendedProfile]);
 
   const useAuthentication = useMediaAuthentication();
 
   const [saveState, handleSave] = useAsyncCallback(
     useCallback(
       async (fields: ExtendedProfile) => {
-        await Promise.all(
-          Object.entries(fields).map(async ([key, value]) => {
-            if (value === undefined) {
-              await mx.deleteExtendedProfileProperty(key);
-            } else {
-              await mx.setExtendedProfileProperty(key, value);
-            }
-          })
-        );
-        await refreshExtendedProfile();
-        // XXX: synthesise a profile update for ourselves because Synapse is broken and won't
-        const user = mx.getUser(userId);
-        if (user) {
-          user.displayName = fields.displayname;
-          user.avatarUrl = fields.avatar_url;
-          user.emit(UserEvent.DisplayName, user.events.presence, user);
-          user.emit(UserEvent.AvatarUrl, user.events.presence, user);
+        if (extendedProfileSupported) {
+          await Promise.all(
+            Object.entries(fields).map(async ([key, value]) => {
+              if (value === undefined) {
+                await mx.deleteExtendedProfileProperty(key);
+              } else {
+                await mx.setExtendedProfileProperty(key, value);
+              }
+            })
+          );
+          await refreshExtendedProfile();
+          // XXX: synthesise a profile update for ourselves because Synapse is broken and won't
+          const user = mx.getUser(userId);
+          if (user) {
+            user.displayName = fields.displayname;
+            user.avatarUrl = fields.avatar_url;
+            user.emit(UserEvent.DisplayName, user.events.presence, user);
+            user.emit(UserEvent.AvatarUrl, user.events.presence, user);
+          }
+        } else {
+          await mx.setDisplayName(fields.displayname ?? '');
+          await mx.setAvatarUrl(fields.avatar_url ?? '');
+          setFieldDefaults(fields);
         }
       },
-      [mx, userId, refreshExtendedProfile]
+      [mx, userId, refreshExtendedProfile, extendedProfileSupported, setFieldDefaults]
     )
   );
 
@@ -604,39 +663,66 @@ export function Profile() {
                   gap="400"
                   radii="0"
                 >
-                  <Box gap="300" direction='Column'>
-                    <ProfileAvatar />
-                    <ProfileTextField field="displayname" label="Display Name" />
-                    <ProfilePronouns />
-                    <ProfileTimezone />
-                  </Box>
-                  <Box gap="300" alignItems="Center">
-                    <Button
-                      type="submit"
-                      size="300"
-                      variant={!busy && hasChanges ? 'Success' : 'Secondary'}
-                      fill={!busy && hasChanges ? 'Solid' : 'Soft'}
-                      outlined
-                      radii="300"
-                      disabled={!hasChanges || busy}
-                      onClick={save}
-                    >
-                      <Text size="B300">Save</Text>
-                    </Button>
-                    <Button
-                      type="reset"
-                      size="300"
-                      variant="Secondary"
-                      fill="Soft"
-                      outlined
-                      radii="300"
-                      onClick={reset}
-                      disabled={!hasChanges || busy}
-                    >
-                      <Text size="B300">Cancel</Text>
-                    </Button>
-                    {saving && <Spinner size="300" />}
-                  </Box>
+                  {profileEditableThroughIDP && (
+                    <IdentityProviderSettings authMetadata={authMetadata} />
+                  )}
+                  {profileEditableThroughClient && (
+                    <>
+                      <Box gap="300" direction="Column">
+                        <ProfileAvatar />
+                        <ProfileTextField field="displayname" label="Display Name" />
+                        {extendedProfileSupported && (
+                          <>
+                            <ProfilePronouns />
+                            <ProfileTimezone />
+                          </>
+                        )}
+                      </Box>
+                      <Box gap="300" alignItems="Center">
+                        <Button
+                          type="submit"
+                          size="300"
+                          variant={!busy && hasChanges ? 'Success' : 'Secondary'}
+                          fill={!busy && hasChanges ? 'Solid' : 'Soft'}
+                          outlined
+                          radii="300"
+                          disabled={!hasChanges || busy}
+                          onClick={save}
+                        >
+                          <Text size="B300">Save</Text>
+                        </Button>
+                        <Button
+                          type="reset"
+                          size="300"
+                          variant="Secondary"
+                          fill="Soft"
+                          outlined
+                          radii="300"
+                          onClick={reset}
+                          disabled={!hasChanges || busy}
+                        >
+                          <Text size="B300">Cancel</Text>
+                        </Button>
+                        {saving && <Spinner size="300" />}
+                      </Box>
+                    </>
+                  )}
+                  {!(profileEditableThroughClient || profileEditableThroughIDP) && (
+                    <CutoutCard style={{ padding: config.space.S200 }} variant="Critical">
+                      <SettingTile>
+                        <Box direction="Column" gap="200">
+                          <Box gap="200" justifyContent="SpaceBetween">
+                            <Text size="L400">Profile Editing Disabled</Text>
+                          </Box>
+                          <Box direction="Column">
+                            <Text size="T200">
+                              Your homeserver does not allow you to edit your profile.
+                            </Text>
+                          </Box>
+                        </Box>
+                      </SettingTile>
+                    </CutoutCard>
+                  )}
                 </SequenceCard>
               </>
             );
