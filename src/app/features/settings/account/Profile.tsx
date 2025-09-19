@@ -1,17 +1,5 @@
-import React, {
-  useCallback,
-  useLayoutEffect,
-  useMemo,
-  useState,
-} from 'react';
-import {
-  Box,
-  Text,
-  Button,
-  config,
-  Spinner,
-  Line,
-} from 'folds';
+import React, { useCallback, useLayoutEffect, useMemo, useState } from 'react';
+import { Box, Text, Button, config, Spinner, Line } from 'folds';
 import { UserEvent, ValidatedAuthMetadata } from 'matrix-js-sdk';
 import { SequenceCard } from '../../../components/sequence-card';
 import { SettingTile } from '../../../components/setting-tile';
@@ -59,7 +47,6 @@ function IdentityProviderSettings({ authMetadata }: { authMetadata: ValidatedAut
   return (
     <CutoutCard style={{ padding: config.space.S200 }} variant="Surface">
       <SettingTile
-        description="Change profile settings in your homeserver's account dashboard."
         after={
           <Button
             size="300"
@@ -72,7 +59,9 @@ function IdentityProviderSettings({ authMetadata }: { authMetadata: ValidatedAut
             <Text size="B300">Open</Text>
           </Button>
         }
-      />
+      >
+        <Text size="T200">Change profile settings in your homeserver's account dashboard.</Text>
+      </SettingTile>
     </CutoutCard>
   );
 }
