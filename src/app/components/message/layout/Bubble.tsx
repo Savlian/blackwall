@@ -40,19 +40,23 @@ export const BubbleLayout = as<'div', BubbleLayoutProps>(
       </Box>
       <Box grow="Yes" direction="Column">
         {header}
-        <Box>
-          <Box
-            className={
-              hideBubble
-                ? undefined
-                : classNames(css.BubbleContent, before ? css.BubbleContentArrowLeft : undefined)
-            }
-            direction="Column"
-          >
-            {!hideBubble && before ? <BubbleLeftArrow variant="SurfaceVariant" /> : null}
-            {children}
+        {hideBubble ? (
+          children
+        ) : (
+          <Box>
+            <Box
+              className={
+                hideBubble
+                  ? undefined
+                  : classNames(css.BubbleContent, before ? css.BubbleContentArrowLeft : undefined)
+              }
+              direction="Column"
+            >
+              {before ? <BubbleLeftArrow variant="SurfaceVariant" /> : null}
+              {children}
+            </Box>
           </Box>
-        </Box>
+        )}
       </Box>
     </Box>
   )
