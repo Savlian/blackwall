@@ -6,6 +6,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import { deepCompare } from 'matrix-js-sdk/lib/utils';
 import { ExtendedProfile } from '../../../../hooks/useExtendedProfile';
 
 type ExtendedProfileKeys = keyof {
@@ -71,8 +72,7 @@ export function ProfileFieldContext<C>({
     () =>
       Object.entries(fields).find(
         ([key, value]) =>
-          // this is a hack but ExtendedProfile is always valid JSON anyway
-          JSON.stringify(fieldDefaults[key as keyof ExtendedProfile]) !== JSON.stringify(value)
+          deepCompare(fieldDefaults[key as keyof ExtendedProfile], value)
       ) !== undefined,
     [fields, fieldDefaults]
   );
