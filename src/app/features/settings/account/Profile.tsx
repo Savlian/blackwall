@@ -60,7 +60,7 @@ function IdentityProviderSettings({ authMetadata }: { authMetadata: ValidatedAut
           </Button>
         }
       >
-        <Text size="T200">Change profile settings in your homeserver's account dashboard.</Text>
+        <Text size="T200">Change profile settings in your homeserver&apos;s account dashboard.</Text>
       </SettingTile>
     </CutoutCard>
   );
