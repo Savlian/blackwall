@@ -28,6 +28,8 @@ export function useExtendedProfileSupported(): boolean {
   return unstableFeatures?.['uk.tcpip.msc4133'] || versions.includes('v1.15');
 }
 
+/// Returns the user's MSC4133 extended profile, if our homeserver supports it.
+/// This will return `undefined` while the request is in flight and `null` if the HS lacks support.
 export function useExtendedProfile(
   userId: string
 ): [ExtendedProfile | undefined | null, () => Promise<void>] {
@@ -54,6 +56,7 @@ export function useExtendedProfile(
 
 const LEGACY_FIELDS = ['displayname', 'avatar_url'];
 
+/// Returns whether the given profile field may be edited by the user.
 export function profileEditsAllowed(
   field: string,
   capabilities: Capabilities,

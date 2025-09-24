@@ -27,8 +27,6 @@ import { ProfileTextField } from './fields/ProfileTextField';
 import { ProfilePronouns } from './fields/ProfilePronouns';
 import { ProfileTimezone } from './fields/ProfileTimezone';
 
-export type FieldContext = { busy: boolean };
-
 function IdentityProviderSettings({ authMetadata }: { authMetadata: ValidatedAuthMetadata }) {
   const accountManagementActions = useAccountManagementActions();
 
@@ -66,6 +64,12 @@ function IdentityProviderSettings({ authMetadata }: { authMetadata: ValidatedAut
   );
 }
 
+/// Context props which are passed to every field element.
+/// Right now this is only a flag for if the profile is being saved.
+export type FieldContext = { busy: boolean };
+
+/// Field editor elements for the pre-MSC4133 profile fields. This should only
+/// ever contain keys for `displayname` and `avatar_url`.
 const LEGACY_FIELD_ELEMENTS = {
   avatar_url: ProfileAvatar,
   displayname: (props: ProfileFieldElementProps<'displayname', FieldContext>) => (
@@ -73,6 +77,8 @@ const LEGACY_FIELD_ELEMENTS = {
   ),
 };
 
+/// Field editor elements for MSC4133 extended profile fields.
+/// These will appear in the UI in the order they are defined in this map.
 const EXTENDED_FIELD_ELEMENTS = {
   'io.fsky.nyx.pronouns': ProfilePronouns,
   'us.cloke.msc4175.tz': ProfileTimezone,
@@ -91,6 +97,7 @@ export function Profile() {
   const extendedProfileSupported = extendedProfile !== null;
   const legacyProfile = useUserProfile(userId);
 
+  // next-gen auth identity providers may provide profile settings if they want
   const profileEditableThroughIDP =
     authMetadata !== undefined &&
     authMetadata.account_management_actions_supported?.includes(accountManagementActions.profile);
@@ -98,8 +105,12 @@ export function Profile() {
   const [fieldElementConstructors, profileEditableThroughClient] = useMemo(() => {
     const entries = Object.entries({
       ...LEGACY_FIELD_ELEMENTS,
+      // don't show the MSC4133 elements if the HS doesn't support them
       ...(extendedProfileSupported ? EXTENDED_FIELD_ELEMENTS : {}),
-    }).filter(([key]) => profileEditsAllowed(key, capabilities, extendedProfileSupported));
+    }).filter(([key]) => 
+      // don't show fields if the HS blocks them with capabilities
+      profileEditsAllowed(key, capabilities, extendedProfileSupported)
+    );
     return [Object.fromEntries(entries), entries.length > 0];
   }, [capabilities, extendedProfileSupported]);
 
@@ -107,7 +118,13 @@ export function Profile() {
     displayname: legacyProfile.displayName,
     avatar_url: legacyProfile.avatarUrl,
   });
+
+  // this updates the field defaults when the extended profile data is (re)loaded.
+  // it has to be a layout effect to prevent flickering on saves.
+  // if MSC4133 isn't supported by the HS this does nothing
   useLayoutEffect(() => {
+    // `extendedProfile` includes the old dn/av fields, so
+    // we don't have to add those here
     if (extendedProfile) {
       setFieldDefaults(extendedProfile);
     }
@@ -126,8 +143,13 @@ export function Profile() {
               }
             })
           );
+          
+          // calling this will trigger the layout effect to update the defaults
+          // once the profile request completes
           await refreshExtendedProfile();
-          // XXX: synthesise a profile update for ourselves because Synapse is broken and won't
+
+          // synthesise a profile update for ourselves to update our name and avatr in the rest
+          // of the UI. code copied from matrix-js-sdk
           const user = mx.getUser(userId);
           if (user) {
             user.displayName = fields.displayname;
@@ -138,6 +160,8 @@ export function Profile() {
         } else {
           await mx.setDisplayName(fields.displayname ?? '');
           await mx.setAvatarUrl(fields.avatar_url ?? '');
+          // layout effect does nothing because `extendedProfile` is undefined
+          // so we have to update the defaults explicitly here
           setFieldDefaults(fields);
         }
       },
