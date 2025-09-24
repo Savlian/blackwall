@@ -7,22 +7,22 @@ export type InCinnyExploreServersContent = {
   servers?: string[];
 };
 
-export const useExploreServers = (
-  exclude?: string[]
-): [string[], (server: string) => Promise<void>, (server: string) => Promise<void>] => {
+export const useExploreServers = (): [
+  string[],
+  (server: string) => Promise<void>,
+  (server: string) => Promise<void>
+] => {
   const mx = useMatrixClient();
   const accountData = useAccountData(AccountDataEvent.CinnyExplore);
   const userAddedServers = useMemo(
-    () =>
-      accountData
-        ?.getContent<InCinnyExploreServersContent>()
-        ?.servers?.filter((server) => !exclude?.includes(server)) ?? [],
-    [exclude, accountData]
+    () => accountData?.getContent<InCinnyExploreServersContent>()?.servers ?? [],
+    [accountData]
   );
 
   const addServer = useCallback(
     async (server: string) => {
       if (userAddedServers.indexOf(server) === -1) {
+        // @ts-expect-error Custom account data event
         await mx.setAccountData(AccountDataEvent.CinnyExplore, {
           servers: [...userAddedServers, server],
         });
@@ -33,6 +33,7 @@ export const useExploreServers = (
 
   const removeServer = useCallback(
     async (server: string) => {
+      // @ts-expect-error Custom account data event
       await mx.setAccountData(AccountDataEvent.CinnyExplore, {
         servers: userAddedServers.filter((addedServer) => server !== addedServer),
       });

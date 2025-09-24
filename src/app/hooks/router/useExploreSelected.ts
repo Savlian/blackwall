@@ -11,7 +11,7 @@ export const useExploreSelected = (): boolean => {
   return !!match;
 };
 
-export const useExploreFeaturedRooms = (): boolean => {
+export const useExploreFeaturedSelected = (): boolean => {
   const match = useMatch({
     path: getExploreFeaturedPath(),
     caseSensitive: true,
