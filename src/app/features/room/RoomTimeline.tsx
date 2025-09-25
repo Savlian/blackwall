@@ -127,7 +127,7 @@ import { useAccessiblePowerTagColors, useGetMemberPowerTag } from '../../hooks/u
 import { useTheme } from '../../hooks/useTheme';
 import { useRoomCreatorsTag } from '../../hooks/useRoomCreatorsTag';
 import { usePowerLevelTags } from '../../hooks/usePowerLevelTags';
-import { ThreadSelector, ThreadSelectorContainer } from '../../components/thread-selector';
+import { ThreadSelector, ThreadSelectorContainer } from './message/thread-selector';
 
 const TimelineFloat = as<'div', css.TimelineFloatVariants>(
   ({ position, className, ...props }, ref) => (
@@ -1113,7 +1113,13 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
 
             {threadDetail && (
               <ThreadSelectorContainer>
-                <ThreadSelector room={room} senderId={senderId} threadDetail={threadDetail} />
+                <ThreadSelector
+                  room={room}
+                  threadDetail={threadDetail}
+                  hour24Clock={hour24Clock}
+                  dateFormatString={dateFormatString}
+                  outlined={messageLayout === MessageLayout.Bubble}
+                />
               </ThreadSelectorContainer>
             )}
           </Message>

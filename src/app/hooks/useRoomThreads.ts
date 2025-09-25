@@ -14,7 +14,7 @@ export const useRoomMyThreads = (room: Room): MatrixEvent[] | undefined => {
           null,
           30,
           Direction.Backward,
-          ThreadFilterType.My
+          ThreadFilterType.All
         ),
       [mx, room]
     )

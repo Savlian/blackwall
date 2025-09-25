@@ -80,7 +80,7 @@ import {
 } from '../../../hooks/useMemberPowerTag';
 import { useRoomCreatorsTag } from '../../../hooks/useRoomCreatorsTag';
 import { useRoomMyThreads } from '../../../hooks/useRoomThreads';
-import { ThreadSelector, ThreadSelectorContainer } from '../../../components/thread-selector';
+import { ThreadSelector, ThreadSelectorContainer } from '../message/thread-selector';
 
 type ThreadMessageProps = {
   room: Room;
@@ -287,9 +287,10 @@ export const ThreadsMenu = forwardRef<HTMLDivElement, ThreadsMenuProps>(
                 <ThreadSelectorContainer>
                   <ThreadSelector
                     room={room}
-                    senderId={event.getSender()!}
                     threadDetail={threadDetail}
                     outlined
+                    hour24Clock={hour24Clock}
+                    dateFormatString={dateFormatString}
                   />
                 </ThreadSelectorContainer>
               )}
