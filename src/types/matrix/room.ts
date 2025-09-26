@@ -77,10 +77,6 @@ export type IRoomCreateContent = {
   };
 };
 
-export type IRoomPinnedEventsContent = {
-  pinned: string[];
-};
-
 export type GetContentCallback = <T>() => T;
 
 export type RoomToParents = Map<string, Set<string>>;
