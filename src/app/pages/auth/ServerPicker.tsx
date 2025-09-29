@@ -111,7 +111,14 @@ export function ServerPicker({
                   <Header size="300" style={{ padding: `0 ${config.space.S200}` }}>
                     <Text size="L400">Homeserver List</Text>
                   </Header>
-                  <div style={{ padding: config.space.S100, paddingTop: 0 }}>
+                  <div style={{
+                    padding: config.space.S100,
+                    paddingTop: 0,
+                    maxHeight: 320,
+                    overflowY: 'auto',
+                    WebkitOverflowScrolling: 'touch',
+                    }}
+                  >
                     {serverList?.map((serverName) => (
                       <MenuItem
                         key={serverName}
