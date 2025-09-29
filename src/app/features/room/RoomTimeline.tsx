@@ -77,6 +77,7 @@ import {
   decryptAllTimelineEvent,
   getEditedEvent,
   getEventReactions,
+  getEventThreadDetail,
   getLatestEditableEvt,
   getMemberDisplayName,
   getReactionContent,
@@ -126,6 +127,7 @@ import { useAccessiblePowerTagColors, useGetMemberPowerTag } from '../../hooks/u
 import { useTheme } from '../../hooks/useTheme';
 import { useRoomCreatorsTag } from '../../hooks/useRoomCreatorsTag';
 import { usePowerLevelTags } from '../../hooks/usePowerLevelTags';
+import { ThreadSelector, ThreadSelectorContainer } from './message/thread-selector';
 
 const TimelineFloat = as<'div', css.TimelineFloatVariants>(
   ({ position, className, ...props }, ref) => (
@@ -1034,6 +1036,7 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
         const senderId = mEvent.getSender() ?? '';
         const senderDisplayName =
           getMemberDisplayName(room, senderId) ?? getMxIdLocalPart(senderId) ?? senderId;
+        const threadDetail = getEventThreadDetail(mEvent);
 
         return (
           <Message
@@ -1106,6 +1109,18 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
                 linkifyOpts={linkifyOpts}
                 outlineAttachment={messageLayout === MessageLayout.Bubble}
               />
+            )}
+
+            {threadDetail && (
+              <ThreadSelectorContainer>
+                <ThreadSelector
+                  room={room}
+                  threadDetail={threadDetail}
+                  hour24Clock={hour24Clock}
+                  dateFormatString={dateFormatString}
+                  outlined={messageLayout === MessageLayout.Bubble}
+                />
+              </ThreadSelectorContainer>
             )}
           </Message>
         );
