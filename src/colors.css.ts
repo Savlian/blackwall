@@ -197,6 +197,105 @@ const darkThemeData = {
 
 export const darkTheme = createTheme(color, darkThemeData);
 
+const blackwallThemeData = {
+  Background: {
+    Container: 'rgba(2, 2, 2, 0.96)',
+    ContainerHover: 'rgba(12, 12, 12, 0.92)',
+    ContainerActive: 'rgba(18, 18, 18, 0.88)',
+    ContainerLine: 'rgba(255, 255, 255, 0.08)',
+    OnContainer: '#f4dcdc',
+  },
+
+  Surface: {
+    Container: 'rgba(4, 4, 4, 0.9)',
+    ContainerHover: 'rgba(10, 10, 10, 0.88)',
+    ContainerActive: 'rgba(16, 16, 16, 0.86)',
+    ContainerLine: 'rgba(255, 255, 255, 0.07)',
+    OnContainer: '#f8e9e9',
+  },
+
+  SurfaceVariant: {
+    Container: 'rgba(12, 12, 12, 0.88)',
+    ContainerHover: 'rgba(18, 18, 18, 0.86)',
+    ContainerActive: 'rgba(22, 22, 22, 0.84)',
+    ContainerLine: 'rgba(255, 255, 255, 0.06)',
+    OnContainer: '#fbeeee',
+  },
+
+  Primary: {
+    Main: '#7A0000',
+    MainHover: '#8c0505',
+    MainActive: '#9b0909',
+    MainLine: '#ff1a1a',
+    OnMain: '#FFFFFF',
+    Container: 'rgba(122, 0, 0, 0.2)',
+    ContainerHover: 'rgba(168, 0, 0, 0.24)',
+    ContainerActive: 'rgba(255, 26, 26, 0.28)',
+    ContainerLine: 'rgba(255, 80, 80, 0.45)',
+    OnContainer: '#ffeaea',
+  },
+
+  Secondary: {
+    Main: 'rgba(255, 255, 255, 0.86)',
+    MainHover: 'rgba(255, 255, 255, 0.9)',
+    MainActive: '#ffffff',
+    MainLine: 'rgba(255, 255, 255, 0.12)',
+    OnMain: '#060606',
+    Container: 'rgba(26, 26, 26, 0.92)',
+    ContainerHover: 'rgba(36, 36, 36, 0.9)',
+    ContainerActive: 'rgba(46, 46, 46, 0.88)',
+    ContainerLine: 'rgba(255, 255, 255, 0.12)',
+    OnContainer: '#fdf4f4',
+  },
+
+  Success: {
+    Main: '#85E0BA',
+    MainHover: '#70DBAF',
+    MainActive: '#66D9A9',
+    MainLine: '#5CD6A3',
+    OnMain: '#0F3D2A',
+    Container: '#175C3F',
+    ContainerHover: '#1A6646',
+    ContainerActive: '#1C704D',
+    ContainerLine: '#1F7A54',
+    OnContainer: '#CCF2E2',
+  },
+
+  Warning: {
+    Main: '#E3BA91',
+    MainHover: '#DFAF7E',
+    MainActive: '#DDA975',
+    MainLine: '#DAA36C',
+    OnMain: '#3F2A15',
+    Container: '#5E3F20',
+    ContainerHover: '#694624',
+    ContainerActive: '#734D27',
+    ContainerLine: '#7D542B',
+    OnContainer: '#F3E2D1',
+  },
+
+  Critical: {
+    Main: '#E85C5C',
+    MainHover: '#E04A4A',
+    MainActive: '#D63F3F',
+    MainLine: '#FF6F6F',
+    OnMain: '#2C0909',
+    Container: '#5A1A1A',
+    ContainerHover: '#651F1F',
+    ContainerActive: '#702424',
+    ContainerLine: '#7A2828',
+    OnContainer: '#FBD7D7',
+  },
+
+  Other: {
+    FocusRing: 'rgba(255, 255, 255, 0.35)',
+    Shadow: 'rgba(0, 0, 0, 0.85)',
+    Overlay: 'rgba(0, 0, 0, 0.78)',
+  },
+};
+
+export const blackwallTheme = createTheme(color, blackwallThemeData);
+
 export const butterTheme = createTheme(color, {
   ...darkThemeData,
   Background: {
@@ -236,3 +335,4 @@ export const butterTheme = createTheme(color, {
     OnContainer: '#F2EED3',
   },
 });
+

@@ -1,10 +1,10 @@
 const cons = {
-  version: '4.9.0',
+  version: '0.0.1',
   secretKey: {
-    ACCESS_TOKEN: 'cinny_access_token',
-    DEVICE_ID: 'cinny_device_id',
-    USER_ID: 'cinny_user_id',
-    BASE_URL: 'cinny_hs_base_url',
+    ACCESS_TOKEN: 'blackwall_access_token',
+    DEVICE_ID: 'blackwall_device_id',
+    USER_ID: 'blackwall_user_id',
+    BASE_URL: 'blackwall_hs_base_url',
   },
   status: {
     PRE_FLIGHT: 'pre-flight',

@@ -1,20 +1,9 @@
-## Builder
-FROM node:20.12.2-alpine3.18 as builder
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY . .
+RUN npm ci && npm run build
 
-WORKDIR /src
-
-COPY .npmrc package.json package-lock.json /src/
-RUN npm ci
-COPY . /src/
-ENV NODE_OPTIONS=--max_old_space_size=4096
-RUN npm run build
-
-
-## App
-FROM nginx:1.29.0-alpine
-
-COPY --from=builder /src/dist /app
-COPY --from=builder /src/docker-nginx.conf /etc/nginx/conf.d/default.conf
-
-RUN rm -rf /usr/share/nginx/html \
-  && ln -s /app /usr/share/nginx/html
+FROM nginx:1.27-alpine
+COPY --from=build /app/dist/ /usr/share/nginx/html/
+RUN rm -f /usr/share/nginx/html/sw.js /usr/share/nginx/html/sw.js.map || true
+EXPOSE 80

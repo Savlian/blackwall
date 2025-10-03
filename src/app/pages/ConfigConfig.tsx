@@ -1,6 +1,7 @@
-import { Box, Button, Dialog, Spinner, Text, color, config } from 'folds';
+import { Box, Button, Spinner, Text, color, config } from 'folds';
 import React from 'react';
 import { SplashScreen } from '../components/splash-screen';
+import { GlitchDialog } from '../components/blackwall/GlitchDialog';
 
 export function ConfigConfigLoading() {
   return (
@@ -22,7 +23,7 @@ export function ConfigConfigError({ error, retry, ignore }: ConfigConfigErrorPro
   return (
     <SplashScreen>
       <Box grow="Yes" direction="Column" gap="400" alignItems="Center" justifyContent="Center">
-        <Dialog>
+        <GlitchDialog>
           <Box style={{ padding: config.space.S400 }} direction="Column" gap="400">
             <Box direction="Column" gap="100">
               <Text>Failed to load client configuration file.</Text>
@@ -46,7 +47,7 @@ export function ConfigConfigError({ error, retry, ignore }: ConfigConfigErrorPro
               </Text>
             </Button>
           </Box>
-        </Dialog>
+        </GlitchDialog>
       </Box>
     </SplashScreen>
   );

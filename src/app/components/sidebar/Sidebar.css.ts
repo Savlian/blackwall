@@ -1,20 +1,113 @@
-import { createVar, style } from '@vanilla-extract/css';
+import { createVar, keyframes, style, globalStyle } from '@vanilla-extract/css';
 import { recipe, RecipeVariants } from '@vanilla-extract/recipes';
 import { color, config, DefaultReset, Disabled, FocusOutline, toRem } from 'folds';
 import { ContainerColor } from '../../styles/ContainerColor.css';
+
+const neonGridShift = keyframes({
+  '0%': { backgroundPosition: '0px 0px, 28px 18px, 0px 0px' },
+  '50%': { backgroundPosition: '26px 12px, 54px 34px, 18px 12px' },
+  '100%': { backgroundPosition: '52px 24px, 80px 50px, 36px 24px' },
+});
+
+const avatarPulse = keyframes({
+  '0%': { transform: 'scale(0.96)', opacity: 0.16 },
+  '40%': { transform: 'scale(1.02)', opacity: 0.24 },
+  '70%': { transform: 'scale(0.98)', opacity: 0.18 },
+  '100%': { transform: 'scale(0.96)', opacity: 0.16 },
+});
+
+const glitchSweep = keyframes({
+  '0%': { transform: 'translateY(-50%) translateX(-4px)', opacity: 0 },
+  '30%': { opacity: 0.4 },
+  '50%': { transform: 'translateY(-50%) translateX(4px)', opacity: 0.55 },
+  '80%': { opacity: 0.2 },
+  '100%': { transform: 'translateY(-50%) translateX(0)', opacity: 0 },
+});
+
+const circuitTrace = keyframes({
+  '0%': { backgroundPosition: 'center, 0% 0%, 0 0, 0 0' },
+  '50%': { backgroundPosition: 'center, 45% 55%, 18px 24px, -12px -18px' },
+  '100%': { backgroundPosition: 'center, 90% 110%, 0 0, 0 0' },
+});
+
+const weatherPulse = keyframes({
+  '0%': { transform: 'scale(1) rotate(0deg)', opacity: 0.4 },
+  '50%': { transform: 'scale(1.06) rotate(3deg)', opacity: 0.62 },
+  '100%': { transform: 'scale(1) rotate(0deg)', opacity: 0.4 },
+});
 
 export const Sidebar = style([
   DefaultReset,
   {
     width: toRem(66),
-    backgroundColor: color.Background.Container,
-    borderRight: `${config.borderWidth.B300} solid ${color.Background.ContainerLine}`,
+    backgroundColor: 'rgba(18, 0, 2, 0.82)',
+    borderRight: `${config.borderWidth.B300} solid rgba(255, 48, 48, 0.3)`,
 
     display: 'flex',
     flexDirection: 'column',
     color: color.Background.OnContainer,
+    position: 'relative',
+    isolation: 'isolate',
+    overflow: 'hidden',
+    boxShadow: '0 0 22px rgba(255, 40, 84, 0.18)',
+    selectors: {
+      '&::before': {
+        content: '',
+        position: 'absolute',
+        inset: '-12% -40%',
+        backgroundImage:
+          'linear-gradient(115deg, rgba(255, 28, 28, 0.16) 0%, rgba(26, 0, 0, 0.1) 45%, rgba(12, 0, 0, 0) 70%), linear-gradient(90deg, rgba(210, 0, 0, 0.14) 1px, transparent 1px), linear-gradient(0deg, rgba(255, 20, 20, 0.12) 1px, transparent 1px)',
+        backgroundSize: '100% 100%, 42px 42px, 42px 42px',
+        mixBlendMode: 'screen',
+        opacity: 0.35,
+        animationName: neonGridShift,
+        animationDuration: '32s',
+        animationTimingFunction: 'ease-in-out',
+        animationIterationCount: 'infinite',
+        pointerEvents: 'none',
+        zIndex: -3,
+      },
+      '&::after': {
+        content: '',
+        position: 'absolute',
+        inset: 0,
+        backgroundImage:
+          'radial-gradient(90% 120% at 50% 20%, rgba(255, 38, 38, 0.24) 0%, rgba(18, 0, 0, 0) 70%), linear-gradient(125deg, rgba(255, 68, 96, 0.18) 0%, rgba(8, 0, 0, 0) 60%), repeating-linear-gradient(90deg, rgba(255, 64, 96, 0.22) 0 1px, transparent 1px 8px), repeating-linear-gradient(0deg, rgba(255, 48, 108, 0.16) 0 1px, transparent 1px 12px)',
+        backgroundSize: '100% 100%, 180% 160%, 60px 60px, 110px 110px',
+        backgroundPosition: 'center, 0 0, 0 0, 0 0',
+        pointerEvents: 'none',
+        opacity: 0.32,
+        mixBlendMode: 'screen',
+        animationName: circuitTrace,
+        animationDuration: '28s',
+        animationTimingFunction: 'linear',
+        animationIterationCount: 'infinite',
+        zIndex: -2,
+      },
+    },
   },
 ]);
+
+globalStyle(`${Sidebar} > *`, {
+  position: 'relative',
+  zIndex: 1,
+});
+
+export const SidebarWeatherOverlay = style({
+  position: 'absolute',
+  inset: '-18% -30%',
+  background:
+    'radial-gradient(80% 140% at 50% 10%, rgba(92, 32, 180, 0.28) 0%, rgba(8, 0, 12, 0) 70%), radial-gradient(60% 80% at 30% 120%, rgba(255, 48, 120, 0.22) 0%, rgba(12, 0, 24, 0) 65%)',
+  mixBlendMode: 'screen',
+  filter: 'blur(32px)',
+  opacity: 0.5,
+  pointerEvents: 'none',
+  animationName: weatherPulse,
+  animationDuration: '24s',
+  animationTimingFunction: 'ease-in-out',
+  animationIterationCount: 'infinite',
+  zIndex: -1,
+});
 
 export const SidebarStack = style([
   DefaultReset,
@@ -90,9 +183,39 @@ export const SidebarItem = recipe({
           background: 'CurrentColor',
           transition: 'height 200ms linear',
         },
+        '&::after': {
+          content: '',
+          position: 'absolute',
+          left: toRem(-12),
+          top: '50%',
+          width: toRem(8),
+          height: toRem(22),
+          transform: 'translateY(-50%)',
+          background:
+            'linear-gradient(180deg, rgba(255, 50, 50, 0.6) 0%, rgba(122, 0, 0, 0.1) 70%, rgba(255, 40, 40, 0.45) 100%)',
+          filter: 'blur(1.2px)',
+          opacity: 0,
+          pointerEvents: 'none',
+        },
         '&:hover::before': {
           display: 'block',
           width: toRem(3),
+        },
+        '&:hover::after, &[aria-pressed=true]::after': {
+          opacity: 0.28,
+          animation: `${glitchSweep} 520ms steps(2, end) infinite`,
+        },
+        '&[data-activity="true"]::after': {
+          opacity: 0.2,
+          animation: `${glitchSweep} 920ms steps(3, end) infinite`,
+        },
+        '&[data-alert="true"]::after': {
+          opacity: 0.44,
+          animation: `${glitchSweep} 420ms steps(2, end) infinite`,
+        },
+        '&[data-alert="true"]::before': {
+          display: 'block',
+          height: toRem(20),
         },
       },
     },
@@ -148,9 +271,35 @@ export type SidebarItemBadgeVariants = RecipeVariants<typeof SidebarItemBadge>;
 export const SidebarAvatar = recipe({
   base: [
     {
+      position: 'relative',
+      isolation: 'isolate',
       selectors: {
         'button&': {
           cursor: 'pointer',
+        },
+        '&::after': {
+          content: '',
+          position: 'absolute',
+          inset: '-6px',
+          borderRadius: 'inherit',
+          background:
+            'radial-gradient(circle at 50% 50%, rgba(255, 40, 40, 0.26) 0%, rgba(18, 0, 0, 0.04) 70%)',
+          filter: 'blur(6px)',
+          opacity: 0.14,
+          transition: 'opacity 220ms ease, transform 220ms ease',
+          animation: `${avatarPulse} 6.4s ease-in-out infinite`,
+          pointerEvents: 'none',
+        },
+        '&[aria-pressed=true]::after': {
+          opacity: 0.26,
+        },
+        '&[data-activity="true"]::after': {
+          opacity: 0.24,
+          animationDuration: '4.4s',
+        },
+        '&[data-alert="true"]::after': {
+          opacity: 0.38,
+          animationDuration: '3.2s',
         },
       },
     },
@@ -185,6 +334,15 @@ export const SidebarAvatar = recipe({
 });
 export type SidebarAvatarVariants = RecipeVariants<typeof SidebarAvatar>;
 
+const sidebarAvatarLarge = SidebarAvatar({ size: '400' });
+const sidebarAvatarMedium = SidebarAvatar({ size: '300' });
+const sidebarAvatarSmall = SidebarAvatar({ size: '200' });
+
+globalStyle(`${sidebarAvatarLarge} > *, ${sidebarAvatarMedium} > *, ${sidebarAvatarSmall} > *`, {
+  position: 'relative',
+  zIndex: 1,
+});
+
 export const SidebarFolder = recipe({
   base: [
     ContainerColor({ variant: 'Background' }),
@@ -200,6 +358,27 @@ export const SidebarFolder = recipe({
       selectors: {
         'button&': {
           cursor: 'pointer',
+        },
+        '&::after': {
+          content: '',
+          position: 'absolute',
+          inset: '-8px',
+          borderRadius: 'inherit',
+          background:
+            'radial-gradient(circle at 50% 40%, rgba(255, 38, 38, 0.28) 0%, rgba(8, 0, 0, 0.08) 70%)',
+          filter: 'blur(8px)',
+          opacity: 0,
+          transition: 'opacity 220ms ease, transform 220ms ease',
+          pointerEvents: 'none',
+        },
+        '&:hover::after, &:focus-visible::after': {
+          opacity: 0.24,
+        },
+        '&[data-activity="true"]::after': {
+          opacity: 0.2,
+        },
+        '&[data-alert="true"]::after': {
+          opacity: 0.34,
         },
       },
     },

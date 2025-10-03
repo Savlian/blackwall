@@ -1,27 +1,16 @@
 import React, { ReactNode, useEffect } from 'react';
 import { configClass, varsClass } from 'folds';
 import {
-  DarkTheme,
-  LightTheme,
+  BlackwallTheme,
   ThemeContextProvider,
-  ThemeKind,
   useActiveTheme,
-  useSystemThemeKind,
 } from '../hooks/useTheme';
 
 export function UnAuthRouteThemeManager() {
-  const systemThemeKind = useSystemThemeKind();
-
   useEffect(() => {
     document.body.className = '';
-    document.body.classList.add(configClass, varsClass);
-    if (systemThemeKind === ThemeKind.Dark) {
-      document.body.classList.add(...DarkTheme.classNames);
-    }
-    if (systemThemeKind === ThemeKind.Light) {
-      document.body.classList.add(...LightTheme.classNames);
-    }
-  }, [systemThemeKind]);
+    document.body.classList.add(configClass, varsClass, ...BlackwallTheme.classNames);
+  }, []);
 
   return null;
 }

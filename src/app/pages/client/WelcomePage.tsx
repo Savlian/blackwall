@@ -1,7 +1,6 @@
 import React from 'react';
 import { Box, Button, Icon, Icons, Text, config, toRem } from 'folds';
 import { Page, PageHero, PageHeroSection } from '../../components/page';
-import CinnySVG from '../../../../public/res/svg/cinny.svg';
 
 export function WelcomePage() {
   return (
@@ -14,26 +13,15 @@ export function WelcomePage() {
       >
         <PageHeroSection>
           <PageHero
-            icon={<img width="70" height="70" src={CinnySVG} alt="Cinny Logo" />}
-            title="Welcome to Cinny"
-            subTitle={
-              <span>
-                Yet another matrix client.{' '}
-                <a
-                  href="https://github.com/cinnyapp/cinny/releases"
-                  target="_blank"
-                  rel="noreferrer noopener"
-                >
-                  v4.9.0
-                </a>
-              </span>
-            }
+            icon={<img width="80" height="80" src="/logo.png" alt="Blackwall sigil" />}
+            title="Welcome to the Blackwall."
+            subTitle={<span>The matrix has you. v0.0.1</span>}
           >
             <Box justifyContent="Center">
               <Box grow="Yes" style={{ maxWidth: toRem(300) }} direction="Column" gap="300">
                 <Button
                   as="a"
-                  href="https://github.com/cinnyapp/cinny"
+                  href="https://github.com/Savlian/blackwall"
                   target="_blank"
                   rel="noreferrer noopener"
                   before={<Icon size="200" src={Icons.Code} />}
@@ -44,7 +32,7 @@ export function WelcomePage() {
                 </Button>
                 <Button
                   as="a"
-                  href="https://cinny.in/#sponsor"
+                  href="https://github.com/Savlian/blackwall/discussions"
                   target="_blank"
                   rel="noreferrer noopener"
                   fill="Soft"

@@ -1,7 +1,7 @@
 {
-  "name": "Cinny",
-  "short_name": "Cinny",
-  "description": "Yet another matrix client",
+  "name": "Blackwall",
+  "short_name": "Blackwall",
+  "description": "A neon Matrix companion",
   "dir": "auto",
   "lang": "en-US",
   "display": "standalone",

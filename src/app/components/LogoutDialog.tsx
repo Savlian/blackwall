@@ -1,5 +1,5 @@
 import React, { forwardRef, useCallback } from 'react';
-import { Dialog, Header, config, Box, Text, Button, Spinner, color } from 'folds';
+import { Header, config, Box, Text, Button, Spinner, color } from 'folds';
 import { AsyncStatus, useAsyncCallback } from '../hooks/useAsyncCallback';
 import { logoutClient } from '../../client/initMatrix';
 import { useMatrixClient } from '../hooks/useMatrixClient';
@@ -9,6 +9,7 @@ import {
   useDeviceVerificationStatus,
   VerificationStatus,
 } from '../hooks/useDeviceVerificationStatus';
+import { GlitchDialog } from './blackwall/GlitchDialog';
 
 type LogoutDialogProps = {
   handleClose: () => void;
@@ -33,7 +34,7 @@ export const LogoutDialog = forwardRef<HTMLDivElement, LogoutDialogProps>(
     const ongoingLogout = logoutState.status === AsyncStatus.Loading;
 
     return (
-      <Dialog variant="Surface" ref={ref}>
+      <GlitchDialog variant="Surface" ref={ref}>
         <Header
           style={{
             padding: `0 ${config.space.S200} 0 ${config.space.S400}`,
@@ -83,7 +84,7 @@ export const LogoutDialog = forwardRef<HTMLDivElement, LogoutDialogProps>(
             </Button>
           </Box>
         </Box>
-      </Dialog>
+      </GlitchDialog>
     );
   }
 );

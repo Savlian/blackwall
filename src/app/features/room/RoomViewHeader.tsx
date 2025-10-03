@@ -29,6 +29,7 @@ import { useAtomValue } from 'jotai';
 import { useStateEvent } from '../../hooks/useStateEvent';
 import { PageHeader } from '../../components/page';
 import { RoomAvatar, RoomIcon } from '../../components/room-avatar';
+import { RoomChrono } from './RoomChrono';
 import { UseStateProvider } from '../../components/UseStateProvider';
 import { RoomTopicViewer } from '../../components/room-topic-viewer';
 import { StateEvent } from '../../../types/matrix/room';
@@ -358,6 +359,7 @@ export function RoomViewHeader() {
             )}
           </Box>
         </Box>
+        <RoomChrono />
         <Box shrink="No">
           {!ecryptedRoom && (
             <TooltipProvider

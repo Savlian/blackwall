@@ -43,10 +43,10 @@ export interface Settings {
 }
 
 const defaultSettings: Settings = {
-  themeId: undefined,
-  useSystemTheme: true,
-  lightThemeId: undefined,
-  darkThemeId: undefined,
+  themeId: 'blackwall-theme',
+  useSystemTheme: false,
+  lightThemeId: 'blackwall-theme',
+  darkThemeId: 'blackwall-theme',
   isMarkdown: true,
   editorToolbar: false,
   twitterEmoji: false,

@@ -1,0 +1,400 @@
+/* === Blackwall theme overrides === */
+:root {
+  --bw-bg: #010101;
+  --bw-text: #e8e8e8;
+  --bw-primary: #7A0000;
+  --bw-primary-2: #A80000;
+  --bw-neon: #FF1A1A;
+  color-scheme: dark;
+}
+
+@keyframes bw-wall-shift {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-1.5%, -1%, 0) scale(1.025); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes bw-circuit-flow {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 160px; }
+}
+
+@keyframes bw-glitch {
+  0% { transform: translate3d(0, 0, 0); }
+  20% { transform: translate3d(-1px, 0, 0); }
+  40% { transform: translate3d(1px, 0, 0); }
+  60% { transform: translate3d(-0.6px, 0, 0); }
+  80% { transform: translate3d(0.6px, 0, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes bw-haze-shift {
+  0% { transform: rotate(0deg) scale(1); opacity: 0.22; }
+  40% { transform: rotate(2deg) scale(1.05); opacity: 0.24; }
+  60% { transform: rotate(-2deg) scale(1.04); opacity: 0.2; }
+  100% { transform: rotate(0deg) scale(1); opacity: 0.22; }
+}
+
+@keyframes bw-shimmer {
+  0% { opacity: 0.08; background-position: 0% 0%; }
+  50% { opacity: 0.14; background-position: 100% 50%; }
+  100% { opacity: 0.08; background-position: 200% 100%; }
+}
+
+@keyframes bw-sidepulse {
+  0%, 100% { opacity: 0.35; }
+  45% { opacity: 0.55; }
+  60% { opacity: 0.28; }
+}
+
+@keyframes bw-neon-pulse {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(122, 0, 0, 0.35), 0 0 14px rgba(255, 26, 26, 0.25);
+  }
+  45% {
+    box-shadow: 0 0 12px rgba(168, 0, 0, 0.5), 0 0 24px rgba(255, 26, 26, 0.4);
+  }
+  65% {
+    box-shadow: 0 0 8px rgba(122, 0, 0, 0.4), 0 0 18px rgba(255, 26, 26, 0.32);
+  }
+}
+
+@keyframes bw-neon-flicker {
+  0%, 100% {
+    text-shadow: 0 0 6px rgba(255, 26, 26, 0.6), 0 0 12px rgba(168, 0, 0, 0.45);
+    opacity: 1;
+  }
+  40% {
+    text-shadow: 0 0 8px rgba(255, 26, 26, 0.7), 0 0 16px rgba(168, 0, 0, 0.5);
+    opacity: 0.96;
+  }
+  48% {
+    text-shadow: 0 0 14px rgba(255, 26, 26, 0.85), 0 0 26px rgba(168, 0, 0, 0.55);
+    opacity: 1;
+  }
+  55% {
+    text-shadow: 0 0 9px rgba(255, 26, 26, 0.75), 0 0 18px rgba(168, 0, 0, 0.5);
+    opacity: 0.94;
+  }
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body.blackwall-theme,
+body.blackwall-theme #root {
+  background: transparent;
+  color: var(--bw-text);
+}
+
+body.blackwall-theme {
+  position: relative;
+  overflow: hidden;
+}
+
+body.blackwall-theme::after {
+  content: '';
+  position: fixed;
+  inset: -10vh;
+  pointer-events: none;
+  background: radial-gradient(140% 140% at 20% 20%, rgba(122, 0, 0, 0.22) 0%, rgba(0, 0, 0, 0) 55%),
+    radial-gradient(120% 120% at 80% 15%, rgba(255, 26, 26, 0.18) 0%, rgba(0, 0, 0, 0) 60%),
+    radial-gradient(160% 160% at 50% 80%, rgba(90, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0) 65%);
+  mix-blend-mode: screen;
+  opacity: 0.22;
+  filter: blur(8px);
+  animation: bw-haze-shift 55s linear infinite;
+  will-change: transform, opacity;
+  z-index: -1;
+}
+
+
+body.blackwall-theme::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(120% 120% at 12% 8%, rgba(84, 0, 0, 0.55) 0%, rgba(12, 0, 0, 0.96) 55%, rgba(2, 0, 0, 1) 100%);
+  background-size: 140% 140%;
+  background-position: 50% 0;
+  z-index: -2;
+  pointer-events: none;
+  animation: bw-wall-shift 120s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (min-width: 1100px) {
+  body.blackwall-theme::before {
+    background-image: radial-gradient(120% 120% at 12% 8%, rgba(84, 0, 0, 0.55) 0%, rgba(12, 0, 0, 0.96) 55%, rgba(2, 0, 0, 1) 100%), url('/blackwall-bg.png');
+    background-blend-mode: screen;
+    background-size: 140% 140%, cover;
+    background-position: 50% 0, center;
+    background-attachment: fixed;
+  }
+}
+
+body.blackwall-theme header,
+body.blackwall-theme .app-header {
+  background: rgba(0, 0, 0, 0.9);
+  border-bottom: 2px solid var(--bw-primary);
+  box-shadow: 0 0 10px rgba(122, 0, 0, 0.35);
+  animation: bw-neon-pulse 7s ease-in-out infinite;
+  animation-delay: -1.5s;
+  will-change: box-shadow;
+}
+
+body.blackwall-theme header h1,
+body.blackwall-theme .app-title {
+  color: var(--bw-text);
+  text-shadow: 0 0 6px rgba(255, 26, 26, 0.35);
+}
+
+body.blackwall-theme header img[alt="Blackwall Logo"] {
+  opacity: 0;
+}
+
+body.blackwall-theme .room-list,
+body.blackwall-theme nav,
+body.blackwall-theme .sidebar,
+body.blackwall-theme .aside,
+body.blackwall-theme .timeline,
+body.blackwall-theme .chat-area,
+body.blackwall-theme .main,
+body.blackwall-theme .content,
+body.blackwall-theme .user-list,
+body.blackwall-theme .members,
+body.blackwall-theme .right-panel,
+body.blackwall-theme .mx_RightPanel,
+body.blackwall-theme .room-members {
+  background: rgba(18, 0, 2, 0.82);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 6px rgba(168, 0, 0, 0.18), 0 0 16px rgba(255, 30, 30, 0.14);
+  animation: bw-neon-pulse 9s ease-in-out infinite;
+  animation-delay: -3s;
+  will-change: box-shadow;
+}
+
+body.blackwall-theme nav::before,
+body.blackwall-theme .sidebar::before,
+body.blackwall-theme .room-list::before,
+body.blackwall-theme .aside::before,
+body.blackwall-theme .user-list::before,
+body.blackwall-theme .members::before,
+body.blackwall-theme .right-panel::before,
+body.blackwall-theme .mx_RightPanel::before,
+body.blackwall-theme .room-members::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: repeating-linear-gradient(180deg, rgba(255, 32, 32, 0.13) 0px, rgba(255, 32, 32, 0.13) 2px, transparent 2px, transparent 14px),
+    repeating-linear-gradient(90deg, rgba(180, 0, 0, 0.09) 0px, rgba(180, 0, 0, 0.09) 1px, transparent 1px, transparent 24px);
+  background-size: 100% 180px, 140px 100%;
+  mix-blend-mode: screen;
+  opacity: 0.22;
+  animation: bw-circuit-flow 18s linear infinite;
+  pointer-events: none;
+  z-index: -2;
+}
+
+body.blackwall-theme nav,
+body.blackwall-theme .sidebar {
+  background-color: rgba(0, 0, 0, 0.9);
+  background-image: linear-gradient(180deg, rgba(34, 0, 0, 0.95) 0%, rgba(10, 0, 0, 0.9) 45%, rgba(28, 0, 0, 0.98) 100%);
+}
+
+body.blackwall-theme .room-list {
+  background-color: rgba(0, 0, 0, 0.9);
+  background-image: linear-gradient(180deg, rgba(30, 0, 0, 0.94) 0%, rgba(8, 0, 0, 0.9) 40%, rgba(22, 0, 0, 0.96) 100%);
+}
+
+body.blackwall-theme .timeline,
+body.blackwall-theme .chat-area {
+  background-color: rgba(0, 0, 0, 0.9);
+  background-image: radial-gradient(140% 180% at 50% 0%, rgba(64, 0, 0, 0.32) 0%, rgba(0, 0, 0, 0) 48%),
+    linear-gradient(180deg, rgba(12, 0, 0, 0.94) 0%, rgba(2, 0, 0, 0.9) 52%, rgba(14, 0, 0, 0.94) 100%);
+  background-blend-mode: screen, normal;
+}
+
+body.blackwall-theme .right-panel,
+body.blackwall-theme .mx_RightPanel,
+body.blackwall-theme .room-members {
+  background-color: rgba(0, 0, 0, 0.9);
+  background-image: linear-gradient(180deg, rgba(36, 0, 0, 0.94) 0%, rgba(8, 0, 0, 0.92) 55%, rgba(24, 0, 0, 0.97) 100%);
+}
+
+body.blackwall-theme .room-list::after,
+body.blackwall-theme nav::after,
+body.blackwall-theme .sidebar::after,
+body.blackwall-theme .aside::after,
+body.blackwall-theme .timeline::after,
+body.blackwall-theme .chat-area::after,
+body.blackwall-theme .main::after,
+body.blackwall-theme .content::after,
+body.blackwall-theme .user-list::after,
+body.blackwall-theme .members::after,
+body.blackwall-theme .right-panel::after,
+body.blackwall-theme .mx_RightPanel::after,
+body.blackwall-theme .room-members::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05) 0px, rgba(255, 255, 255, 0.05) 1px, transparent 1px, transparent 3px),
+    linear-gradient(130deg, rgba(255, 26, 26, 0.1), rgba(0, 0, 0, 0));
+  background-size: 320% 320%;
+  mix-blend-mode: screen;
+  opacity: 0.08;
+  animation: bw-shimmer 85s linear infinite;
+  will-change: background-position, opacity;
+  z-index: -1;
+}
+
+body.blackwall-theme .timeline::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(255, 26, 26, 0.42) 0%, rgba(255, 26, 26, 0.1) 4%, transparent 16%, transparent 84%, rgba(255, 26, 26, 0.1) 96%, rgba(255, 26, 26, 0.45) 100%);
+  mix-blend-mode: screen;
+  opacity: 0.34;
+  animation: bw-sidepulse 5.5s ease-in-out infinite;
+  will-change: opacity;
+  z-index: -1;
+}
+
+body.blackwall-theme .room-list,
+body.blackwall-theme nav {
+  border-right: 1px solid rgba(122, 0, 0, 0.4);
+}
+
+body.blackwall-theme .right-panel,
+body.blackwall-theme .mx_RightPanel {
+  border-left: 1px solid rgba(122, 0, 0, 0.4);
+}
+
+body.blackwall-theme .timeline .message-body a,
+body.blackwall-theme .chat-area .message-body a,
+body.blackwall-theme nav a,
+body.blackwall-theme .room-list a {
+  color: var(--bw-primary);
+  text-decoration: none;
+  transition: color 0.2s, text-shadow 0.2s;
+}
+
+body.blackwall-theme .timeline .message-body a:hover,
+body.blackwall-theme .chat-area .message-body a:hover,
+body.blackwall-theme nav a:hover,
+body.blackwall-theme .room-list a:hover {
+  color: var(--bw-neon);
+  text-shadow: 0 0 6px var(--bw-neon), 0 0 10px var(--bw-primary-2);
+  animation: bw-neon-flicker 1.8s ease-in-out infinite;
+}
+
+body.blackwall-theme .timeline .message-body a:focus-visible,
+body.blackwall-theme .chat-area .message-body a:focus-visible,
+body.blackwall-theme nav a:focus-visible,
+body.blackwall-theme .room-list a:focus-visible,
+body.blackwall-theme nav button:focus-visible,
+body.blackwall-theme .sidebar button:focus-visible {
+  color: var(--bw-neon);
+  text-shadow: 0 0 6px var(--bw-neon), 0 0 10px var(--bw-primary-2);
+  animation: bw-neon-flicker 1.8s ease-in-out infinite;
+  outline: none;
+}
+
+body.blackwall-theme .user-pill,
+body.blackwall-theme .mx_UserPill,
+body.blackwall-theme [class*='user-pill'],
+body.blackwall-theme [class*='mx_UserPill'],
+body.blackwall-theme span.username,
+body.blackwall-theme a.user {
+  background: none;
+  border: none !important;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+  box-shadow: none !important;
+  outline: none !important;
+  display: inline;
+  color: var(--bw-text);
+  text-decoration: none;
+}
+
+body.blackwall-theme .room-header h2,
+body.blackwall-theme .timeline__header h2,
+body.blackwall-theme [class*='RoomHeader'] h2 {
+  font-size: 1.2rem;
+  line-height: 1.4rem;
+  color: var(--bw-text);
+  text-shadow: 0 0 6px rgba(122, 0, 0, 0.35);
+  margin: 0;
+}
+
+body.blackwall-theme ::-webkit-scrollbar {
+  width: 10px;
+  background: #000;
+}
+
+body.blackwall-theme ::-webkit-scrollbar-thumb {
+  background: var(--bw-primary);
+  border-radius: 5px;
+  box-shadow: 0 0 4px var(--bw-primary-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.blackwall-theme::after,
+  body.blackwall-theme header,
+  body.blackwall-theme .app-header,
+  body.blackwall-theme .room-list,
+  body.blackwall-theme nav,
+  body.blackwall-theme .sidebar,
+  body.blackwall-theme .aside,
+  body.blackwall-theme .timeline,
+  body.blackwall-theme .chat-area,
+  body.blackwall-theme .main,
+  body.blackwall-theme .content,
+  body.blackwall-theme .user-list,
+  body.blackwall-theme .members,
+  body.blackwall-theme .right-panel,
+  body.blackwall-theme .mx_RightPanel,
+  body.blackwall-theme .room-members,
+  body.blackwall-theme .room-list::before,
+  body.blackwall-theme nav::before,
+  body.blackwall-theme .sidebar::before,
+  body.blackwall-theme .aside::before,
+  body.blackwall-theme .user-list::before,
+  body.blackwall-theme .members::before,
+  body.blackwall-theme .right-panel::before,
+  body.blackwall-theme .mx_RightPanel::before,
+  body.blackwall-theme .room-members::before,
+  body.blackwall-theme .room-list::after,
+  body.blackwall-theme nav::after,
+  body.blackwall-theme .sidebar::after,
+  body.blackwall-theme .aside::after,
+  body.blackwall-theme .timeline::after,
+  body.blackwall-theme .timeline::before,
+  body.blackwall-theme .chat-area::after,
+  body.blackwall-theme .main::after,
+  body.blackwall-theme .content::after,
+  body.blackwall-theme .user-list::after,
+  body.blackwall-theme .members::after,
+  body.blackwall-theme .right-panel::after,
+  body.blackwall-theme .mx_RightPanel::after,
+  body.blackwall-theme .room-members::after,
+  body.blackwall-theme .timeline .message-body a:hover,
+  body.blackwall-theme .chat-area .message-body a:hover,
+  body.blackwall-theme nav a:hover,
+  body.blackwall-theme .room-list a:hover,
+  body.blackwall-theme .timeline .message-body a:focus-visible,
+  body.blackwall-theme .chat-area .message-body a:focus-visible,
+  body.blackwall-theme nav a:focus-visible,
+  body.blackwall-theme .room-list a:focus-visible,
+  body.blackwall-theme nav button:focus-visible,
+  body.blackwall-theme .sidebar button:focus-visible {
+    animation: none !important;
+  }
+}
+

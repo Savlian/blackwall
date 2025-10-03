@@ -1,7 +1,8 @@
 import React, { useEffect, useCallback, FormEventHandler } from 'react';
-import { Dialog, Text, Box, Button, config, Input } from 'folds';
+import { Text, Box, Button, config, Input } from 'folds';
 import { AuthType } from 'matrix-js-sdk';
 import { StageComponentProps } from './types';
+import { GlitchDialog } from '../blackwall/GlitchDialog';
 
 function RegistrationTokenErrorDialog({
   title,
@@ -26,7 +27,7 @@ function RegistrationTokenErrorDialog({
   };
 
   return (
-    <Dialog>
+    <GlitchDialog>
       <Box
         as="form"
         onSubmit={handleFormSubmit}
@@ -60,7 +61,7 @@ function RegistrationTokenErrorDialog({
           </Text>
         </Button>
       </Box>
-    </Dialog>
+    </GlitchDialog>
   );
 }
 

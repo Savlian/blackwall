@@ -1,8 +1,9 @@
 import React, { ReactNode, useEffect } from 'react';
-import { Box, Dialog, Text, config } from 'folds';
+import { Box, Text, config } from 'folds';
 import { AsyncStatus, useAsyncCallback } from '../hooks/useAsyncCallback';
 import { checkIndexedDBSupport } from '../utils/featureCheck';
 import { SplashScreen } from '../components/splash-screen';
+import { GlitchDialog } from '../components/blackwall/GlitchDialog';
 
 export function FeatureCheck({ children }: { children: ReactNode }) {
   const [idbSupportState, checkIDBSupport] = useAsyncCallback(checkIndexedDBSupport);
@@ -15,7 +16,7 @@ export function FeatureCheck({ children }: { children: ReactNode }) {
     return (
       <SplashScreen>
         <Box grow="Yes" alignItems="Center" justifyContent="Center">
-          <Dialog>
+          <GlitchDialog>
             <Box style={{ padding: config.space.S400 }} direction="Column" gap="400">
               <Text>Missing Browser Feature</Text>
               <Text size="T300" priority="400">
@@ -32,7 +33,7 @@ export function FeatureCheck({ children }: { children: ReactNode }) {
                 </a>
               </Text>
             </Box>
-          </Dialog>
+          </GlitchDialog>
         </Box>
       </SplashScreen>
     );

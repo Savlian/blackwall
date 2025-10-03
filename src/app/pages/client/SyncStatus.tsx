@@ -2,6 +2,7 @@ import { MatrixClient, SyncState } from 'matrix-js-sdk';
 import React, { useCallback, useState } from 'react';
 import { Box, config, Line, Text } from 'folds';
 import { useSyncState } from '../../hooks/useSyncState';
+import * as css from './SyncStatus.css';
 import { ContainerColor } from '../../styles/ContainerColor.css';
 
 type StateData = {
@@ -38,15 +39,10 @@ export function SyncStatus({ mx }: SyncStatusProps) {
   ) {
     return (
       <Box direction="Column" shrink="No">
-        <Box
-          className={ContainerColor({ variant: 'Success' })}
-          style={{ padding: `${config.space.S100} 0` }}
-          alignItems="Center"
-          justifyContent="Center"
-        >
+        <Box className={css.connecting}>
           <Text size="L400">Connecting...</Text>
         </Box>
-        <Line variant="Success" size="300" />
+        <div className={css.connectingLine} />
       </Box>
     );
   }

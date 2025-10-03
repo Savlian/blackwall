@@ -29,6 +29,7 @@ import {
   NavItemContent,
   NavLink,
 } from '../../../components/nav';
+import * as homeCss from './Home.css';
 import {
   encodeSearchParamValueArray,
   getExplorePath,
@@ -64,6 +65,10 @@ import {
 } from '../../../hooks/useRoomsNotificationPreferences';
 import { UseStateProvider } from '../../../components/UseStateProvider';
 import { JoinAddressPrompt } from '../../../components/join-address-prompt';
+import { WhisperBacklog } from '../sidebar/WhisperBacklog';
+import { SynthWeatherPanel } from '../sidebar/SynthWeatherPanel';
+import * as sidebarWidgetCss from '../sidebar/SidebarWidgets.css';
+
 import { _RoomSearchParams } from '../../paths';
 
 type HomeMenuProps = {
@@ -239,9 +244,10 @@ export function Home() {
         <HomeEmpty />
       ) : (
         <PageNavContent scrollRef={scrollRef}>
-          <Box direction="Column" gap="300">
+          <Box direction="Column" grow="Yes" style={{ minHeight: "100%", justifyContent: 'space-between' }}>
+            <Box direction="Column" gap="300">
             <NavCategory>
-              <NavItem variant="Background" radii="400" aria-selected={createRoomSelected}>
+              <NavItem className={homeCss.quickAction} variant="Background" radii="400" aria-selected={createRoomSelected}>
                 <NavButton onClick={() => navigate(getHomeCreatePath())}>
                   <NavItemContent>
                     <Box as="span" grow="Yes" alignItems="Center" gap="200">
@@ -260,7 +266,7 @@ export function Home() {
               <UseStateProvider initial={false}>
                 {(open, setOpen) => (
                   <>
-                    <NavItem variant="Background" radii="400">
+                    <NavItem className={homeCss.quickAction} variant="Background" radii="400">
                       <NavButton onClick={() => setOpen(true)}>
                         <NavItemContent>
                           <Box as="span" grow="Yes" alignItems="Center" gap="200">
@@ -295,7 +301,7 @@ export function Home() {
                   </>
                 )}
               </UseStateProvider>
-              <NavItem variant="Background" radii="400" aria-selected={searchSelected}>
+              <NavItem className={homeCss.quickAction} variant="Background" radii="400" aria-selected={searchSelected}>
                 <NavLink to={getHomeSearchPath()}>
                   <NavItemContent>
                     <Box as="span" grow="Yes" alignItems="Center" gap="200">
@@ -313,7 +319,7 @@ export function Home() {
               </NavItem>
             </NavCategory>
             <NavCategory>
-              <NavCategoryHeader>
+              <NavCategoryHeader className={homeCss.roomsHeader}>
                 <RoomNavCategoryButton
                   closed={closedCategories.has(DEFAULT_CATEGORY_ID)}
                   data-category-id={DEFAULT_CATEGORY_ID}
@@ -354,9 +360,15 @@ export function Home() {
                 })}
               </div>
             </NavCategory>
+            </Box>
+            <NavCategory className={sidebarWidgetCss.widgetCluster}>
+              <WhisperBacklog />
+              <SynthWeatherPanel />
+            </NavCategory>
           </Box>
         </PageNavContent>
       )}
     </PageNav>
   );
 }
+

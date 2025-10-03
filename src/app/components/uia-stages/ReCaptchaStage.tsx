@@ -1,8 +1,9 @@
 import React from 'react';
-import { Dialog, Text, Box, Button, config } from 'folds';
+import { Text, Box, Button, config } from 'folds';
 import { AuthType } from 'matrix-js-sdk';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { StageComponentProps } from './types';
+import { GlitchDialog } from '../blackwall/GlitchDialog';
 
 function ReCaptchaErrorDialog({
   title,
@@ -14,7 +15,7 @@ function ReCaptchaErrorDialog({
   onCancel: () => void;
 }) {
   return (
-    <Dialog>
+    <GlitchDialog>
       <Box style={{ padding: config.space.S400 }} direction="Column" gap="400">
         <Box direction="Column" gap="100">
           <Text size="H4">{title}</Text>
@@ -26,7 +27,7 @@ function ReCaptchaErrorDialog({
           </Text>
         </Button>
       </Box>
-    </Dialog>
+    </GlitchDialog>
   );
 }
 
@@ -54,11 +55,11 @@ export function ReCaptchaStageDialog({ stageData, submitAuthDict, onCancel }: St
   }
 
   return (
-    <Dialog>
+    <GlitchDialog>
       <Box style={{ padding: config.space.S400 }} direction="Column" gap="400">
         <Text>Please check the box below to proceed.</Text>
         <ReCAPTCHA sitekey={publicKey} onChange={handleChange} />
       </Box>
-    </Dialog>
+    </GlitchDialog>
   );
 }

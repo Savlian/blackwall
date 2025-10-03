@@ -193,8 +193,8 @@
   --fluid-slide-up: cubic-bezier(0.13, 0.56, 0.25, 0.99);
 
   --font-emoji: 'Twemoji_DISABLED';
-  --font-primary: 'InterVariable', var(--font-emoji), sans-serif;
-  --font-secondary: 'InterVariable', var(--font-emoji), sans-serif;
+  --font-primary: 'Consolas', 'Fira Code', 'JetBrains Mono', 'IBM Plex Mono', 'Courier New', monospace;
+  --font-secondary: 'Consolas', 'Fira Code', 'JetBrains Mono', 'IBM Plex Mono', 'Courier New', monospace;
 }
 
 .silver-theme {
@@ -326,7 +326,7 @@
   --fw-medium: 450;
   --fw-bold: 550;
 
-  --font-secondary: 'InterVariable', var(--font-emoji), sans-serif;
+  --font-secondary: 'Consolas', 'Fira Code', 'JetBrains Mono', 'IBM Plex Mono', 'Courier New', monospace;
 }
 
 .butter-theme {
@@ -406,6 +406,15 @@ body {
   /*Why font-variant-ligatures => https://github.com/rsms/inter/issues/222 */
   font-variant-ligatures: no-contextual;
 }
+
+body.blackwall-theme {
+  background-color: transparent;
+}
+
+body.blackwall-theme #root {
+  background-color: transparent;
+}
+
 #root {
   width: 100%;
   height: 100%;

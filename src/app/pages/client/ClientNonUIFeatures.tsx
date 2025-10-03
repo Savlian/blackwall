@@ -3,9 +3,7 @@ import React, { ReactNode, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RoomEvent, RoomEventHandlerMap } from 'matrix-js-sdk';
 import { roomToUnreadAtom, unreadEqual, unreadInfoToUnread } from '../../state/room/roomToUnread';
-import LogoSVG from '../../../../public/res/svg/cinny.svg';
-import LogoUnreadSVG from '../../../../public/res/svg/cinny-unread.svg';
-import LogoHighlightSVG from '../../../../public/res/svg/cinny-highlight.svg';
+import Logo from '../../../../public/logo.png';
 import NotificationSound from '../../../../public/sound/notification.ogg';
 import InviteSound from '../../../../public/sound/invite.ogg';
 import { notificationPermission, setFavicon } from '../../utils/dom';
@@ -67,9 +65,9 @@ function FaviconUpdater() {
     });
 
     if (notification) {
-      setFavicon(highlight ? LogoHighlightSVG : LogoUnreadSVG);
+      setFavicon(highlight ? Logo : Logo);
     } else {
-      setFavicon(LogoSVG);
+      setFavicon(Logo);
     }
   }, [roomToUnread]);
 
@@ -89,8 +87,8 @@ function InviteNotifications() {
   const notify = useCallback(
     (count: number) => {
       const noti = new window.Notification('Invitation', {
-        icon: LogoSVG,
-        badge: LogoSVG,
+        icon: Logo,
+        badge: Logo,
         body: `You have ${count} new invitation request.`,
         silent: true,
       });

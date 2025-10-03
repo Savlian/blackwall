@@ -72,6 +72,8 @@ export function HomeTab() {
   const orphanRooms = useOrphanRooms(mx, allRoomsAtom, mDirects, roomToParents);
   const homeUnread = useRoomsUnread(orphanRooms, roomToUnreadAtom);
   const homeSelected = useHomeSelected();
+  const hasHighlight = homeUnread?.highlight ? homeUnread.highlight > 0 : false;
+  const hasUnread = homeUnread?.total ? homeUnread.total > 0 : false;
   const [menuAnchor, setMenuAnchor] = useState<RectCords>();
 
   const handleHomeClick = () => {
@@ -94,7 +96,11 @@ export function HomeTab() {
   };
 
   return (
-    <SidebarItem active={homeSelected}>
+    <SidebarItem
+      active={homeSelected}
+      data-alert={hasHighlight ? 'true' : undefined}
+      data-activity={hasUnread ? 'true' : undefined}
+    >
       <SidebarItemTooltip tooltip="Home">
         {(triggerRef) => (
           <SidebarAvatar
@@ -103,6 +109,8 @@ export function HomeTab() {
             outlined
             onClick={handleHomeClick}
             onContextMenu={handleContextMenu}
+            data-activity={hasUnread ? 'true' : undefined}
+            data-alert={hasHighlight ? 'true' : undefined}
           >
             <Icon src={Icons.Home} filled={homeSelected} />
           </SidebarAvatar>

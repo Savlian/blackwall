@@ -1,7 +1,8 @@
 import React, { useEffect, useCallback } from 'react';
-import { Dialog, Text, Box, Button, config } from 'folds';
+import { Text, Box, Button, config } from 'folds';
 import { AuthType } from 'matrix-js-sdk';
 import { StageComponentProps } from './types';
+import { GlitchDialog } from '../blackwall/GlitchDialog';
 
 function TermsErrorDialog({
   title,
@@ -15,7 +16,7 @@ function TermsErrorDialog({
   onCancel: () => void;
 }) {
   return (
-    <Dialog>
+    <GlitchDialog>
       <Box style={{ padding: config.space.S400 }} direction="Column" gap="400">
         <Box direction="Column" gap="100">
           <Text size="H4">{title}</Text>
@@ -32,7 +33,7 @@ function TermsErrorDialog({
           </Text>
         </Button>
       </Box>
-    </Dialog>
+    </GlitchDialog>
   );
 }
 

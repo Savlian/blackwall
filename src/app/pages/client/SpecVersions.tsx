@@ -1,8 +1,9 @@
 import React, { ReactNode } from 'react';
-import { Box, Dialog, config, Text, Button, Spinner } from 'folds';
+import { Box, config, Text, Button, Spinner } from 'folds';
 import { SpecVersionsLoader } from '../../components/SpecVersionsLoader';
 import { SpecVersionsProvider } from '../../hooks/useSpecVersions';
 import { SplashScreen } from '../../components/splash-screen';
+import { GlitchDialog } from '../../components/blackwall/GlitchDialog';
 
 export function SpecVersions({ baseUrl, children }: { baseUrl: string; children: ReactNode }) {
   return (
@@ -19,7 +20,7 @@ export function SpecVersions({ baseUrl, children }: { baseUrl: string; children:
       error={(err, retry, ignore) => (
         <SplashScreen>
           <Box direction="Column" grow="Yes" alignItems="Center" justifyContent="Center" gap="400">
-            <Dialog>
+            <GlitchDialog>
               <Box direction="Column" gap="400" style={{ padding: config.space.S400 }}>
                 <Text>
                   Failed to connect to homeserver. Either homeserver is down or your internet.
@@ -35,7 +36,7 @@ export function SpecVersions({ baseUrl, children }: { baseUrl: string; children:
                   </Text>
                 </Button>
               </Box>
-            </Dialog>
+            </GlitchDialog>
           </Box>
         </SplashScreen>
       )}

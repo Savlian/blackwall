@@ -27,6 +27,7 @@ export function InboxTab() {
   const inboxSelected = useInboxSelected();
   const allInvites = useAtomValue(allInvitesAtom);
   const inviteCount = allInvites.length;
+  const hasAlert = inviteCount > 0;
 
   const handleInboxClick = () => {
     if (screenSize === ScreenSize.Mobile) {
@@ -44,10 +45,21 @@ export function InboxTab() {
   };
 
   return (
-    <SidebarItem active={inboxSelected}>
+    <SidebarItem
+      active={inboxSelected}
+      data-alert={hasAlert ? 'true' : undefined}
+      data-activity={hasAlert ? 'true' : undefined}
+    >
       <SidebarItemTooltip tooltip="Inbox">
         {(triggerRef) => (
-          <SidebarAvatar as="button" ref={triggerRef} outlined onClick={handleInboxClick}>
+          <SidebarAvatar
+            as="button"
+            ref={triggerRef}
+            outlined
+            onClick={handleInboxClick}
+            data-activity={hasAlert ? 'true' : undefined}
+            data-alert={hasAlert ? 'true' : undefined}
+          >
             <Icon src={Icons.Inbox} filled={inboxSelected} />
           </SidebarAvatar>
         )}

@@ -37,6 +37,7 @@ import { SettingTile } from '../../../components/setting-tile';
 import { KeySymbol } from '../../../utils/key-symbol';
 import { isMacOS } from '../../../utils/user-agent';
 import {
+  BlackwallTheme,
   DarkTheme,
   LightTheme,
   Theme,
@@ -149,7 +150,7 @@ function SystemThemePreferences() {
   const darkThemes = themes.filter((theme) => theme.kind === ThemeKind.Dark);
 
   const selectedLightTheme = lightThemes.find((theme) => theme.id === lightThemeId) ?? LightTheme;
-  const selectedDarkTheme = darkThemes.find((theme) => theme.id === darkThemeId) ?? DarkTheme;
+  const selectedDarkTheme = darkThemes.find((theme) => theme.id === darkThemeId) ?? BlackwallTheme;
 
   const [ltCords, setLTCords] = useState<RectCords>();
   const [dtCords, setDTCords] = useState<RectCords>();

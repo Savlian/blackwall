@@ -4,7 +4,6 @@ import { Page, PageContent, PageHeader } from '../../../components/page';
 import { SequenceCard } from '../../../components/sequence-card';
 import { SequenceCardStyle } from '../styles.css';
 import { SettingTile } from '../../../components/setting-tile';
-import CinnySVG from '../../../../../public/res/svg/cinny.svg';
 import cons from '../../../../client/state/cons';
 import { clearCacheAndReload } from '../../../../client/initMatrix';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
@@ -39,23 +38,23 @@ export function About({ requestClose }: AboutProps) {
                 <Box shrink="No">
                   <img
                     style={{ width: toRem(60), height: toRem(60) }}
-                    src={CinnySVG}
-                    alt="Cinny logo"
+                    src="/logo.png"
+                    alt="Blackwall sigil"
                   />
                 </Box>
                 <Box direction="Column" gap="300">
                   <Box direction="Column" gap="100">
                     <Box gap="100" alignItems="End">
-                      <Text size="H3">Cinny</Text>
+                      <Text size="H3">Blackwall</Text>
                       <Text size="T200">v{cons.version}</Text>
                     </Box>
-                    <Text>Yet another matrix client.</Text>
+                    <Text>The matrix has you.</Text>
                   </Box>
 
                   <Box gap="200" wrap="Wrap">
                     <Button
                       as="a"
-                      href="https://github.com/cinnyapp/cinny"
+                      href="https://github.com/Savlian/blackwall"
                       rel="noreferrer noopener"
                       target="_blank"
                       variant="Secondary"
@@ -68,7 +67,7 @@ export function About({ requestClose }: AboutProps) {
                     </Button>
                     <Button
                       as="a"
-                      href="https://cinny.in/#sponsor"
+                      href="https://github.com/Savlian/blackwall/discussions"
                       rel="noreferrer noopener"
                       target="_blank"
                       variant="Critical"

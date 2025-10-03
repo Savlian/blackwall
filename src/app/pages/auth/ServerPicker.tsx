@@ -29,11 +29,13 @@ export function ServerPicker({
   serverList,
   allowCustomServer,
   onServerChange,
+  className,
 }: {
   server: string;
   serverList: string[];
   allowCustomServer?: boolean;
   onServerChange: (server: string) => void;
+  className?: string;
 }) {
   const [serverMenuAnchor, setServerMenuAnchor] = useState<RectCords>();
   const serverInputRef = useRef<HTMLInputElement>(null);
@@ -79,10 +81,10 @@ export function ServerPicker({
 
   return (
     <Input
+      className={className}
       ref={serverInputRef}
       style={{ paddingRight: config.space.S200 }}
-      variant={allowCustomServer ? 'Background' : 'Surface'}
-      outlined
+      variant="Background"
       defaultValue={server}
       onChange={handleServerChange}
       onKeyDown={handleKeyDown}
@@ -130,7 +132,7 @@ export function ServerPicker({
           >
             <IconButton
               onClick={handleOpenServerMenu}
-              variant={allowCustomServer ? 'Background' : 'Surface'}
+              variant="Background"
               size="300"
               aria-pressed={!!serverMenuAnchor}
               radii="300"

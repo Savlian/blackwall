@@ -5,20 +5,20 @@ import * as css from './styles.css';
 export function AuthFooter() {
   return (
     <Box className={css.AuthFooter} justifyContent="Center" gap="400" wrap="Wrap">
-      <Text as="a" size="T300" href="https://cinny.in" target="_blank" rel="noreferrer">
+      <Text as="a" size="T300" href="https://github.com/Savlian/blackwall" target="_blank" rel="noreferrer">
         About
       </Text>
       <Text
         as="a"
         size="T300"
-        href="https://github.com/ajbura/cinny/releases"
+        href="https://github.com/Savlian/blackwall/releases"
         target="_blank"
         rel="noreferrer"
       >
-        v4.9.0
+        v0.0.1
       </Text>
-      <Text as="a" size="T300" href="https://twitter.com/cinnyapp" target="_blank" rel="noreferrer">
-        Twitter
+      <Text as="a" size="T300" href="https://matrix.to/#/#blackwall:matrix.org" target="_blank" rel="noreferrer">
+        Matrix Room
       </Text>
       <Text as="a" size="T300" href="https://matrix.org" target="_blank" rel="noreferrer">
         Powered by Matrix

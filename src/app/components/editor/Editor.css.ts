@@ -1,14 +1,61 @@
-import { style } from '@vanilla-extract/css';
+import { keyframes, style } from '@vanilla-extract/css';
 import { color, config, DefaultReset, toRem } from 'folds';
+
+const signalSweep = keyframes({
+  '0%': { transform: 'translateX(-120%) skewX(-18deg)', opacity: 0 },
+  '40%': { opacity: 0.35 },
+  '100%': { transform: 'translateX(160%) skewX(-18deg)', opacity: 0 },
+});
 
 export const Editor = style([
   DefaultReset,
   {
-    backgroundColor: color.SurfaceVariant.Container,
+    position: 'relative',
+    background: 'rgba(18, 0, 4, 0.86)',
     color: color.SurfaceVariant.OnContainer,
-    boxShadow: `inset 0 0 0 ${config.borderWidth.B300} ${color.SurfaceVariant.ContainerLine}`,
-    borderRadius: config.radii.R400,
+    boxShadow: '0 0 0 1px rgba(255, 56, 64, 0.28)',
+    borderRadius: config.radii.R500,
     overflow: 'hidden',
+    isolation: 'isolate',
+    backdropFilter: 'blur(6px)',
+    transition: 'box-shadow 220ms ease, background-color 220ms ease',
+    selectors: {
+      '&::before': {
+        content: '',
+        position: 'absolute',
+        inset: '-18% -40%',
+        background:
+          'radial-gradient(circle at 18% 18%, rgba(255, 56, 56, 0.22) 0%, rgba(18, 0, 0, 0) 55%), radial-gradient(circle at 82% 78%, rgba(255, 40, 40, 0.18) 0%, rgba(18, 0, 0, 0) 52%)',
+        opacity: 0.6,
+        pointerEvents: 'none',
+        filter: 'blur(26px)',
+      },
+      '&::after': {
+        content: '',
+        position: 'absolute',
+        inset: 0,
+        background:
+          'linear-gradient(90deg, rgba(255, 72, 72, 0) 0%, rgba(255, 72, 72, 0.4) 52%, rgba(255, 72, 72, 0) 100%)',
+        opacity: 0,
+        pointerEvents: 'none',
+        mixBlendMode: 'screen',
+        filter: 'blur(6px)',
+        animationName: signalSweep,
+        animationDuration: '11s',
+        animationIterationCount: 'infinite',
+        animationTimingFunction: 'ease-in-out',
+      },
+      '&:focus-within': {
+        background: 'rgba(26, 0, 2, 0.94)',
+        boxShadow: '0 0 26px rgba(255, 64, 64, 0.34)',
+      },
+      '&:focus-within::after': {
+        opacity: 0.85,
+      },
+      '&:hover::after': {
+        opacity: 0.4,
+      },
+    },
   },
 ]);
 
@@ -16,10 +63,13 @@ export const EditorOptions = style([
   DefaultReset,
   {
     padding: config.space.S200,
+    background: 'rgba(26, 0, 6, 0.46)',
   },
 ]);
 
-export const EditorTextareaScroll = style({});
+export const EditorTextareaScroll = style({
+  background: 'transparent',
+});
 
 export const EditorTextarea = style([
   DefaultReset,

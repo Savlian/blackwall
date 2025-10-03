@@ -1,6 +1,7 @@
-import { Box, Button, color, config, Dialog, Header, Icon, IconButton, Icons, Text } from 'folds';
+import { Box, Button, color, config, Header, Icon, IconButton, Icons, Text } from 'folds';
 import React, { useCallback, useEffect, useState } from 'react';
 import { StageComponentProps } from './types';
+import { GlitchDialog } from '../blackwall/GlitchDialog';
 
 export function SSOStage({
   ssoRedirectURL,
@@ -40,7 +41,7 @@ export function SSOStage({
   }, [ssoWindow, handleSubmit]);
 
   return (
-    <Dialog>
+    <GlitchDialog>
       <Header
         style={{
           padding: `0 ${config.space.S200} 0 ${config.space.S400}`,
@@ -86,6 +87,6 @@ export function SSOStage({
           </Button>
         )}
       </Box>
-    </Dialog>
+    </GlitchDialog>
   );
 }

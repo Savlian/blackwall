@@ -1,9 +1,10 @@
 import React, { useEffect, useCallback, FormEventHandler } from 'react';
-import { Dialog, Text, Box, Button, config, Input, color, Spinner } from 'folds';
+import { Text, Box, Button, config, Input, color, Spinner } from 'folds';
 import { AuthType, MatrixError } from 'matrix-js-sdk';
 import { StageComponentProps } from './types';
 import { AsyncState, AsyncStatus } from '../../hooks/useAsyncCallback';
 import { RequestEmailTokenCallback, RequestEmailTokenResponse } from '../../hooks/types';
+import { GlitchDialog } from '../blackwall/GlitchDialog';
 
 function EmailErrorDialog({
   title,
@@ -28,7 +29,7 @@ function EmailErrorDialog({
   };
 
   return (
-    <Dialog>
+    <GlitchDialog>
       <Box
         as="form"
         onSubmit={handleFormSubmit}
@@ -62,7 +63,7 @@ function EmailErrorDialog({
           </Text>
         </Button>
       </Box>
-    </Dialog>
+    </GlitchDialog>
   );
 }
 
@@ -137,7 +138,7 @@ export function EmailStageDialog({
 
   if (emailTokenState.status === AsyncStatus.Success) {
     return (
-      <Dialog>
+      <GlitchDialog>
         <Box style={{ padding: config.space.S400 }} direction="Column" gap="400">
           <Box direction="Column" gap="100">
             <Text size="H4">Verification Request Sent</Text>
@@ -153,7 +154,7 @@ export function EmailStageDialog({
             </Text>
           </Button>
         </Box>
-      </Dialog>
+      </GlitchDialog>
     );
   }
 

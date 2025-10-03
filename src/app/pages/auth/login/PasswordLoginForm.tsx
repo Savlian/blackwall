@@ -37,6 +37,7 @@ import { PasswordInput } from '../../../components/password-input';
 import { FieldError } from '../FiledError';
 import { getResetPasswordPath } from '../../pathUtils';
 import { stopPropagation } from '../../../utils/keyboard';
+import * as authCss from '../styles.css';
 
 function UsernameHint({ server }: { server: string }) {
   const [anchor, setAnchor] = useState<RectCords>();
@@ -133,7 +134,7 @@ export function PasswordLoginForm({ defaultUsername, defaultEmail }: PasswordLog
         user: username,
       },
       password,
-      initial_device_display_name: 'Cinny Web',
+      initial_device_display_name: 'Blackwall Web',
     });
   };
 
@@ -151,7 +152,7 @@ export function PasswordLoginForm({ defaultUsername, defaultEmail }: PasswordLog
         user: mxIdUsername,
       },
       password,
-      initial_device_display_name: 'Cinny Web',
+      initial_device_display_name: 'Blackwall Web',
     });
   };
   const handleEmailLogin = (email: string, password: string) => {
@@ -163,7 +164,7 @@ export function PasswordLoginForm({ defaultUsername, defaultEmail }: PasswordLog
         address: email,
       },
       password,
-      initial_device_display_name: 'Cinny Web',
+      initial_device_display_name: 'Blackwall Web',
     });
   };
 
@@ -203,13 +204,13 @@ export function PasswordLoginForm({ defaultUsername, defaultEmail }: PasswordLog
           Username
         </Text>
         <Input
+          className={authCss.AuthField}
           defaultValue={defaultUsername ?? defaultEmail}
           style={{ paddingRight: config.space.S300 }}
           name="usernameInput"
           variant="Background"
           size="500"
           required
-          outlined
           after={<UsernameHint server={server} />}
         />
         {loginState.status === AsyncStatus.Error && (
@@ -227,7 +228,13 @@ export function PasswordLoginForm({ defaultUsername, defaultEmail }: PasswordLog
         <Text as="label" size="L400" priority="300">
           Password
         </Text>
-        <PasswordInput name="passwordInput" variant="Background" size="500" outlined required />
+        <PasswordInput
+          className={authCss.AuthField}
+          name="passwordInput"
+          variant="Background"
+          size="500"
+          required
+        />
         <Box alignItems="Start" justifyContent="SpaceBetween" gap="200">
           {loginState.status === AsyncStatus.Error && (
             <>

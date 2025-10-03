@@ -8,11 +8,9 @@ import {
   useNavigate,
   useParams,
 } from 'react-router-dom';
-import classNames from 'classnames';
 
 import { AuthFooter } from './AuthFooter';
 import * as css from './styles.css';
-import * as PatternsCss from '../../styles/Patterns.css';
 import {
   clientAllowedServer,
   clientDefaultServer,
@@ -20,7 +18,6 @@ import {
 } from '../../hooks/useClientConfig';
 import { AsyncStatus, useAsyncCallback } from '../../hooks/useAsyncCallback';
 import { LOGIN_PATH, REGISTER_PATH, RESET_PASSWORD_PATH } from '../paths';
-import CinnySVG from '../../../../public/res/svg/cinny.svg';
 import { ServerPicker } from './ServerPicker';
 import { AutoDiscoveryAction, autoDiscovery } from '../../cs-api';
 import { SpecVersionsLoader } from '../../components/SpecVersionsLoader';
@@ -125,7 +122,7 @@ export function AuthLayout() {
   return (
     <Scroll variant="Background" visibility="Hover" size="300" hideTrack>
       <Box
-        className={classNames(css.AuthLayout, PatternsCss.BackgroundDotPattern)}
+        className={css.AuthLayout}
         direction="Column"
         alignItems="Center"
         justifyContent="SpaceBetween"
@@ -133,9 +130,25 @@ export function AuthLayout() {
       >
         <Box direction="Column" className={css.AuthCard}>
           <Header className={css.AuthHeader} size="600" variant="Surface">
-            <Box grow="Yes" direction="Row" gap="300" alignItems="Center">
-              <img className={css.AuthLogo} src={CinnySVG} alt="Cinny Logo" />
-              <Text size="H3">Cinny</Text>
+            <Box
+              grow="Yes"
+              direction="Row"
+              gap="300"
+              alignItems="Center"
+              justifyContent="Center"
+            >
+              <img className={css.AuthLogo} src="/logo.png" alt="Blackwall sigil" />
+              <Text
+                size="H3"
+                align="Center"
+                style={{
+                  fontFamily: "'Consolas', 'Fira Code', 'Courier New', monospace",
+                  letterSpacing: '0.24em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Enter the Blackwall
+              </Text>
             </Box>
           </Header>
           <Box className={css.AuthCardContent} direction="Column">
@@ -144,6 +157,7 @@ export function AuthLayout() {
                 Homeserver
               </Text>
               <ServerPicker
+                className={css.AuthField}
                 server={server}
                 serverList={clientConfig.homeserverList ?? []}
                 allowCustomServer={clientConfig.allowCustomHomeservers}

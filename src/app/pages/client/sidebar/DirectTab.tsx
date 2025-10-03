@@ -72,6 +72,8 @@ export function DirectTab() {
   const [menuAnchor, setMenuAnchor] = useState<RectCords>();
 
   const directSelected = useDirectSelected();
+  const hasHighlight = directUnread?.highlight ? directUnread.highlight > 0 : false;
+  const hasUnread = directUnread?.total ? directUnread.total > 0 : false;
 
   const handleDirectClick = () => {
     const activePath = navToActivePath.get('direct');
@@ -92,7 +94,11 @@ export function DirectTab() {
     });
   };
   return (
-    <SidebarItem active={directSelected}>
+    <SidebarItem
+      active={directSelected}
+      data-alert={hasHighlight ? 'true' : undefined}
+      data-activity={hasUnread ? 'true' : undefined}
+    >
       <SidebarItemTooltip tooltip="Direct Messages">
         {(triggerRef) => (
           <SidebarAvatar
@@ -101,6 +107,8 @@ export function DirectTab() {
             outlined
             onClick={handleDirectClick}
             onContextMenu={handleContextMenu}
+            data-activity={hasUnread ? 'true' : undefined}
+            data-alert={hasHighlight ? 'true' : undefined}
           >
             <Icon src={Icons.User} filled={directSelected} />
           </SidebarAvatar>

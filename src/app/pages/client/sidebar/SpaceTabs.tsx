@@ -68,7 +68,7 @@ import {
   ISidebarFolder,
   SidebarItems,
   TSidebarItem,
-  makeCinnySpacesContent,
+  makeBlackwallSpacesContent,
   parseSidebar,
   sidebarItemWithout,
   useSidebarItems,
@@ -421,8 +421,12 @@ function SpaceTab({
 
   return (
     <RoomUnreadProvider roomId={space.roomId}>
-      {(unread) => (
-        <SidebarItem
+      {(unread) => {
+        const hasHighlight = unread?.highlight ? unread.highlight > 0 : false;
+        const hasUnread = unread?.total ? unread.total > 0 : false;
+
+        return (
+          <SidebarItem
           active={selected}
           ref={targetRef}
           aria-disabled={disabled}
@@ -430,6 +434,8 @@ function SpaceTab({
           data-drop-above={dropType === 'reorder-above'}
           data-drop-below={dropType === 'reorder-below'}
           data-inside-folder={!!folder}
+          data-alert={hasHighlight ? 'true' : undefined}
+          data-activity={hasUnread ? 'true' : undefined}
         >
           <SidebarItemTooltip tooltip={disabled ? undefined : space.name}>
             {(triggerRef) => (
@@ -440,6 +446,8 @@ function SpaceTab({
                 size={folder ? '300' : '400'}
                 onClick={onClick}
                 onContextMenu={handleContextMenu}
+                data-activity={hasUnread ? 'true' : undefined}
+                data-alert={hasHighlight ? 'true' : undefined}
               >
                 <RoomAvatar
                   roomId={space.roomId}
@@ -484,7 +492,8 @@ function SpaceTab({
             />
           )}
         </SidebarItem>
-      )}
+        );
+      }}
     </RoomUnreadProvider>
   );
 }
@@ -549,24 +558,43 @@ function ClosedSpaceFolder({
 
   return (
     <RoomsUnreadProvider rooms={folder.content}>
-      {(unread) => (
-        <SidebarItem
+      {(unread) => {
+        const hasHighlight = unread?.highlight ? unread.highlight > 0 : false;
+        const hasUnread = unread?.total ? unread.total > 0 : false;
+
+        return (
+          <SidebarItem
           active={selected}
           ref={handlerRef}
           aria-disabled={disabled}
           data-drop-child={dropType === 'make-child'}
           data-drop-above={dropType === 'reorder-above'}
           data-drop-below={dropType === 'reorder-below'}
+          data-alert={hasHighlight ? 'true' : undefined}
+          data-activity={hasUnread ? 'true' : undefined}
         >
           <SidebarItemTooltip tooltip={disabled ? undefined : tooltipName}>
             {(tooltipRef) => (
-              <SidebarFolder data-id={folder.id} as="button" ref={tooltipRef} onClick={onOpen}>
+              <SidebarFolder
+                data-id={folder.id}
+                as="button"
+                ref={tooltipRef}
+                onClick={onOpen}
+                data-activity={hasUnread ? 'true' : undefined}
+                data-alert={hasHighlight ? 'true' : undefined}
+              >
                 {folder.content.map((sId) => {
                   const space = mx.getRoom(sId);
                   if (!space) return null;
 
                   return (
-                    <SidebarAvatar key={sId} size="200" radii="300">
+                    <SidebarAvatar
+                      key={sId}
+                      size="200"
+                      radii="300"
+                      data-activity={hasUnread ? 'true' : undefined}
+                      data-alert={hasHighlight ? 'true' : undefined}
+                    >
                       <RoomAvatar
                         roomId={space.roomId}
                         src={getRoomAvatarUrl(mx, space, 96, useAuthentication) ?? undefined}
@@ -579,7 +607,7 @@ function ClosedSpaceFolder({
                       />
                     </SidebarAvatar>
                   );
-                })}
+               })}
               </SidebarFolder>
             )}
           </SidebarItemTooltip>
@@ -589,7 +617,8 @@ function ClosedSpaceFolder({
             </SidebarItemBadge>
           )}
         </SidebarItem>
-      )}
+        );
+      }}
     </RoomsUnreadProvider>
   );
 }
@@ -733,9 +762,9 @@ export function SpaceTabs({ scrollRef }: SpaceTabsProps) {
           newItems.push(i);
         });
 
-        const newSpacesContent = makeCinnySpacesContent(mx, newItems);
+        const newSpacesContent = makeBlackwallSpacesContent(mx, newItems);
         localEchoSidebarItem(parseSidebar(mx, orphanSpaces, newSpacesContent));
-        mx.setAccountData(AccountDataEvent.CinnySpaces, newSpacesContent);
+        mx.setAccountData(AccountDataEvent.BlackwallSpaces, newSpacesContent);
       },
       [mx, sidebarItems, setOpenedFolder, localEchoSidebarItem, orphanSpaces]
     )
@@ -779,9 +808,9 @@ export function SpaceTabs({ scrollRef }: SpaceTabsProps) {
       if (orphanSpaces.includes(roomId)) return;
       const newItems = sidebarItemWithout(sidebarItems, roomId);
 
-      const newSpacesContent = makeCinnySpacesContent(mx, newItems);
+      const newSpacesContent = makeBlackwallSpacesContent(mx, newItems);
       localEchoSidebarItem(parseSidebar(mx, orphanSpaces, newSpacesContent));
-      mx.setAccountData(AccountDataEvent.CinnySpaces, newSpacesContent);
+      mx.setAccountData(AccountDataEvent.BlackwallSpaces, newSpacesContent);
     },
     [mx, sidebarItems, orphanSpaces, localEchoSidebarItem]
   );

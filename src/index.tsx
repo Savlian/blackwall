@@ -9,7 +9,7 @@ import { configClass, varsClass } from 'folds';
 enableMapSet();
 
 import './index.scss';
-
+import './blackwall.css';
 import { trimTrailingSlash } from './app/utils/common';
 import App from './app/pages/App';
 
@@ -29,7 +29,7 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', (event) => {
     if (event.data?.type === 'token' && event.data?.responseKey) {
       // Get the token for SW.
-      const token = localStorage.getItem('cinny_access_token') ?? undefined;
+      const token = localStorage.getItem('blackwall_access_token') ?? undefined;
       event.source!.postMessage({
         responseKey: event.data.responseKey,
         token,

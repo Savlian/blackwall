@@ -1,9 +1,10 @@
-import { Box, Button, color, config, Dialog, Header, Icon, IconButton, Icons, Text } from 'folds';
+import { Box, Button, color, config, Header, Icon, IconButton, Icons, Text } from 'folds';
 import React, { FormEventHandler } from 'react';
 import { AuthType } from 'matrix-js-sdk';
 import { StageComponentProps } from './types';
 import { ErrorCode } from '../../cs-errorcode';
 import { PasswordInput } from '../password-input';
+import { GlitchDialog } from '../blackwall/GlitchDialog';
 
 export function PasswordStage({
   stageData,
@@ -34,7 +35,7 @@ export function PasswordStage({
   };
 
   return (
-    <Dialog>
+    <GlitchDialog>
       <Header
         style={{
           padding: `0 ${config.space.S200} 0 ${config.space.S400}`,
@@ -84,6 +85,6 @@ export function PasswordStage({
           </Text>
         </Button>
       </Box>
-    </Dialog>
+    </GlitchDialog>
   );
 }
