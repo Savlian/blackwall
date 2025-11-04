@@ -1,12 +1,10 @@
-import { lightTheme } from 'folds';
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { onDarkFontWeight, onLightFontWeight } from '../../config.css';
-import { blackwallTheme, butterTheme, darkTheme, silverTheme } from '../../colors.css';
+import { createContext, useContext, useMemo } from 'react';
+import { onDarkFontWeight } from '../../config.css';
+import { blackwallAccentThemes, BlackwallAccentKey } from '../../colors.css';
 import { settingsAtom } from '../state/settings';
 import { useSetting } from '../state/hooks/settings';
 
 export enum ThemeKind {
-  Light = 'light',
   Dark = 'dark',
 }
 
@@ -14,94 +12,55 @@ export type Theme = {
   id: string;
   kind: ThemeKind;
   classNames: string[];
+  label: string;
+  previewColor: string;
 };
 
-export const LightTheme: Theme = {
-  id: 'light-theme',
-  kind: ThemeKind.Light,
-  classNames: [lightTheme, onLightFontWeight, 'prism-light'],
+type AccentMeta = {
+  key: BlackwallAccentKey;
+  label: string;
+  previewColor: string;
+  accentClass: string;
 };
 
-export const SilverTheme: Theme = {
-  id: 'silver-theme',
-  kind: ThemeKind.Light,
-  classNames: ['silver-theme', silverTheme, onLightFontWeight, 'prism-light'],
-};
-export const DarkTheme: Theme = {
-  id: 'dark-theme',
+const accentOrder: AccentMeta[] = [
+  { key: 'red', label: 'Red', previewColor: '#FF1A1A', accentClass: 'blackwall-accent-red' },
+  { key: 'green', label: 'Green', previewColor: '#5FE39F', accentClass: 'blackwall-accent-green' },
+  { key: 'blue', label: 'Blue', previewColor: '#4E8CFF', accentClass: 'blackwall-accent-blue' },
+  { key: 'purple', label: 'Purple', previewColor: '#B066FF', accentClass: 'blackwall-accent-purple' },
+  { key: 'pink', label: 'Pink', previewColor: '#FF5DB1', accentClass: 'blackwall-accent-pink' },
+];
+
+const createThemeForAccent = ({ key, label, previewColor, accentClass }: AccentMeta): Theme => ({
+  id: 'blackwall-' + key,
   kind: ThemeKind.Dark,
-  classNames: ['dark-theme', darkTheme, onDarkFontWeight, 'prism-dark'],
-};
-export const ButterTheme: Theme = {
-  id: 'butter-theme',
-  kind: ThemeKind.Dark,
-  classNames: ['butter-theme', butterTheme, onDarkFontWeight, 'prism-dark'],
-};
+  classNames: ['blackwall-theme', accentClass, blackwallAccentThemes[key], onDarkFontWeight, 'prism-dark'],
+  label,
+  previewColor,
+});
 
-export const BlackwallTheme: Theme = {
-  id: 'blackwall-theme',
-  kind: ThemeKind.Dark,
-  classNames: ['blackwall-theme', blackwallTheme, onDarkFontWeight, 'prism-dark'],
-};
+const themes = accentOrder.map(createThemeForAccent);
+const themeById = new Map(themes.map((theme) => [theme.id, theme]));
 
-export const useThemes = (): Theme[] => {
-  const themes: Theme[] = useMemo(() => [LightTheme, SilverTheme, DarkTheme, ButterTheme, BlackwallTheme], []);
+export const BlackwallTheme = themes[0];
 
-  return themes;
-};
+export const useThemes = (): Theme[] => themes;
 
 export const useThemeNames = (): Record<string, string> =>
   useMemo(
-    () => ({
-      [LightTheme.id]: 'Light',
-      [SilverTheme.id]: 'Silver',
-      [DarkTheme.id]: 'Dark',
-      [ButterTheme.id]: 'Butter',
-      [BlackwallTheme.id]: 'Blackwall',
-    }),
+    () => Object.fromEntries(themes.map((theme) => [theme.id, theme.label])),
     []
   );
 
-export const useSystemThemeKind = (): ThemeKind => {
-  const darkModeQueryList = useMemo(() => window.matchMedia('(prefers-color-scheme: dark)'), []);
-  const [themeKind, setThemeKind] = useState<ThemeKind>(
-    darkModeQueryList.matches ? ThemeKind.Dark : ThemeKind.Light
+export const useThemePreviews = (): Record<string, string> =>
+  useMemo(
+    () => Object.fromEntries(themes.map((theme) => [theme.id, theme.previewColor])),
+    []
   );
 
-  useEffect(() => {
-    const handleMediaQueryChange = () => {
-      setThemeKind(darkModeQueryList.matches ? ThemeKind.Dark : ThemeKind.Light);
-    };
-
-    darkModeQueryList.addEventListener('change', handleMediaQueryChange);
-    return () => {
-      darkModeQueryList.removeEventListener('change', handleMediaQueryChange);
-    };
-  }, [darkModeQueryList, setThemeKind]);
-
-  return themeKind;
-};
-
 export const useActiveTheme = (): Theme => {
-  const systemThemeKind = useSystemThemeKind();
-  const themes = useThemes();
-  const [systemTheme] = useSetting(settingsAtom, 'useSystemTheme');
   const [themeId] = useSetting(settingsAtom, 'themeId');
-  const [lightThemeId] = useSetting(settingsAtom, 'lightThemeId');
-  const [darkThemeId] = useSetting(settingsAtom, 'darkThemeId');
-
-  if (!systemTheme) {
-    const selectedTheme = themes.find((theme) => theme.id === themeId) ?? LightTheme;
-
-    return selectedTheme;
-  }
-
-  const selectedTheme =
-    systemThemeKind === ThemeKind.Dark
-      ? themes.find((theme) => theme.id === darkThemeId) ?? DarkTheme
-      : themes.find((theme) => theme.id === lightThemeId) ?? LightTheme;
-
-  return selectedTheme;
+  return themeById.get(themeId ?? BlackwallTheme.id) ?? BlackwallTheme;
 };
 
 const ThemeContext = createContext<Theme | null>(null);
@@ -115,3 +74,6 @@ export const useTheme = (): Theme => {
 
   return theme;
 };
+
+
+
