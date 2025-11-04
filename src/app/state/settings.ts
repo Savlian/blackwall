@@ -11,9 +11,6 @@ export enum MessageLayout {
 
 export interface Settings {
   themeId?: string;
-  useSystemTheme: boolean;
-  lightThemeId?: string;
-  darkThemeId?: string;
   isMarkdown: boolean;
   editorToolbar: boolean;
   twitterEmoji: boolean;
@@ -42,11 +39,14 @@ export interface Settings {
   developerTools: boolean;
 }
 
+type LegacySettings = Partial<Settings> & {
+  useSystemTheme?: boolean;
+  lightThemeId?: string;
+  darkThemeId?: string;
+};
+
 const defaultSettings: Settings = {
-  themeId: 'blackwall-theme',
-  useSystemTheme: false,
-  lightThemeId: 'blackwall-theme',
-  darkThemeId: 'blackwall-theme',
+  themeId: 'blackwall-red',
   isMarkdown: true,
   editorToolbar: false,
   twitterEmoji: false,
@@ -75,12 +75,29 @@ const defaultSettings: Settings = {
   developerTools: false,
 };
 
-export const getSettings = () => {
+const normaliseThemeId = (settings: LegacySettings): string => {
+  const candidates = [settings.themeId, settings.darkThemeId, settings.lightThemeId].filter(
+    (value): value is string => typeof value === 'string'
+  );
+
+  const match = candidates.find((value) => value.startsWith('blackwall-') || value === 'blackwall-theme');
+  if (!match) return defaultSettings.themeId;
+
+  if (match === 'blackwall-theme') return 'blackwall-red';
+  return match;
+};
+
+export const getSettings = (): Settings => {
   const settings = localStorage.getItem(STORAGE_KEY);
   if (settings === null) return defaultSettings;
+
+  const parsed = JSON.parse(settings) as LegacySettings;
+  const themeId = normaliseThemeId(parsed);
+
   return {
     ...defaultSettings,
-    ...(JSON.parse(settings) as Settings),
+    ...parsed,
+    themeId,
   };
 };
 

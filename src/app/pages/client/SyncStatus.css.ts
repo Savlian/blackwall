@@ -3,19 +3,19 @@ import { config } from 'folds';
 
 const pulse = keyframes({
   '0%': {
-    boxShadow: '0 0 12px rgba(255, 26, 26, 0.45)',
+    boxShadow: '0 0 12px var(--bw-neon-medium)',
     opacity: 0.9,
   },
   '45%': {
-    boxShadow: '0 0 22px rgba(255, 26, 26, 0.65)',
+    boxShadow: '0 0 22px var(--bw-neon-strong)',
     opacity: 1,
   },
   '70%': {
-    boxShadow: '0 0 16px rgba(255, 26, 26, 0.55)',
+    boxShadow: '0 0 16px var(--bw-neon-glow)',
     opacity: 0.92,
   },
   '100%': {
-    boxShadow: '0 0 12px rgba(255, 26, 26, 0.45)',
+    boxShadow: '0 0 12px var(--bw-neon-medium)',
     opacity: 0.9,
   },
 });
@@ -44,8 +44,9 @@ export const connecting = style({
   alignItems: 'center',
   position: 'relative',
   overflow: 'hidden',
-  background: 'linear-gradient(90deg, rgba(255, 26, 26, 0.65) 0%, rgba(122, 0, 0, 0.85) 50%, rgba(255, 26, 26, 0.65) 100%)',
-  color: '#ffeaea',
+  background:
+    'linear-gradient(90deg, color-mix(in srgb, var(--bw-neon) 65%, transparent) 0%, color-mix(in srgb, var(--bw-primary) 50%, transparent) 50%, color-mix(in srgb, var(--bw-neon) 65%, transparent) 100%)',
+  color: 'color-mix(in srgb, var(--bw-neon) 16%, #ffffff)',
   textTransform: 'uppercase',
   letterSpacing: '0.26em',
   fontFamily: "'Consolas', 'Fira Code', 'Courier New', monospace",
@@ -74,7 +75,8 @@ export const connecting = style({
 
 export const connectingLine = style({
   height: config.borderWidth.B300,
-  background: 'linear-gradient(90deg, rgba(255, 26, 26, 0.85) 0%, rgba(255, 80, 80, 0.4) 35%, rgba(255, 26, 26, 0.85) 100%)',
-  boxShadow: '0 0 14px rgba(255, 26, 26, 0.55)',
+  background:
+    'linear-gradient(90deg, color-mix(in srgb, var(--bw-neon) 85%, transparent) 0%, color-mix(in srgb, var(--bw-neon) 40%, transparent) 35%, color-mix(in srgb, var(--bw-neon) 85%, transparent) 100%)',
+  boxShadow: '0 0 14px var(--bw-neon-glow)',
 });
 

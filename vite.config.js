@@ -27,8 +27,32 @@ const copyFiles = {
       dest: '',
     },
     {
+      src: 'public/logo.png',
+      dest: '',
+    },
+    {
+      src: 'public/blackwall-bg.png',
+      dest: '',
+    },
+    {
+      src: 'public/favicon.ico',
+      dest: '',
+    },
+    {
       src: 'public/manifest.json',
       dest: '',
+    },
+    {
+      src: 'public/icons',
+      dest: 'icons',
+    },
+    {
+      src: 'public/font',
+      dest: 'font',
+    },
+    {
+      src: 'public/sound',
+      dest: 'sound',
     },
     {
       src: 'public/res/android',
@@ -129,3 +153,6 @@ export default defineConfig({
     },
   },
 });
+
+
+

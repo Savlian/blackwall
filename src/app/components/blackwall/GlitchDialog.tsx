@@ -1,11 +1,16 @@
 import classNames from 'classnames';
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { Dialog } from 'folds';
 
 import * as css from '../../styles/Modal.css';
 
 type GlitchDialogProps = React.ComponentProps<typeof Dialog>;
 
-export function GlitchDialog({ className, ...props }: GlitchDialogProps) {
-  return <Dialog {...props} className={classNames(css.GlitchedDialog, className)} />;
-}
+export const GlitchDialog = forwardRef<HTMLElement, GlitchDialogProps>(
+  ({ className, ...props }, ref) => (
+    <Dialog {...props} ref={ref} className={classNames(css.GlitchedDialog, className)} />
+  )
+);
+
+GlitchDialog.displayName = 'GlitchDialog';
+

@@ -1,9 +1,15 @@
-FROM node:20-alpine AS build
+FROM node:20-alpine AS builder
 WORKDIR /app
+
+# Only copy package files first (cache-friendly)
+COPY package*.json ./
+RUN npm install --legacy-peer-deps
+
+# Now copy the rest
 COPY . .
-RUN npm ci && npm run build
+RUN npm run build
 
 FROM nginx:1.27-alpine
-COPY --from=build /app/dist/ /usr/share/nginx/html/
-RUN rm -f /usr/share/nginx/html/sw.js /usr/share/nginx/html/sw.js.map || true
+COPY docker-nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/dist /usr/share/nginx/html
 EXPOSE 80

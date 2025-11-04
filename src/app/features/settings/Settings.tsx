@@ -187,12 +187,17 @@ export function Settings({ initialPage, requestClose }: SettingsProps) {
                         <Text size="B400">Logout</Text>
                       </Button>
                       {logout && (
-                        <Overlay open backdrop={<OverlayBackdrop />}>
+                        <Overlay
+                          open
+                          backdrop={<OverlayBackdrop onClick={() => setLogout(false)} />}
+                        >
                           <OverlayCenter>
                             <FocusTrap
                               focusTrapOptions={{
                                 onDeactivate: () => setLogout(false),
-                                clickOutsideDeactivates: true,
+                                // Focus trap can treat portal content as outside; keep trap active and handle closing ourselves.
+                                clickOutsideDeactivates: false,
+                                allowOutsideClick: true,
                                 escapeDeactivates: stopPropagation,
                               }}
                             >

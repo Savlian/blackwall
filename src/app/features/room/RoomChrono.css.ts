@@ -13,7 +13,7 @@ export const chrono = style({
   letterSpacing: '0.18em',
   pointerEvents: 'none',
   fontFamily: "'Consolas', 'Fira Code', 'Courier New', monospace",
-  color: '#ffeaea',
+  color: 'color-mix(in srgb, var(--bw-neon) 18%, #ffffff)',
 });
 
 export const label = style({
@@ -26,8 +26,8 @@ export const label = style({
 export const value = style({
   fontSize: '0.95rem',
   letterSpacing: '0.14em',
-  color: '#ffffff',
-  textShadow: '0 0 10px rgba(255, 26, 26, 0.45)',
+  color: 'color-mix(in srgb, var(--bw-neon) 10%, #ffffff)',
+  textShadow: '0 0 10px var(--bw-neon-medium)',
   lineHeight: 1.05,
 });
 

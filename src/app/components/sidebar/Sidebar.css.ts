@@ -40,8 +40,8 @@ export const Sidebar = style([
   DefaultReset,
   {
     width: toRem(66),
-    backgroundColor: 'rgba(18, 0, 2, 0.82)',
-    borderRight: `${config.borderWidth.B300} solid rgba(255, 48, 48, 0.3)`,
+    backgroundColor: 'var(--bw-panel-bg)',
+    borderRight: `${config.borderWidth.B300} solid color-mix(in srgb, var(--bw-neon) 30%, transparent)`,
 
     display: 'flex',
     flexDirection: 'column',
@@ -49,14 +49,17 @@ export const Sidebar = style([
     position: 'relative',
     isolation: 'isolate',
     overflow: 'hidden',
-    boxShadow: '0 0 22px rgba(255, 40, 84, 0.18)',
+    boxShadow: '0 0 22px color-mix(in srgb, var(--bw-neon) 18%, transparent)',
     selectors: {
       '&::before': {
         content: '',
         position: 'absolute',
         inset: '-12% -40%',
-        backgroundImage:
-          'linear-gradient(115deg, rgba(255, 28, 28, 0.16) 0%, rgba(26, 0, 0, 0.1) 45%, rgba(12, 0, 0, 0) 70%), linear-gradient(90deg, rgba(210, 0, 0, 0.14) 1px, transparent 1px), linear-gradient(0deg, rgba(255, 20, 20, 0.12) 1px, transparent 1px)',
+        backgroundImage: [
+          'linear-gradient(115deg, color-mix(in srgb, var(--bw-neon) 16%, transparent) 0%, color-mix(in srgb, var(--bw-primary) 10%, transparent) 45%, transparent 70%)',
+          'linear-gradient(90deg, color-mix(in srgb, var(--bw-primary-2) 14%, transparent) 1px, transparent 1px)',
+          'linear-gradient(0deg, color-mix(in srgb, var(--bw-neon) 12%, transparent) 1px, transparent 1px)',
+        ].join(', '),
         backgroundSize: '100% 100%, 42px 42px, 42px 42px',
         mixBlendMode: 'screen',
         opacity: 0.35,
@@ -71,8 +74,12 @@ export const Sidebar = style([
         content: '',
         position: 'absolute',
         inset: 0,
-        backgroundImage:
-          'radial-gradient(90% 120% at 50% 20%, rgba(255, 38, 38, 0.24) 0%, rgba(18, 0, 0, 0) 70%), linear-gradient(125deg, rgba(255, 68, 96, 0.18) 0%, rgba(8, 0, 0, 0) 60%), repeating-linear-gradient(90deg, rgba(255, 64, 96, 0.22) 0 1px, transparent 1px 8px), repeating-linear-gradient(0deg, rgba(255, 48, 108, 0.16) 0 1px, transparent 1px 12px)',
+        backgroundImage: [
+          'radial-gradient(90% 120% at 50% 20%, color-mix(in srgb, var(--bw-neon) 24%, transparent) 0%, transparent 70%)',
+          'linear-gradient(125deg, color-mix(in srgb, var(--bw-neon) 18%, transparent) 0%, transparent 60%)',
+          'repeating-linear-gradient(90deg, color-mix(in srgb, var(--bw-neon) 22%, transparent) 0 1px, transparent 1px 8px)',
+          'repeating-linear-gradient(0deg, color-mix(in srgb, var(--bw-neon) 16%, transparent) 0 1px, transparent 1px 12px)',
+        ].join(', '),
         backgroundSize: '100% 100%, 180% 160%, 60px 60px, 110px 110px',
         backgroundPosition: 'center, 0 0, 0 0, 0 0',
         pointerEvents: 'none',
@@ -96,8 +103,10 @@ globalStyle(`${Sidebar} > *`, {
 export const SidebarWeatherOverlay = style({
   position: 'absolute',
   inset: '-18% -30%',
-  background:
-    'radial-gradient(80% 140% at 50% 10%, rgba(92, 32, 180, 0.28) 0%, rgba(8, 0, 12, 0) 70%), radial-gradient(60% 80% at 30% 120%, rgba(255, 48, 120, 0.22) 0%, rgba(12, 0, 24, 0) 65%)',
+  background: [
+    'radial-gradient(80% 140% at 50% 10%, color-mix(in srgb, var(--bw-neon) 28%, transparent) 0%, transparent 70%)',
+    'radial-gradient(60% 80% at 30% 120%, color-mix(in srgb, var(--bw-primary-2) 22%, transparent) 0%, transparent 65%)',
+  ].join(', '),
   mixBlendMode: 'screen',
   filter: 'blur(32px)',
   opacity: 0.5,
@@ -192,7 +201,7 @@ export const SidebarItem = recipe({
           height: toRem(22),
           transform: 'translateY(-50%)',
           background:
-            'linear-gradient(180deg, rgba(255, 50, 50, 0.6) 0%, rgba(122, 0, 0, 0.1) 70%, rgba(255, 40, 40, 0.45) 100%)',
+            'linear-gradient(180deg, color-mix(in srgb, var(--bw-neon) 60%, transparent) 0%, color-mix(in srgb, var(--bw-primary) 10%, transparent) 70%, color-mix(in srgb, var(--bw-neon) 45%, transparent) 100%)',
           filter: 'blur(1.2px)',
           opacity: 0,
           pointerEvents: 'none',
@@ -283,7 +292,7 @@ export const SidebarAvatar = recipe({
           inset: '-6px',
           borderRadius: 'inherit',
           background:
-            'radial-gradient(circle at 50% 50%, rgba(255, 40, 40, 0.26) 0%, rgba(18, 0, 0, 0.04) 70%)',
+            'radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--bw-neon) 26%, transparent) 0%, color-mix(in srgb, var(--bw-primary) 4%, transparent) 70%)',
           filter: 'blur(6px)',
           opacity: 0.14,
           transition: 'opacity 220ms ease, transform 220ms ease',
@@ -365,7 +374,7 @@ export const SidebarFolder = recipe({
           inset: '-8px',
           borderRadius: 'inherit',
           background:
-            'radial-gradient(circle at 50% 40%, rgba(255, 38, 38, 0.28) 0%, rgba(8, 0, 0, 0.08) 70%)',
+            'radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--bw-neon) 28%, transparent) 0%, color-mix(in srgb, var(--bw-primary) 8%, transparent) 70%)',
           filter: 'blur(8px)',
           opacity: 0,
           transition: 'opacity 220ms ease, transform 220ms ease',

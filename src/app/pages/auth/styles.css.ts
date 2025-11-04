@@ -2,9 +2,9 @@ import { keyframes, style, globalStyle } from '@vanilla-extract/css';
 import { DefaultReset, config, toRem } from 'folds';
 
 const cardPulse = keyframes({
-  '0%': { boxShadow: '0 0 18px rgba(255, 26, 26, 0.35)' },
-  '50%': { boxShadow: '0 0 26px rgba(255, 26, 26, 0.45)' },
-  '100%': { boxShadow: '0 0 18px rgba(255, 26, 26, 0.35)' },
+  '0%': { boxShadow: '0 0 18px var(--bw-neon-medium)' },
+  '50%': { boxShadow: '0 0 26px var(--bw-neon-strong)' },
+  '100%': { boxShadow: '0 0 18px var(--bw-neon-medium)' },
 });
 
 const glowSweep = keyframes({
@@ -33,8 +33,8 @@ export const AuthLayout = style({
   flexDirection: 'column',
   alignItems: 'center',
   gap: config.space.S600,
-  color: '#ffeaea',
-  backgroundColor: '#050005',
+  color: 'color-mix(in srgb, var(--bw-neon) 18%, #ffffff)',
+  backgroundColor: 'color-mix(in srgb, var(--bw-primary) 8%, #050005)',
   position: 'relative',
   isolation: 'isolate',
   selectors: {
@@ -43,7 +43,7 @@ export const AuthLayout = style({
       position: 'absolute',
       inset: 0,
       backgroundImage:
-        'radial-gradient(circle, rgba(255, 72, 72, 0.28) 1px, transparent 1px), radial-gradient(circle, rgba(255, 24, 24, 0.18) 1px, transparent 1px)',
+        'radial-gradient(circle, color-mix(in srgb, var(--bw-neon) 28%, transparent) 1px, transparent 1px), radial-gradient(circle, color-mix(in srgb, var(--bw-neon) 18%, transparent) 1px, transparent 1px)',
       backgroundSize: '20px 20px, 20px 20px',
       backgroundPosition: '0 0, 10px 10px',
       mixBlendMode: 'screen',
@@ -59,7 +59,7 @@ export const AuthLayout = style({
       position: 'absolute',
       inset: '-25% -40% -35% -40%',
       background:
-        'radial-gradient(120% 80% at 50% 40%, rgba(255, 32, 68, 0.26) 0%, rgba(255, 32, 68, 0) 74%)',
+        'radial-gradient(120% 80% at 50% 40%, color-mix(in srgb, var(--bw-neon) 26%, transparent) 0%, transparent 74%)',
       mixBlendMode: 'screen',
       filter: 'blur(42px)',
       opacity: 0.6,
@@ -76,12 +76,12 @@ export const AuthCard = style({
   marginTop: '2vh',
   maxWidth: toRem(480),
   width: 'min(32rem, 100%)',
-  background: 'rgba(8, 0, 0, 0.92)',
+  background: 'color-mix(in srgb, var(--bw-primary) 12%, rgb(0 0 0 / 92%))',
   backgroundImage:
-    'linear-gradient(145deg, rgba(255, 26, 26, 0.18) 0%, rgba(10, 0, 0, 0.9) 55%, rgba(0, 0, 0, 0.96) 100%)',
+    'linear-gradient(145deg, color-mix(in srgb, var(--bw-neon) 18%, transparent) 0%, color-mix(in srgb, var(--bw-primary) 9%, rgb(0 0 0 / 90%)) 55%, color-mix(in srgb, var(--bw-primary) 4%, rgb(0 0 0 / 96%)) 100%)',
   borderRadius: config.radii.R500,
-  border: '1px solid rgba(255, 26, 26, 0.35)',
-  boxShadow: '0 0 22px rgba(255, 26, 26, 0.35)',
+  border: '1px solid var(--bw-neon-medium)',
+  boxShadow: '0 0 22px var(--bw-neon-medium)',
   overflow: 'hidden',
   position: 'relative',
   animationName: cardPulse,
@@ -93,7 +93,7 @@ export const AuthCard = style({
       content: '',
       position: 'absolute',
       inset: 0,
-      borderTop: '1px solid rgba(255, 90, 90, 0.6)',
+      borderTop: '1px solid color-mix(in srgb, var(--bw-neon) 60%, transparent)',
       opacity: 0.4,
       pointerEvents: 'none',
     },
@@ -105,7 +105,7 @@ export const AuthCard = style({
       left: '-28%',
       width: '38%',
       background:
-        'linear-gradient(90deg, rgba(255, 230, 230, 0) 0%, rgba(255, 230, 230, 0.35) 50%, rgba(255, 230, 230, 0) 100%)',
+        'linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, color-mix(in srgb, var(--bw-neon) 35%, #ffffff) 50%, rgba(255, 255, 255, 0) 100%)',
       filter: 'blur(12px)',
       opacity: 0,
       animationName: glowSweep,
@@ -122,7 +122,7 @@ export const AuthLogo = style([
     width: toRem(28),
     height: toRem(28),
     borderRadius: '50%',
-    filter: 'drop-shadow(0 0 6px rgba(255, 26, 26, 0.55))',
+    filter: 'drop-shadow(0 0 6px var(--bw-neon-strong))',
   },
 ]);
 
@@ -131,9 +131,9 @@ export const AuthHeader = style({
   justifyContent: 'center',
   alignItems: 'center',
   padding: `0 ${config.space.S400}`,
-  borderBottom: '1px solid rgba(255, 26, 26, 0.32)',
-  background: 'linear-gradient(90deg, rgba(255, 26, 26, 0.45) 0%, rgba(0, 0, 0, 0) 65%)',
-  boxShadow: '0 0 12px rgba(255, 26, 26, 0.35)',
+  borderBottom: '1px solid var(--bw-neon-medium)',
+  background: 'linear-gradient(90deg, color-mix(in srgb, var(--bw-neon) 45%, transparent) 0%, transparent 65%)',
+  boxShadow: '0 0 12px var(--bw-neon-medium)',
 });
 
 export const AuthCardContent = style({
@@ -148,7 +148,7 @@ export const AuthCardContent = style({
 
 export const AuthFooter = style({
   padding: config.space.S300,
-  color: '#ffbdbd',
+  color: 'color-mix(in srgb, var(--bw-neon) 24%, #ffffff)',
 });
 
 
@@ -158,27 +158,28 @@ export const AuthField = style({
   width: '100%',
   alignItems: 'center',
   borderRadius: '14px',
-  background: 'rgba(10, 0, 12, 0.82)',
+  background: 'color-mix(in srgb, var(--bw-primary) 14%, rgb(0 0 0 / 82%))',
   overflow: 'hidden',
   isolation: 'isolate',
   backdropFilter: 'blur(10px)',
   transition: 'background-color 180ms ease, box-shadow 180ms ease',
-  boxShadow: '0 0 0 1px rgba(255, 48, 78, 0.45)',
+  boxShadow: '0 0 0 1px color-mix(in srgb, var(--bw-neon) 45%, transparent)',
   selectors: {
     '&::before': {
       content: '',
       position: 'absolute',
       inset: 0,
       borderRadius: 'inherit',
-      boxShadow: '0 0 18px rgba(255, 42, 72, 0.24)',
+      boxShadow: '0 0 18px color-mix(in srgb, var(--bw-neon) 24%, transparent)',
       opacity: 0,
       transition: 'opacity 220ms ease',
       pointerEvents: 'none',
       zIndex: -1,
     },
     '&:focus-within': {
-      background: 'rgba(12, 0, 14, 0.94)',
-      boxShadow: '0 0 0 1px rgba(255, 96, 124, 0.82), 0 0 20px rgba(255, 72, 102, 0.28)',
+      background: 'color-mix(in srgb, var(--bw-primary) 16%, rgb(0 0 0 / 94%))',
+      boxShadow:
+        '0 0 0 1px color-mix(in srgb, var(--bw-neon) 82%, transparent), 0 0 20px color-mix(in srgb, var(--bw-neon) 28%, transparent)',
     },
     '&:focus-within::before': {
       opacity: 1,
@@ -190,21 +191,21 @@ export const AuthField = style({
 const buttonSelector = `${AuthCard} button` as const;
 
 globalStyle(buttonSelector, {
-  background: 'rgba(12, 0, 0, 0.78)',
-  border: '1px solid rgba(255, 26, 26, 0.35)',
-  color: '#ffeaea',
+  background: 'color-mix(in srgb, var(--bw-primary) 12%, rgb(0 0 0 / 78%))',
+  border: '1px solid var(--bw-neon-medium)',
+  color: 'color-mix(in srgb, var(--bw-neon) 18%, #ffffff)',
   borderRadius: '12px',
   transition: 'background-color 180ms ease, box-shadow 180ms ease, transform 120ms ease',
 });
 
 globalStyle(`${buttonSelector}:hover`, {
-  background: 'rgba(24, 0, 0, 0.88)',
-  boxShadow: '0 0 16px rgba(255, 26, 26, 0.4)',
+  background: 'color-mix(in srgb, var(--bw-primary) 18%, rgb(0 0 0 / 88%))',
+  boxShadow: '0 0 16px var(--bw-neon-medium)',
 });
 
 globalStyle(`${buttonSelector}:focus-visible`, {
   outline: 'none',
-  boxShadow: '0 0 18px rgba(255, 26, 26, 0.6)',
+  boxShadow: '0 0 18px var(--bw-neon-strong)',
 });
 
 globalStyle(`${buttonSelector}:active`, {
@@ -212,19 +213,19 @@ globalStyle(`${buttonSelector}:active`, {
 });
 
 globalStyle(`${AuthCard} a`, {
-  color: '#ff7070',
+  color: 'color-mix(in srgb, var(--bw-neon) 30%, #ffffff)',
   textDecoration: 'none',
   transition: 'color 160ms ease',
 });
 
 globalStyle(`${AuthCard} a:hover`, {
-  color: '#ff9a9a',
+  color: 'color-mix(in srgb, var(--bw-neon) 45%, #ffffff)',
 });
 
 globalStyle(`${AuthCard} input, ${AuthCard} select`, {
   background: 'transparent',
   border: 'none',
-  color: '#ffeaea',
+  color: 'color-mix(in srgb, var(--bw-neon) 18%, #ffffff)',
   borderRadius: 0,
   outline: 'none',
   boxShadow: 'none',
@@ -240,7 +241,7 @@ globalStyle(`${AuthField} input, ${AuthField} select`, {
   width: '100%',
   background: 'transparent',
   border: 'none',
-  color: '#ffeaea',
+  color: 'color-mix(in srgb, var(--bw-neon) 18%, #ffffff)',
   position: 'relative',
   zIndex: 1,
 });

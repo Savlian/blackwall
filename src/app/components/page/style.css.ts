@@ -13,16 +13,19 @@ export const PageNav = recipe({
     position: 'relative',
     isolation: 'isolate',
     minHeight: '100%',
-    background: 'rgba(18, 0, 2, 0.82)',
-    boxShadow: 'inset 0 0 0 1px rgba(255, 42, 42, 0.18)',
+    background: 'var(--bw-panel-bg)',
+    boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--bw-neon) 18%, transparent)',
     overflow: 'hidden',
     selectors: {
       '&::before': {
         content: '',
         position: 'absolute',
         inset: '-18% -30%',
-        backgroundImage:
-          'linear-gradient(135deg, rgba(255, 22, 36, 0.18) 0%, rgba(36, 0, 2, 0.13) 45%, rgba(10, 0, 0, 0) 70%), linear-gradient(90deg, rgba(188, 0, 0, 0.16) 1px, transparent 1px), linear-gradient(0deg, rgba(255, 26, 26, 0.12) 1px, transparent 1px)',
+        backgroundImage: [
+          'linear-gradient(135deg, color-mix(in srgb, var(--bw-neon) 18%, transparent) 0%, color-mix(in srgb, var(--bw-primary) 13%, transparent) 45%, transparent 70%)',
+          'linear-gradient(90deg, color-mix(in srgb, var(--bw-primary-2) 16%, transparent) 1px, transparent 1px)',
+          'linear-gradient(0deg, color-mix(in srgb, var(--bw-neon) 12%, transparent) 1px, transparent 1px)',
+        ].join(', '),
         backgroundSize: '100% 100%, 42px 42px, 42px 42px',
         mixBlendMode: 'screen',
         opacity: 0.36,
@@ -37,7 +40,7 @@ export const PageNav = recipe({
         position: 'absolute',
         inset: 0,
         background:
-          'radial-gradient(92% 120% at 50% 12%, rgba(255, 18, 34, 0.24) 0%, rgba(16, 0, 0, 0) 58%)',
+          'radial-gradient(92% 120% at 50% 12%, color-mix(in srgb, var(--bw-neon) 24%, transparent) 0%, transparent 58%)',
         opacity: 0.26,
         mixBlendMode: 'screen',
         pointerEvents: 'none',

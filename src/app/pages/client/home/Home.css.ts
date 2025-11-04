@@ -11,7 +11,7 @@ export const quickAction = style({
       position: 'absolute',
       inset: '-2px',
       background:
-        'linear-gradient(135deg, rgba(255, 26, 26, 0.35) 0%, rgba(122, 0, 0, 0.2) 28%, rgba(8, 0, 0, 0.05) 70%)',
+        'linear-gradient(135deg, color-mix(in srgb, var(--bw-neon) 35%, transparent) 0%, color-mix(in srgb, var(--bw-primary) 20%, transparent) 28%, color-mix(in srgb, var(--bw-primary) 5%, transparent) 70%)',
       mixBlendMode: 'screen',
       opacity: 0.4,
       transition: 'opacity 240ms ease, transform 320ms ease',
@@ -26,7 +26,7 @@ export const quickAction = style({
       bottom: '-2px',
       height: '3px',
       background:
-        'linear-gradient(90deg, rgba(255, 26, 26, 0.85) 0%, rgba(255, 120, 120, 0.35) 50%, rgba(255, 26, 26, 0.85) 100%)',
+        'linear-gradient(90deg, color-mix(in srgb, var(--bw-neon) 85%, transparent) 0%, color-mix(in srgb, var(--bw-neon) 35%, transparent) 50%, color-mix(in srgb, var(--bw-neon) 85%, transparent) 100%)',
       filter: 'blur(0.5px)',
       opacity: 0.65,
       transition: 'opacity 220ms ease',
@@ -55,16 +55,16 @@ globalStyle(`${quickAction} > *`, {
 
 globalStyle(`${quickAction} button`, {
   transition: 'transform 160ms ease, filter 160ms ease',
-  filter: 'drop-shadow(0 0 0 rgba(255, 26, 26, 0))',
+  filter: 'drop-shadow(0 0 0 rgba(0, 0, 0, 0))',
   willChange: 'transform, filter',
 });
 
 globalStyle(`${quickAction} button:hover`, {
-  filter: 'drop-shadow(0 0 8px rgba(255, 26, 26, 0.6))',
+  filter: 'drop-shadow(0 0 8px var(--bw-neon-strong))',
 });
 
 globalStyle(`${quickAction} button:focus-visible`, {
-  filter: 'drop-shadow(0 0 10px rgba(255, 26, 26, 0.75))',
+  filter: 'drop-shadow(0 0 10px var(--bw-neon-flare))',
 });
 
 globalStyle(`${quickAction} button:active`, {

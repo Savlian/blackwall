@@ -8,6 +8,59 @@
   color-scheme: dark;
 }
 
+body.blackwall-accent-red {
+  --bw-primary: #7A0000;
+  --bw-primary-2: #A80000;
+  --bw-neon: #FF1A1A;
+}
+
+body.blackwall-accent-green {
+  --bw-primary: #0F9D58;
+  --bw-primary-2: #12AD61;
+  --bw-neon: #5FE39F;
+}
+
+body.blackwall-accent-blue {
+  --bw-primary: #1555FF;
+  --bw-primary-2: #1E65FF;
+  --bw-neon: #4E8CFF;
+}
+
+body.blackwall-accent-purple {
+  --bw-primary: #6A0DAD;
+  --bw-primary-2: #7515BE;
+  --bw-neon: #B066FF;
+}
+
+body.blackwall-accent-pink {
+  --bw-primary: #C2187B;
+  --bw-primary-2: #D11F85;
+  --bw-neon: #FF5DB1;
+}
+
+body.blackwall-theme {
+  --bw-primary-soft: color-mix(in srgb, var(--bw-primary) 25%, transparent);
+  --bw-primary-medium: color-mix(in srgb, var(--bw-primary) 40%, transparent);
+  --bw-primary-strong: color-mix(in srgb, var(--bw-primary) 55%, transparent);
+  --bw-primary-overlay: color-mix(in srgb, var(--bw-primary) 28%, rgb(0 0 0 / 88%));
+  --bw-primary-overlay-strong: color-mix(in srgb, var(--bw-primary) 42%, rgb(0 0 0 / 94%));
+  --bw-primary-overlay-deep: color-mix(in srgb, var(--bw-primary) 34%, rgb(0 0 0 / 98%));
+  --bw-chrome-bg: color-mix(in srgb, var(--bw-primary) 14%, rgb(0 0 0 / 90%));
+  --bw-panel-bg: color-mix(in srgb, var(--bw-primary) 22%, rgb(0 0 0 / 82%));
+  --bw-panel-glow: color-mix(in srgb, var(--bw-neon) 18%, transparent);
+  --bw-gradient-top: color-mix(in srgb, var(--bw-primary) 32%, rgb(0 0 0 / 95%));
+  --bw-gradient-mid: color-mix(in srgb, var(--bw-primary) 16%, rgb(0 0 0 / 90%));
+  --bw-gradient-bottom: color-mix(in srgb, var(--bw-primary) 28%, rgb(0 0 0 / 98%));
+  --bw-secondary-soft: color-mix(in srgb, var(--bw-primary-2) 30%, transparent);
+  --bw-secondary-medium: color-mix(in srgb, var(--bw-primary-2) 45%, transparent);
+  --bw-secondary-strong: color-mix(in srgb, var(--bw-primary-2) 60%, transparent);
+  --bw-neon-soft: color-mix(in srgb, var(--bw-neon) 20%, transparent);
+  --bw-neon-medium: color-mix(in srgb, var(--bw-neon) 32%, transparent);
+  --bw-neon-strong: color-mix(in srgb, var(--bw-neon) 48%, transparent);
+  --bw-neon-glow: color-mix(in srgb, var(--bw-neon) 62%, transparent);
+  --bw-neon-flare: color-mix(in srgb, var(--bw-neon) 78%, transparent);
+}
+
 @keyframes bw-wall-shift {
   0% { transform: translate3d(0, 0, 0) scale(1); }
   50% { transform: translate3d(-1.5%, -1%, 0) scale(1.025); }
@@ -49,31 +102,31 @@
 
 @keyframes bw-neon-pulse {
   0%, 100% {
-    box-shadow: 0 0 6px rgba(122, 0, 0, 0.35), 0 0 14px rgba(255, 26, 26, 0.25);
+    box-shadow: 0 0 6px var(--bw-primary-medium), 0 0 14px var(--bw-neon-soft);
   }
   45% {
-    box-shadow: 0 0 12px rgba(168, 0, 0, 0.5), 0 0 24px rgba(255, 26, 26, 0.4);
+    box-shadow: 0 0 12px var(--bw-secondary-strong), 0 0 24px var(--bw-neon-strong);
   }
   65% {
-    box-shadow: 0 0 8px rgba(122, 0, 0, 0.4), 0 0 18px rgba(255, 26, 26, 0.32);
+    box-shadow: 0 0 8px var(--bw-primary-strong), 0 0 18px var(--bw-neon-medium);
   }
 }
 
 @keyframes bw-neon-flicker {
   0%, 100% {
-    text-shadow: 0 0 6px rgba(255, 26, 26, 0.6), 0 0 12px rgba(168, 0, 0, 0.45);
+    text-shadow: 0 0 6px var(--bw-neon-strong), 0 0 12px var(--bw-secondary-medium);
     opacity: 1;
   }
   40% {
-    text-shadow: 0 0 8px rgba(255, 26, 26, 0.7), 0 0 16px rgba(168, 0, 0, 0.5);
+    text-shadow: 0 0 8px var(--bw-neon-flare), 0 0 16px var(--bw-secondary-strong);
     opacity: 0.96;
   }
   48% {
-    text-shadow: 0 0 14px rgba(255, 26, 26, 0.85), 0 0 26px rgba(168, 0, 0, 0.55);
+    text-shadow: 0 0 14px var(--bw-neon-flare), 0 0 26px var(--bw-secondary-strong);
     opacity: 1;
   }
   55% {
-    text-shadow: 0 0 9px rgba(255, 26, 26, 0.75), 0 0 18px rgba(168, 0, 0, 0.5);
+    text-shadow: 0 0 9px var(--bw-neon-strong), 0 0 18px var(--bw-secondary-medium);
     opacity: 0.94;
   }
 }
@@ -100,9 +153,17 @@ body.blackwall-theme::after {
   position: fixed;
   inset: -10vh;
   pointer-events: none;
-  background: radial-gradient(140% 140% at 20% 20%, rgba(122, 0, 0, 0.22) 0%, rgba(0, 0, 0, 0) 55%),
-    radial-gradient(120% 120% at 80% 15%, rgba(255, 26, 26, 0.18) 0%, rgba(0, 0, 0, 0) 60%),
-    radial-gradient(160% 160% at 50% 80%, rgba(90, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0) 65%);
+  background: radial-gradient(
+      140% 140% at 20% 20%,
+      var(--bw-primary-soft) 0%,
+      transparent 55%
+    ),
+    radial-gradient(120% 120% at 80% 15%, var(--bw-neon-soft) 0%, transparent 60%),
+    radial-gradient(
+      160% 160% at 50% 80%,
+      color-mix(in srgb, var(--bw-primary) 18%, transparent) 0%,
+      transparent 65%
+    );
   mix-blend-mode: screen;
   opacity: 0.22;
   filter: blur(8px);
@@ -116,7 +177,12 @@ body.blackwall-theme::before {
   content: '';
   position: fixed;
   inset: 0;
-  background: radial-gradient(120% 120% at 12% 8%, rgba(84, 0, 0, 0.55) 0%, rgba(12, 0, 0, 0.96) 55%, rgba(2, 0, 0, 1) 100%);
+  background: radial-gradient(
+    120% 120% at 12% 8%,
+    color-mix(in srgb, var(--bw-primary) 55%, transparent) 0%,
+    color-mix(in srgb, var(--bw-primary) 65%, rgb(0 0 0 / 96%)) 55%,
+    color-mix(in srgb, var(--bw-primary) 20%, rgb(0 0 0 / 100%)) 100%
+  );
   background-size: 140% 140%;
   background-position: 50% 0;
   z-index: -2;
@@ -127,7 +193,13 @@ body.blackwall-theme::before {
 
 @media (min-width: 1100px) {
   body.blackwall-theme::before {
-    background-image: radial-gradient(120% 120% at 12% 8%, rgba(84, 0, 0, 0.55) 0%, rgba(12, 0, 0, 0.96) 55%, rgba(2, 0, 0, 1) 100%), url('/blackwall-bg.png');
+    background-image: radial-gradient(
+        120% 120% at 12% 8%,
+        color-mix(in srgb, var(--bw-primary) 55%, transparent) 0%,
+        color-mix(in srgb, var(--bw-primary) 65%, rgb(0 0 0 / 96%)) 55%,
+        color-mix(in srgb, var(--bw-primary) 20%, rgb(0 0 0 / 100%)) 100%
+      ),
+      url('/blackwall-bg.png');
     background-blend-mode: screen;
     background-size: 140% 140%, cover;
     background-position: 50% 0, center;
@@ -137,9 +209,9 @@ body.blackwall-theme::before {
 
 body.blackwall-theme header,
 body.blackwall-theme .app-header {
-  background: rgba(0, 0, 0, 0.9);
+  background: var(--bw-chrome-bg);
   border-bottom: 2px solid var(--bw-primary);
-  box-shadow: 0 0 10px rgba(122, 0, 0, 0.35);
+  box-shadow: 0 0 10px var(--bw-primary-medium);
   animation: bw-neon-pulse 7s ease-in-out infinite;
   animation-delay: -1.5s;
   will-change: box-shadow;
@@ -148,7 +220,7 @@ body.blackwall-theme .app-header {
 body.blackwall-theme header h1,
 body.blackwall-theme .app-title {
   color: var(--bw-text);
-  text-shadow: 0 0 6px rgba(255, 26, 26, 0.35);
+  text-shadow: 0 0 6px var(--bw-neon-soft);
 }
 
 body.blackwall-theme header img[alt="Blackwall Logo"] {
@@ -168,10 +240,10 @@ body.blackwall-theme .members,
 body.blackwall-theme .right-panel,
 body.blackwall-theme .mx_RightPanel,
 body.blackwall-theme .room-members {
-  background: rgba(18, 0, 2, 0.82);
+  background: var(--bw-panel-bg);
   position: relative;
   overflow: hidden;
-  box-shadow: 0 0 6px rgba(168, 0, 0, 0.18), 0 0 16px rgba(255, 30, 30, 0.14);
+  box-shadow: 0 0 6px var(--bw-secondary-soft), 0 0 16px var(--bw-neon-soft);
   animation: bw-neon-pulse 9s ease-in-out infinite;
   animation-delay: -3s;
   will-change: box-shadow;
@@ -189,8 +261,20 @@ body.blackwall-theme .room-members::before {
   content: '';
   position: absolute;
   inset: -2px;
-  background: repeating-linear-gradient(180deg, rgba(255, 32, 32, 0.13) 0px, rgba(255, 32, 32, 0.13) 2px, transparent 2px, transparent 14px),
-    repeating-linear-gradient(90deg, rgba(180, 0, 0, 0.09) 0px, rgba(180, 0, 0, 0.09) 1px, transparent 1px, transparent 24px);
+  background: repeating-linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--bw-neon) 13%, transparent) 0px,
+      color-mix(in srgb, var(--bw-neon) 13%, transparent) 2px,
+      transparent 2px,
+      transparent 14px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--bw-primary-2) 9%, transparent) 0px,
+      color-mix(in srgb, var(--bw-primary-2) 9%, transparent) 1px,
+      transparent 1px,
+      transparent 24px
+    );
   background-size: 100% 180px, 140px 100%;
   mix-blend-mode: screen;
   opacity: 0.22;
@@ -201,28 +285,52 @@ body.blackwall-theme .room-members::before {
 
 body.blackwall-theme nav,
 body.blackwall-theme .sidebar {
-  background-color: rgba(0, 0, 0, 0.9);
-  background-image: linear-gradient(180deg, rgba(34, 0, 0, 0.95) 0%, rgba(10, 0, 0, 0.9) 45%, rgba(28, 0, 0, 0.98) 100%);
+  background-color: var(--bw-chrome-bg);
+  background-image: linear-gradient(
+    180deg,
+    var(--bw-gradient-top) 0%,
+    var(--bw-gradient-mid) 45%,
+    var(--bw-gradient-bottom) 100%
+  );
 }
 
 body.blackwall-theme .room-list {
-  background-color: rgba(0, 0, 0, 0.9);
-  background-image: linear-gradient(180deg, rgba(30, 0, 0, 0.94) 0%, rgba(8, 0, 0, 0.9) 40%, rgba(22, 0, 0, 0.96) 100%);
+  background-color: var(--bw-chrome-bg);
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bw-primary) 28%, rgb(0 0 0 / 94%)) 0%,
+    color-mix(in srgb, var(--bw-primary) 12%, rgb(0 0 0 / 90%)) 40%,
+    color-mix(in srgb, var(--bw-primary) 24%, rgb(0 0 0 / 96%)) 100%
+  );
 }
 
 body.blackwall-theme .timeline,
 body.blackwall-theme .chat-area {
-  background-color: rgba(0, 0, 0, 0.9);
-  background-image: radial-gradient(140% 180% at 50% 0%, rgba(64, 0, 0, 0.32) 0%, rgba(0, 0, 0, 0) 48%),
-    linear-gradient(180deg, rgba(12, 0, 0, 0.94) 0%, rgba(2, 0, 0, 0.9) 52%, rgba(14, 0, 0, 0.94) 100%);
+  background-color: var(--bw-chrome-bg);
+  background-image: radial-gradient(
+      140% 180% at 50% 0%,
+      color-mix(in srgb, var(--bw-primary) 22%, transparent) 0%,
+      transparent 48%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--bw-primary) 18%, rgb(0 0 0 / 94%)) 0%,
+      color-mix(in srgb, var(--bw-primary) 8%, rgb(0 0 0 / 90%)) 52%,
+      color-mix(in srgb, var(--bw-primary) 20%, rgb(0 0 0 / 94%)) 100%
+    );
   background-blend-mode: screen, normal;
 }
 
 body.blackwall-theme .right-panel,
 body.blackwall-theme .mx_RightPanel,
 body.blackwall-theme .room-members {
-  background-color: rgba(0, 0, 0, 0.9);
-  background-image: linear-gradient(180deg, rgba(36, 0, 0, 0.94) 0%, rgba(8, 0, 0, 0.92) 55%, rgba(24, 0, 0, 0.97) 100%);
+  background-color: var(--bw-chrome-bg);
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bw-primary) 30%, rgb(0 0 0 / 94%)) 0%,
+    color-mix(in srgb, var(--bw-primary) 12%, rgb(0 0 0 / 92%)) 55%,
+    color-mix(in srgb, var(--bw-primary) 26%, rgb(0 0 0 / 97%)) 100%
+  );
 }
 
 body.blackwall-theme .room-list::after,
@@ -242,8 +350,14 @@ body.blackwall-theme .room-members::after {
   position: absolute;
   inset: -1px;
   pointer-events: none;
-  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05) 0px, rgba(255, 255, 255, 0.05) 1px, transparent 1px, transparent 3px),
-    linear-gradient(130deg, rgba(255, 26, 26, 0.1), rgba(0, 0, 0, 0));
+  background: repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.05) 0px,
+      rgba(255, 255, 255, 0.05) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    linear-gradient(130deg, var(--bw-neon-soft), rgba(0, 0, 0, 0));
   background-size: 320% 320%;
   mix-blend-mode: screen;
   opacity: 0.08;
@@ -257,7 +371,15 @@ body.blackwall-theme .timeline::before {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(90deg, rgba(255, 26, 26, 0.42) 0%, rgba(255, 26, 26, 0.1) 4%, transparent 16%, transparent 84%, rgba(255, 26, 26, 0.1) 96%, rgba(255, 26, 26, 0.45) 100%);
+  background: linear-gradient(
+    90deg,
+    var(--bw-neon-medium) 0%,
+    var(--bw-neon-soft) 4%,
+    transparent 16%,
+    transparent 84%,
+    var(--bw-neon-soft) 96%,
+    var(--bw-neon-medium) 100%
+  );
   mix-blend-mode: screen;
   opacity: 0.34;
   animation: bw-sidepulse 5.5s ease-in-out infinite;
@@ -267,12 +389,12 @@ body.blackwall-theme .timeline::before {
 
 body.blackwall-theme .room-list,
 body.blackwall-theme nav {
-  border-right: 1px solid rgba(122, 0, 0, 0.4);
+  border-right: 1px solid var(--bw-primary-medium);
 }
 
 body.blackwall-theme .right-panel,
 body.blackwall-theme .mx_RightPanel {
-  border-left: 1px solid rgba(122, 0, 0, 0.4);
+  border-left: 1px solid var(--bw-primary-medium);
 }
 
 body.blackwall-theme .timeline .message-body a,
@@ -329,7 +451,7 @@ body.blackwall-theme [class*='RoomHeader'] h2 {
   font-size: 1.2rem;
   line-height: 1.4rem;
   color: var(--bw-text);
-  text-shadow: 0 0 6px rgba(122, 0, 0, 0.35);
+  text-shadow: 0 0 6px var(--bw-primary-medium);
   margin: 0;
 }
 

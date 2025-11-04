@@ -1,5 +1,5 @@
 import { keyframes, style } from '@vanilla-extract/css';
-import { color, config, DefaultReset, toRem } from 'folds';
+import { config, DefaultReset, toRem } from 'folds';
 
 const signalSweep = keyframes({
   '0%': { transform: 'translateX(-120%) skewX(-18deg)', opacity: 0 },
@@ -11,9 +11,9 @@ export const Editor = style([
   DefaultReset,
   {
     position: 'relative',
-    background: 'rgba(18, 0, 4, 0.86)',
-    color: color.SurfaceVariant.OnContainer,
-    boxShadow: '0 0 0 1px rgba(255, 56, 64, 0.28)',
+    background: 'var(--bw-panel-bg)',
+    color: 'var(--bw-text)',
+    boxShadow: '0 0 0 1px var(--bw-primary-medium)',
     borderRadius: config.radii.R500,
     overflow: 'hidden',
     isolation: 'isolate',
@@ -24,8 +24,8 @@ export const Editor = style([
         content: '',
         position: 'absolute',
         inset: '-18% -40%',
-        background:
-          'radial-gradient(circle at 18% 18%, rgba(255, 56, 56, 0.22) 0%, rgba(18, 0, 0, 0) 55%), radial-gradient(circle at 82% 78%, rgba(255, 40, 40, 0.18) 0%, rgba(18, 0, 0, 0) 52%)',
+        background: `radial-gradient(circle at 18% 18%, var(--bw-neon-soft) 0%, transparent 55%),
+          radial-gradient(circle at 82% 78%, color-mix(in srgb, var(--bw-primary) 20%, transparent) 0%, transparent 52%)`,
         opacity: 0.6,
         pointerEvents: 'none',
         filter: 'blur(26px)',
@@ -35,7 +35,7 @@ export const Editor = style([
         position: 'absolute',
         inset: 0,
         background:
-          'linear-gradient(90deg, rgba(255, 72, 72, 0) 0%, rgba(255, 72, 72, 0.4) 52%, rgba(255, 72, 72, 0) 100%)',
+          'linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, var(--bw-neon-glow) 52%, rgba(255, 255, 255, 0) 100%)',
         opacity: 0,
         pointerEvents: 'none',
         mixBlendMode: 'screen',
@@ -46,8 +46,8 @@ export const Editor = style([
         animationTimingFunction: 'ease-in-out',
       },
       '&:focus-within': {
-        background: 'rgba(26, 0, 2, 0.94)',
-        boxShadow: '0 0 26px rgba(255, 64, 64, 0.34)',
+        background: 'color-mix(in srgb, var(--bw-primary) 18%, rgb(0 0 0 / 94%))',
+        boxShadow: '0 0 26px var(--bw-neon-strong)',
       },
       '&:focus-within::after': {
         opacity: 0.85,
@@ -63,7 +63,7 @@ export const EditorOptions = style([
   DefaultReset,
   {
     padding: config.space.S200,
-    background: 'rgba(26, 0, 6, 0.46)',
+    background: 'color-mix(in srgb, var(--bw-primary) 12%, rgb(0 0 0 / 46%))',
   },
 ]);
 

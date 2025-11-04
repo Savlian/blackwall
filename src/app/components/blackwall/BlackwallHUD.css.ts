@@ -30,12 +30,12 @@ export const block = style({
   minWidth: '11rem',
   textTransform: 'uppercase',
   letterSpacing: '0.18em',
-  background: 'rgba(8, 0, 0, 0.68)',
-  border: '1px solid rgba(255, 26, 26, 0.45)',
+  background: 'color-mix(in srgb, var(--bw-primary) 18%, rgb(0 0 0 / 68%))',
+  border: '1px solid var(--bw-neon-medium)',
   borderRadius: '12px',
   padding: '0.45rem 0.9rem 0.4rem',
-  boxShadow: '0 0 18px rgba(255, 26, 26, 0.45)',
-  color: '#ffdede',
+  boxShadow: '0 0 18px var(--bw-neon-medium)',
+  color: 'color-mix(in srgb, var(--bw-neon) 18%, #ffffff)',
 });
 
 export const label = style({
@@ -47,8 +47,8 @@ export const label = style({
 export const value = style({
   fontSize: '0.9rem',
   letterSpacing: '0.12em',
-  color: '#ffffff',
-  textShadow: '0 0 10px rgba(255, 26, 26, 0.55)',
+  color: 'color-mix(in srgb, var(--bw-neon) 10%, #ffffff)',
+  textShadow: '0 0 10px var(--bw-neon-strong)',
   lineHeight: 1.1,
 });
 
